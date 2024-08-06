@@ -1,28 +1,18 @@
 import { Application, Container } from 'pixi.js';
-import { loadAssets, tree } from './engine/assets.js';
-import { draw } from './engine/utils.js';
+import { AssetManager } from './engine/assets.js';
+import { PlayerManager } from './engine/player.js';
+import { WorldManager } from './engine/world.js';
 
 // Asynchronous IIFE
 (async () => {
+    // create the app
     const app = new Application();
-
     await app.init({ background: '#4bcf51', resizeTo: window });
     document.body.appendChild(app.canvas);
 
-    const worldContainer = new Container();
-    worldContainer.x = app.screen.width / 2;
-    worldContainer.y = app.screen.height / 2;
-    worldContainer.height = app.screen.height;
-    worldContainer.width = app.screen.width;
-
-    app.stage.addChild(worldContainer);
-
-    await loadAssets();
-
-    draw(worldContainer, tree, -800, -400);
-    draw(worldContainer, tree, -800, -600);
-    draw(worldContainer, tree, -300, -200);
-    draw(worldContainer, tree, 300, -400);
+    await AssetManager.loadAssets();
+    await WorldManager.createWorld(app);
+    await PlayerManager.createPlayer(app);
 
     app.ticker.add((time) => {
 

@@ -1,5 +1,4 @@
-import { Assets, Graphics } from "pixi.js";
-
+import { Assets } from "pixi.js";
 
 export interface GGAsset {
     asset: any;
@@ -7,19 +6,36 @@ export interface GGAsset {
     width: number;
 }
 
-export let tree: GGAsset;
+export abstract class AssetManager {
+    static tree: GGAsset;
+    static knight: GGAsset;
 
-export async function loadAssets() {
-    const treeAsset = await Assets.load({
-        src: '/tree.svg', data: {
-            parseAsGraphicsContext: true,
+    static async loadAssets() {
+        const treeAsset = await Assets.load({
+            src: '/tree.svg', data: {
+                parseAsGraphicsContext: true,
+            }
+        });
+
+        this.tree = {
+            asset: treeAsset,
+            height: 200,
+            width: 200,
         }
-    });
 
-    tree = {
-        asset: treeAsset,
-        height: 100,
-        width: 100,
+        const knightAsset = await Assets.load({
+            src: '/knight.svg', data: {
+                parseAsGraphicsContext: true,
+            }
+        });
+
+        this.knight = {
+            asset: knightAsset,
+            height: 200,
+            width: 100,
+        }
     }
 }
+
+
 
