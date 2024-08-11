@@ -11,29 +11,25 @@ export abstract class AssetManager {
     static knight: GGAsset;
 
     static async loadAssets() {
-        const treeAsset = await Assets.load({
-            src: '/tree.svg', data: {
-                parseAsGraphicsContext: true,
-            }
-        });
+        const treeAsset = await Assets.load('/tree.svg');
 
         this.tree = {
             asset: treeAsset,
-            height: 200,
-            width: 200,
+            height: 250,
+            width: 250,
         }
 
-        const knightAsset = await Assets.load({
-            src: '/knight.svg', data: {
-                parseAsGraphicsContext: true,
-            }
-        });
+        console.log(this.tree);
+
+        const knightAsset = await Assets.load('/knight.svg');
 
         this.knight = {
             asset: knightAsset,
-            height: 200,
-            width: 100,
+            height: 100,
+            width: 50,
         }
+
+        console.log(this.knight);
     }
 }
 
