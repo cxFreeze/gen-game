@@ -1,4 +1,4 @@
-import { Container, Graphics, Sprite } from "pixi.js";
+import { Container, Sprite } from "pixi.js";
 import { AssetManager } from "./assets.js";
 import { WorldManager } from "./world.js";
 
@@ -27,12 +27,12 @@ export abstract class PlayerManager {
     }
 
     private static drawPlayer() {
-        const graphics = new Sprite(AssetManager.knight.asset);
-        graphics.width = AssetManager.knight.width;
-        graphics.height = AssetManager.knight.height;
-        graphics.x = -graphics.width / 2;
-        graphics.y = -graphics.height;
-        this.playerContainer.addChild(graphics);
+        const playerSprite = new Sprite(AssetManager.knight.asset);
+        playerSprite.width = AssetManager.knight.width;
+        playerSprite.height = AssetManager.knight.height;
+        playerSprite.x = -playerSprite.width / 2;
+        playerSprite.y = -playerSprite.height;
+        this.playerContainer.addChild(playerSprite);
     }
 
     static setPlayerPosition(x: number, y: number) {

@@ -1,24 +1,27 @@
 import { Application } from 'pixi.js';
-import { AssetManager } from './engine/assets.js';
-import { PlayerMovement } from './engine/player-movement.js';
-import { PlayerManager } from './engine/player.js';
-import { WorldManager } from './engine/world.js';
+import { AssetManager } from './world/assets.js';
+import { PlayerMovements } from './game/player-movements.js';
+import { PlayerManager } from './world/player.js';
+import { WorldManager } from './world/world.js';
+import { PlayerInputs } from './game/player-inputs.js';
+import { Random } from './utils/random.js';
 
-// Asynchronous IIFE
 (async () => {
+    Random.setSeed();
+
     // create the app
     const app = new Application();
-    await app.init({ background: '#61eb34', resizeTo: window, });
+    await app.init({ resizeTo: window, preference: 'webgpu' });
     document.body.appendChild(app.canvas);
 
     await AssetManager.loadAssets();
     WorldManager.createWorld(app);
     PlayerManager.createPlayer();
-    PlayerMovement.init();
+    PlayerInputs.init();
 
     WorldManager.generateWorld();
     app.ticker.add((time) => {
-        PlayerMovement.updatePlayerPosition(time.elapsedMS);
+        PlayerMovements.updatePlayerPosition(time.elapsedMS);
         WorldManager.updateDebugInfos(time);
     });
 })();
