@@ -3,6 +3,7 @@ export abstract class Random {
     private static seed: string;
 
     static setSeed(seed: string = '') {
+        seed = 'test1'
         if (seed === '') {
             seed = this.randString();
         }
@@ -23,13 +24,14 @@ export abstract class Random {
         h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
         h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
         h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         h1 ^= (h2 ^ h3 ^ h4), h2 ^= h1, h3 ^= h1, h4 ^= h1;
         return [h1 >>> 0, h2 >>> 0, h3 >>> 0, h4 >>> 0];
     }
 
     private static sfc32(a: number, b: number, c: number, d: number): number {
         a |= 0; b |= 0; c |= 0; d |= 0;
-        let t = (a + b | 0) + d | 0;
+        const t = (a + b | 0) + d | 0;
         d = d + 1 | 0;
         a = b ^ b >>> 9;
         b = c + (c << 3) | 0;
@@ -39,7 +41,7 @@ export abstract class Random {
     }
 
     private static seededRand(input: string) {
-        var seed = Random.cyrb128(input + this.seed);
+        const seed = Random.cyrb128(input + this.seed);
         return this.sfc32(seed[0], seed[1], seed[2], seed[3]);
     }
 

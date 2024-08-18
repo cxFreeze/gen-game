@@ -18,8 +18,8 @@ export abstract class PlayerManager {
         this.absDefaultPlayerY = parentContainer.height / 2;
         this.playerContainer.x = this.absDefaultPlayerX;
         this.playerContainer.y = this.absDefaultPlayerY;
-        this.playerContainer.height = AssetManager.knight.width;
-        this.playerContainer.width = AssetManager.knight.height;
+        this.playerContainer.height = AssetManager.knight.width as number;
+        this.playerContainer.width = AssetManager.knight.height as number;
         this.playerContainer.zIndex = 0;
         parentContainer.addChild(this.playerContainer);
 
@@ -28,8 +28,8 @@ export abstract class PlayerManager {
 
     private static drawPlayer() {
         const playerSprite = new Sprite(AssetManager.knight.asset);
-        playerSprite.width = AssetManager.knight.width;
-        playerSprite.height = AssetManager.knight.height;
+        playerSprite.width = AssetManager.knight.width as number;
+        playerSprite.height = AssetManager.knight.height as number;
         playerSprite.x = -playerSprite.width / 2;
         playerSprite.y = -playerSprite.height;
         this.playerContainer.addChild(playerSprite);

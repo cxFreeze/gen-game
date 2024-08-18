@@ -2,6 +2,17 @@ import { Application, Container, Graphics, Sprite, Text, Ticker } from "pixi.js"
 import { Random } from "../utils/random.js";
 import { AssetLevel, AssetManager, AssetZIndex, GGAsset } from "./assets.js";
 
+enum BiomeType { forest = 1 };
+
+interface Biome {
+    ground: GGAsset;
+    items: { asset: GGAsset, drawRate: number }[];
+}
+
+interface LoadedSprite {
+    sprite: Sprite;
+    asset: GGAsset;
+}
 
 export abstract class WorldManager {
 
@@ -10,6 +21,8 @@ export abstract class WorldManager {
     private static debugContainer: Container;
     private static debugInfos: Text;
     private static debugTime: number = 0;
+
+    private static enableDeviation = true;
 
     //private static readonly worldUnit = 10;
     private static readonly chunckSize = 2000;
@@ -21,10 +34,14 @@ export abstract class WorldManager {
     static worldX: number = 0;
     static worldY: number = 0;
 
+    private static currentBiome: BiomeType = BiomeType.forest;
     private static currentChunk: string;
-    private static loadedChuncksItems: { [key: string]: Sprite[] } = {};
+    private static loadedChuncksItems: { [key: string]: LoadedSprite[] } = {};
+
+    private static biomes: { [key in BiomeType]: Biome };
 
     static createWorld(app: Application) {
+        this.initBiomes();
         this.worldContainer = new Container();
         this.absDefaultWorldX = app.screen.width / 2;
         this.absDefaultWorldY = app.screen.height / 2;
@@ -36,35 +53,77 @@ export abstract class WorldManager {
         this.initDebugInfos(app);
     }
 
-    static drawItem(asset: GGAsset, x: number, y: number): Sprite {
+    static initBiomes() {
+        const forestBiomes = {
+            ground: AssetManager.forestGround,
+            items: [{
+                asset: AssetManager.tree,
+                drawRate: 0.2
+            }, {
+                asset: AssetManager.rock,
+                drawRate: 0.05
+            },
+                /*
+                {
+                    asset: AssetManager.grass,
+                    drawRate: 0.07
+                }
+                 */
+            ]
+        }
+
+        this.biomes = {
+            [BiomeType.forest]: forestBiomes
+        }
+    }
+
+
+    static drawItem(asset: GGAsset, x: number, y: number, height: number, width: number): Sprite | undefined {
+        const item = new Sprite(asset.texture);
+        item.width = height;
+        item.height = width;
+        item.x = x - item.width / 2;
+        item.y = y - item.height;
+        item.zIndex = y;
+
+        return this.worldContainer.addChild(item);
+    }
+
+    static drawItemWithDeviation(asset: GGAsset, x: number, y: number): Sprite | undefined {
         let deviationX = 0
         let deviationY = 0
-
-        if (asset.displacementRatio > 0) {
-            deviationX = 2 * asset.height * (this.randNumberItem(asset.name + 'deviationX', x, y) - 50) / 100 * asset.displacementRatio;
-            deviationY = 2 * asset.height * (this.randNumberItem(asset.name + 'deviationY', x, y) - 50) / 100 * asset.displacementRatio;
-        }
 
         let height = asset.height;
         let width = asset.width;
 
-        if (asset.sizeRatio > 0) {
-            let sizeRatio = 2 * asset.sizeRatio * (this.randNumberItem(asset.name + 'sizeRatio', x, y) - 50) / 100;
-            if (sizeRatio < 0) {
-                console.log(sizeRatio, - (1 / (1 - sizeRatio)))
-                sizeRatio = 1 - (1 / (1 - sizeRatio));
+        if (this.enableDeviation) {
+            if (asset.displacementRatio > 0) {
+                deviationX = 2 * asset.height * (this.randNumberItem(asset.name + 'deviationX', x, y) - 50) / 100 * asset.displacementRatio;
+                deviationY = 2 * asset.height * (this.randNumberItem(asset.name + 'deviationY', x, y) - 50) / 100 * asset.displacementRatio;
             }
-            height = asset.height * (1 + sizeRatio);
-            width = asset.width * (1 + sizeRatio);
+
+
+
+            if (asset.sizeRatio > 0) {
+                let sizeRatio = 2 * asset.sizeRatio * (this.randNumberItem(asset.name + 'sizeRatio', x, y) - 50) / 100;
+                if (sizeRatio < 0) {
+                    sizeRatio = 1 - (1 / (1 - sizeRatio));
+                }
+                height = asset.height * (1 + sizeRatio);
+                width = asset.width * (1 + sizeRatio);
+            }
         }
 
-        const item = new Sprite(asset.asset);
-        item.width = height;
-        item.height = width;
-        item.x = x - item.width / 2 + deviationX;
-        item.y = y - item.height + deviationY;
-        item.zIndex = y;
-        return this.worldContainer.addChild(item);
+
+
+        x = x + deviationX;
+        y = y + deviationY;
+
+        if (!this.isSpaceAvailable(x, y, asset, height)) {
+            return;
+        }
+
+        return this.drawItem(asset, x, y, height, width);
     }
 
 
@@ -84,7 +143,6 @@ export abstract class WorldManager {
             this.loadChunksArroundCurrentLocation();
 
         }
-
         this.updateWorldItemsZindex(playerY);
     }
 
@@ -100,13 +158,16 @@ export abstract class WorldManager {
     // CHUNCK MANAGEMENT
 
     private static getCurrentChunk() {
-        const currentChuckX = Math.round(this.worldX / this.chunckSize) * this.chunckSize;
-        const currentChuckY = Math.round(this.worldY / this.chunckSize) * this.chunckSize;
-        return `${currentChuckX}/${currentChuckY}`;
+        return this.getChunk(this.worldX, this.worldY);
+    }
+
+    private static getChunk(x: number, y: number) {
+        const chuckX = Math.round(x / this.chunckSize) * this.chunckSize;
+        const chuckY = Math.round(y / this.chunckSize) * this.chunckSize;
+        return `${chuckX}/${chuckY}`;
     }
 
     private static getChunksToLoad() {
-        console.log(this.currentChunk);
         const [currentChuckX, currentChuckY] = this.currentChunk.split('/').map((val) => parseInt(val));
         const chucks = [];
         for (let i = -1; i < 2; i++) {
@@ -123,7 +184,7 @@ export abstract class WorldManager {
         Object.keys(this.loadedChuncksItems).forEach((chunk) => {
             if (!chucks.includes(chunk)) {
                 this.loadedChuncksItems[chunk].forEach((item) => {
-                    item.destroy();
+                    item.sprite.destroy();
                 });
                 delete this.loadedChuncksItems[chunk];
             }
@@ -144,27 +205,38 @@ export abstract class WorldManager {
     }
 
     private static loadGroundTexture(chunkX: number, chunkY: number): void {
-        this.loadItemType(AssetManager.ground, chunkX, chunkY, 1);
+        this.loadItemType(this.biomes[this.currentBiome].ground, chunkX, chunkY, 1);
     }
 
+
+    // ITEMS MANAGEMENT
+
     private static loadItems(chunkX: number, chunkY: number) {
-        this.loadItemType(AssetManager.tree, chunkX, chunkY, 0.2);
-        this.loadItemType(AssetManager.rock, chunkX, chunkY, 0.04);
-        this.loadItemType(AssetManager.grass, chunkX, chunkY, 0.07);
+        this.biomes[this.currentBiome].items.forEach((item) => {
+            this.loadItemType(item.asset, chunkX, chunkY, item.drawRate);
+        });
+
     }
 
     private static loadItemType(asset: GGAsset, chunkX: number, chunkY: number, probability: number) {
-        for (let i = -this.chunckSize / 2; i < this.chunckSize / 2; i += asset.safeZone) {
-            for (let j = -this.chunckSize / 2; j < this.chunckSize / 2; j += asset.safeZone) {
+        let bound = this.chunckSize / 2;
+        if (asset.level !== AssetLevel.groundTexture) {
+            bound -= asset.safeZone / 2 - 1;
+        }
+        for (let i = -bound; i < bound; i += asset.safeZone) {
+            for (let j = -bound; j < bound; j += asset.safeZone) {
                 const absX = chunkX + i;
                 const absY = chunkY + j;
+
                 if (asset.level >= AssetLevel.ground && absX < this.spawnNoDrawZone && absY < this.spawnNoDrawZone && absX > -this.spawnNoDrawZone && absY > -this.spawnNoDrawZone) {
                     continue;
                 }
 
-
                 if (this.randLoadItem(probability, asset.name, absX, absY)) {
-                    var item = this.drawItem(asset, absX, absY);
+                    const item = this.drawItemWithDeviation(asset, absX, absY);
+                    if (!item) {
+                        continue;
+                    }
                     if (asset.level === AssetLevel.groundTexture) {
                         item.zIndex = AssetZIndex.groundTexture;
                     }
@@ -174,19 +246,78 @@ export abstract class WorldManager {
                     else if (asset.level === AssetLevel.sky) {
                         item.zIndex = AssetZIndex.sky;
                     }
-                    this.loadedChuncksItems[chunkX + '/' + chunkY].push(item);
+                    this.loadedChuncksItems[chunkX + '/' + chunkY].push({ sprite: item, asset });
                 }
             }
         }
     }
 
-    private static randLoadItem(probability: number, itemType: string, x: number, y: number): boolean {
-        return Random.randomBool(itemType + x + y, probability);
+    private static isSpaceAvailable(x: number, y: number, asset: GGAsset, height: number) {
+        if (asset.level === AssetLevel.groundTexture || asset.level === AssetLevel.sky) {
+            return true;
+        }
+
+        const safeZoneProp: 'safeZone' | 'groundSafeZone' = asset.level === AssetLevel.ground ? 'groundSafeZone' : 'safeZone';
+
+        let res = true;
+
+        const chunk = this.getChunk(x, y);
+
+        const obj1SafeZone = asset[safeZoneProp] / 2;
+        const obj1X = x;
+        let obj1Y = y;
+
+        //center
+        if (safeZoneProp === 'safeZone') {
+            obj1Y = y - height / 2;
+        }
+
+        if (!this.loadedChuncksItems[chunk]) {
+            return true;
+        }
+
+        this.loadedChuncksItems[chunk].forEach((item) => {
+            if (!res) {
+                return;
+            }
+
+            if (item.asset.level === AssetLevel.groundTexture || item.asset.level === AssetLevel.sky) {
+                return;
+            }
+
+            const obj2X = item.sprite.x + item.sprite.width / 2;
+            let obj2Y = item.sprite.y + item.sprite.height;
+
+            if (safeZoneProp === 'safeZone') {
+                obj2Y = item.sprite.y + item.sprite.height / 2;
+            }
+
+            const obj2SafeZone = item.asset[safeZoneProp] / 2;
+            const A = obj1X - obj1SafeZone;
+            const B = obj1X + obj1SafeZone;
+            const C = obj2X - obj2SafeZone;
+            const D = obj2X + obj2SafeZone;
+
+            if (B <= C || D <= A) {
+                return;
+            }
+
+            const E = obj1Y - obj1SafeZone;
+            const F = obj1Y + obj1SafeZone;
+            const G = obj2Y - obj2SafeZone;
+            const H = obj2Y + obj2SafeZone;
+
+            if (F <= G || H <= E) {
+                return;
+            }
+
+            res = false;
+        });
+
+        return res;
     }
 
-    private static randNumberItem(itemType: string, x: number, y: number): number {
-        return Random.randomNumber(itemType + x + y);
-    }
+
 
     // WORLD INFO DEBUG
 
@@ -211,8 +342,7 @@ export abstract class WorldManager {
         app.stage.addChild(this.debugContainer);
     }
 
-    static
-        updateDebugInfos(ticker: Ticker) {
+    static updateDebugInfos(ticker: Ticker) {
         this.debugTime += ticker.elapsedMS;
 
         if (this.debugTime > 500) {
@@ -220,4 +350,16 @@ export abstract class WorldManager {
             this.debugInfos.text = `x: ${Math.floor(this.worldX)}   y: ${Math.floor(this.worldY)}   icnt: ${this.worldContainer.children.length}  fps: ${Math.floor(ticker.FPS)}`;
         }
     }
+
+
+    // RAND FUNCTIONS
+
+    private static randLoadItem(probability: number, itemType: string, x: number, y: number): boolean {
+        return Random.randomBool(itemType + x + y, probability);
+    }
+
+    private static randNumberItem(itemType: string, x: number, y: number): number {
+        return Random.randomNumber(itemType + x + y);
+    }
+
 }

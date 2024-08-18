@@ -1,15 +1,15 @@
-import { Assets } from "pixi.js";
+import { Assets, Texture } from "pixi.js";
 
 export enum AssetLevel { groundTexture = 0, ground = 1, player = 2, sky = 3 };
 export enum AssetZIndex { groundTexture = -200000, ground = -100000, sky = 100000 };
 
 export interface GGAsset {
-    asset: any;
+    texture: Texture;
     height: number;
     width: number;
     name: string;
     safeZone: number;
-    smallItemSafeZone: number;
+    groundSafeZone: number;
     level: AssetLevel;
     displacementRatio: number;
     sizeRatio: number;
@@ -18,42 +18,41 @@ export interface GGAsset {
 export abstract class AssetManager {
     static knight: Partial<GGAsset>;
     static tree: GGAsset;
-    static ground: GGAsset;;
+    static forestGround: GGAsset;;
     static grass: GGAsset;
     static rock: GGAsset;
 
     static async loadAssets() {
-
-        const groundAsset = await Assets.load('/ground_texture.png');
-        this.ground = {
+        const groundTxtr = await Assets.load('/ground_texture.png');
+        this.forestGround = {
             name: 'ground',
-            asset: groundAsset,
+            texture: groundTxtr,
             height: 500,
             width: 500,
-            safeZone: 200,
-            smallItemSafeZone: 0,
+            safeZone: 500,
+            groundSafeZone: 500,
             displacementRatio: 0,
             sizeRatio: 0,
             level: AssetLevel.groundTexture
         }
 
-        const treeAsset = await Assets.load('/tree.png');
+        const treeTxtr = await Assets.load('/tree.png');
         this.tree = {
             name: 'tree',
-            asset: treeAsset,
+            texture: treeTxtr,
             height: 280,
             width: 250,
             safeZone: 250,
-            smallItemSafeZone: 0,
+            groundSafeZone: 150,
             displacementRatio: 0.2,
             sizeRatio: 0.4,
             level: AssetLevel.player
         }
 
-        const knightAsset = await Assets.load('/knight.svg');
+        const knightTxtr = await Assets.load('/knight.svg');
         this.knight = {
             name: 'knight',
-            asset: knightAsset,
+            texture: knightTxtr,
             height: 100,
             displacementRatio: 0.4,
             sizeRatio: 0.5,
@@ -63,11 +62,11 @@ export abstract class AssetManager {
         const grassAsset = await Assets.load('/grass.png');
         this.grass = {
             name: 'grass',
-            asset: grassAsset,
+            texture: grassAsset,
             height: 40,
             width: 40,
             safeZone: 50,
-            smallItemSafeZone: 0,
+            groundSafeZone: 50,
             displacementRatio: 0,
             sizeRatio: 0.5,
             level: AssetLevel.ground
@@ -76,14 +75,14 @@ export abstract class AssetManager {
         const rockAsset = await Assets.load('/rock.png');
         this.rock = {
             name: 'rock',
-            asset: rockAsset,
+            texture: rockAsset,
             height: 50,
             width: 50,
-            safeZone: 100,
-            smallItemSafeZone: 0,
+            safeZone: 75,
+            groundSafeZone: 75,
             displacementRatio: 0.2,
             sizeRatio: 0.5,
-            level: AssetLevel.player
+            level: AssetLevel.ground
         }
     }
 }
