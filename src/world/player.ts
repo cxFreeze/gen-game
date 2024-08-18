@@ -27,7 +27,7 @@ export abstract class PlayerManager {
     }
 
     private static drawPlayer() {
-        const playerSprite = new Sprite(AssetManager.knight.asset);
+        const playerSprite = new Sprite(AssetManager.knight.texture);
         playerSprite.width = AssetManager.knight.width as number;
         playerSprite.height = AssetManager.knight.height as number;
         playerSprite.x = -playerSprite.width / 2;

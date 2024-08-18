@@ -23,7 +23,7 @@ export abstract class AssetManager {
     static rock: GGAsset;
 
     static async loadAssets() {
-        const groundTxtr = await Assets.load('/ground_texture.png');
+        const groundTxtr = await Assets.load('./ground_texture.png');
         this.forestGround = {
             name: 'ground',
             texture: groundTxtr,
@@ -36,7 +36,7 @@ export abstract class AssetManager {
             level: AssetLevel.groundTexture
         }
 
-        const treeTxtr = await Assets.load('/tree.png');
+        const treeTxtr = await Assets.load('./tree.png');
         this.tree = {
             name: 'tree',
             texture: treeTxtr,
@@ -49,7 +49,7 @@ export abstract class AssetManager {
             level: AssetLevel.player
         }
 
-        const knightTxtr = await Assets.load('/knight.svg');
+        const knightTxtr = await Assets.load('./knight.svg');
         this.knight = {
             name: 'knight',
             texture: knightTxtr,
@@ -59,7 +59,7 @@ export abstract class AssetManager {
             width: 50,
         }
 
-        const grassAsset = await Assets.load('/grass.png');
+        const grassAsset = await Assets.load('./grass.png');
         this.grass = {
             name: 'grass',
             texture: grassAsset,
@@ -72,7 +72,7 @@ export abstract class AssetManager {
             level: AssetLevel.ground
         }
 
-        const rockAsset = await Assets.load('/rock.png');
+        const rockAsset = await Assets.load('./rock.png');
         this.rock = {
             name: 'rock',
             texture: rockAsset,
