@@ -5,7 +5,7 @@ import { PlayerInputs } from "./player-inputs.js";
 export abstract class PlayerMovements {
 
     private static diagonalRatio: number = Math.sqrt(2);
-    private static moveSpeed: number = 512; // px per second
+    private static moveSpeed: number = 256; // px per second
 
     static updatePlayerPosition(time: number) {
         if (!PlayerInputs.upArrowPressed && !PlayerInputs.downArrowPressed && !PlayerInputs.leftArrowPressed && !PlayerInputs.rightArrowPressed) {
@@ -34,6 +34,18 @@ export abstract class PlayerMovements {
 
         if (PlayerInputs.rightArrowPressed) {
             newX = newX + distance
+        }
+
+        if (!WorldManager.isSpaceAvailableForPlayer(newX, newY)) {
+            if (WorldManager.isSpaceAvailableForPlayer(newX, currentY)) {
+                newY = currentY;
+            }
+            else if (WorldManager.isSpaceAvailableForPlayer(currentX, newY)) {
+                newX = currentX;
+            }
+            else {
+                return;
+            }
         }
 
         if (newX !== currentX && newY !== currentY) {

@@ -3,7 +3,6 @@ export abstract class Random {
     private static seed: string;
 
     static setSeed(seed: string = '') {
-        seed = 'test1'
         if (seed === '') {
             seed = this.randString();
         }

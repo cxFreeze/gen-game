@@ -10,6 +10,7 @@ export interface GGAsset {
     name: string;
     safeZone: number;
     groundSafeZone: number;
+    collisionZone?: number;
     level: AssetLevel;
     displacementRatio: number;
     sizeRatio: number;
@@ -23,7 +24,7 @@ export abstract class AssetManager {
     static rock: GGAsset;
 
     static async loadAssets() {
-        const groundTxtr = await Assets.load('./ground_texture.png');
+        const groundTxtr: Texture = await Assets.load('./ground_texture.png');
         this.forestGround = {
             name: 'ground',
             texture: groundTxtr,
@@ -43,7 +44,7 @@ export abstract class AssetManager {
             height: 280,
             width: 250,
             safeZone: 250,
-            groundSafeZone: 150,
+            groundSafeZone: 50,
             displacementRatio: 0.2,
             sizeRatio: 0.4,
             level: AssetLevel.player
@@ -54,9 +55,8 @@ export abstract class AssetManager {
             name: 'knight',
             texture: knightTxtr,
             height: 100,
-            displacementRatio: 0.4,
-            sizeRatio: 0.5,
             width: 50,
+            collisionZone: 5
         }
 
         const grassAsset = await Assets.load('./grass.png');
@@ -80,6 +80,7 @@ export abstract class AssetManager {
             width: 50,
             safeZone: 75,
             groundSafeZone: 75,
+            collisionZone: 50,
             displacementRatio: 0.2,
             sizeRatio: 0.5,
             level: AssetLevel.ground

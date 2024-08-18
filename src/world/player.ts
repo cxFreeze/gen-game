@@ -16,6 +16,7 @@ export abstract class PlayerManager {
         const parentContainer = WorldManager.worldContainer;
         this.absDefaultPlayerX = parentContainer.width / 2;
         this.absDefaultPlayerY = parentContainer.height / 2;
+        console.log(this.absDefaultPlayerX, this.absDefaultPlayerY);
         this.playerContainer.x = this.absDefaultPlayerX;
         this.playerContainer.y = this.absDefaultPlayerY;
         this.playerContainer.height = AssetManager.knight.width as number;
@@ -27,11 +28,11 @@ export abstract class PlayerManager {
     }
 
     private static drawPlayer() {
-        const playerSprite = new Sprite(AssetManager.knight.texture);
+        const playerSprite = new Sprite({ texture: AssetManager.knight.texture, anchor: { x: 0.5, y: 1 } });
         playerSprite.width = AssetManager.knight.width as number;
         playerSprite.height = AssetManager.knight.height as number;
-        playerSprite.x = -playerSprite.width / 2;
-        playerSprite.y = -playerSprite.height;
+        playerSprite.x = 0;
+        playerSprite.y = 0;
         this.playerContainer.addChild(playerSprite);
     }
 
