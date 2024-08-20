@@ -4,6 +4,8 @@ import { WorldManager } from "./world.js";
 
 export abstract class PlayerManager {
     static playerContainer: Container;
+    static playerSprite: Sprite;
+    static currentPlayerDirection: 'front' | 'back' | 'left' | 'right' = 'front';
 
     private static absDefaultPlayerX: number;
     private static absDefaultPlayerY: number;
@@ -33,7 +35,7 @@ export abstract class PlayerManager {
         playerSprite.height = AssetManager.knight.height as number;
         playerSprite.x = 0;
         playerSprite.y = 0;
-        this.playerContainer.addChild(playerSprite);
+        this.playerSprite = this.playerContainer.addChild(playerSprite);
     }
 
     static setPlayerPosition(x: number, y: number) {
@@ -41,5 +43,29 @@ export abstract class PlayerManager {
         this.playerY = y;
         this.playerContainer.x = this.absDefaultPlayerX + x;
         this.playerContainer.y = this.absDefaultPlayerY + y;
+    }
+
+    static setPlayerTexture(direction: 'front' | 'back' | 'left' | 'right') {
+        if (this.currentPlayerDirection === direction) {
+            return;
+        }
+        this.currentPlayerDirection = direction;
+
+        if (this.playerSprite.scale.x < 0) {
+            this.playerSprite.scale.x *= -1;
+        }
+
+        let texture: 'front' | 'back' | 'side';
+        if (direction === 'left') {
+            texture = 'side';
+        }
+        else if (direction === 'right') {
+            texture = 'side';
+            this.playerSprite.scale.x *= -1;
+        }
+        else {
+            texture = direction;
+        }
+        this.playerSprite.texture = AssetManager.knightTextures[texture];
     }
 }

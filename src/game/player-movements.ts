@@ -53,6 +53,24 @@ export abstract class PlayerMovements {
             newY = currentY - (currentY - newY) / this.diagonalRatio;
         }
 
+        let direction: 'front' | 'back' | 'left' | 'right';
+        if (newX > currentX) {
+            direction = 'left';
+        }
+        else if (newX < currentX) {
+            direction = 'right';
+        }
+        else if (newY > currentY) {
+            direction = 'front';
+        }
+        else if (newY < currentY) {
+            direction = 'back';
+        }
+        else {
+            return;
+        }
+
+        PlayerManager.setPlayerTexture(direction);
         PlayerManager.setPlayerPosition(newX, newY);
         WorldManager.setWorldPosition(-newX, -newY, newY);
     }

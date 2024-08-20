@@ -23,6 +23,8 @@ export abstract class AssetManager {
     static grass: GGAsset;
     static rock: GGAsset;
 
+    static knightTextures: { front: Texture; back: Texture; side: Texture; };
+
     static async loadAssets() {
         const groundTxtr: Texture = await Assets.load('./ground_texture.png');
         this.forestGround = {
@@ -50,15 +52,6 @@ export abstract class AssetManager {
             level: AssetLevel.player
         }
 
-        const knightTxtr = await Assets.load('./knight.svg');
-        this.knight = {
-            name: 'knight',
-            texture: knightTxtr,
-            height: 100,
-            width: 50,
-            collisionZone: 5
-        }
-
         const grassAsset = await Assets.load('./grass.png');
         this.grass = {
             name: 'grass',
@@ -84,6 +77,24 @@ export abstract class AssetManager {
             displacementRatio: 0.2,
             sizeRatio: 0.5,
             level: AssetLevel.ground
+        }
+
+        const knightFrontTxtr = await Assets.load('./knight/front.png');
+        const knightBackTxtr = await Assets.load('./knight/back.png');
+        const knightSideTxtr = await Assets.load('./knight/side.png');
+
+        this.knight = {
+            name: 'knight',
+            texture: knightFrontTxtr,
+            height: 100,
+            width: 60,
+            collisionZone: 5
+        }
+
+        this.knightTextures = {
+            front: knightFrontTxtr,
+            back: knightBackTxtr,
+            side: knightSideTxtr
         }
     }
 }
