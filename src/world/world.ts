@@ -62,6 +62,14 @@ export abstract class WorldManager {
                 asset: AssetManager.rock,
                 drawRate: 0.02
             },
+            {
+                asset: AssetManager.bush,
+                drawRate: 0.01
+            },
+            {
+                asset: AssetManager.brush,
+                drawRate: 0.01
+            },
                 /*
                 {
                     asset: AssetManager.grass,
@@ -270,7 +278,9 @@ export abstract class WorldManager {
             return true;
         }
 
-        const obj1SafeZone = asset[safeZoneProp] / 2;
+        const obj1Scale = height / asset.height;
+
+        const obj1SafeZone = (asset[safeZoneProp] / 2) * obj1Scale;
         const obj1X = x;
         let obj1Y = y;
 
@@ -288,6 +298,8 @@ export abstract class WorldManager {
                 return;
             }
 
+            const obj2Scale = item.sprite.height / item.asset.height;
+
             const obj2X = item.sprite.x;
             let obj2Y = item.sprite.y;
 
@@ -295,7 +307,7 @@ export abstract class WorldManager {
                 obj2Y = item.sprite.y - item.sprite.height / 2;
             }
 
-            const obj2SafeZone = item.asset[safeZoneProp] / 2;
+            const obj2SafeZone = (item.asset[safeZoneProp] / 2) * obj2Scale;
             const A = obj1X - obj1SafeZone;
             const B = obj1X + obj1SafeZone;
             const C = obj2X - obj2SafeZone;
@@ -325,9 +337,9 @@ export abstract class WorldManager {
 
         const asset = AssetManager.knight;
 
-        const obj1SafeZone = asset.collisionZone as number / 2;
-        const obj1X = x;
-        const obj1Y = y;
+        const playerSafeZone = asset.collisionZone as number / 2;
+        const playerX = x;
+        const playerY = y;
 
         this.loadedChuncksItems[this.currentChunk].forEach((item) => {
             if (!res) {
@@ -338,23 +350,25 @@ export abstract class WorldManager {
                 return;
             }
 
-            const obj2X = item.sprite.x;
-            const obj2Y = item.sprite.y;
+            const objX = item.sprite.x;
+            const objY = item.sprite.y;
 
-            const obj2SafeZone = (item.asset.collisionZone ?? item.asset.groundSafeZone) / 2;
-            const A = obj1X - obj1SafeZone;
-            const B = obj1X + obj1SafeZone;
-            const C = obj2X - obj2SafeZone;
-            const D = obj2X + obj2SafeZone;
+            const objSafeZoneX = (item.asset.collisionZone ?? item.asset.groundSafeZone) / 2;
+            const objSafeZoneY = (item.asset.collisionZoneY ?? 2 * objSafeZoneX) / 2;
+
+            const A = playerX - playerSafeZone;
+            const B = playerX + playerSafeZone;
+            const C = objX - objSafeZoneX;
+            const D = objX + objSafeZoneX;
 
             if (B <= C || D <= A) {
                 return;
             }
 
-            const E = obj1Y - 2 * obj1SafeZone;
-            const F = obj1Y;
-            const G = obj2Y - 2 * obj2SafeZone;
-            const H = obj2Y;
+            const E = playerY - 2 * playerSafeZone;
+            const F = playerY;
+            const G = objY - 2 * objSafeZoneY;
+            const H = objY;
 
             if (F <= G || H <= E) {
                 return;

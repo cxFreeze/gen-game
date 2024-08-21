@@ -1,6 +1,7 @@
 import { Container, Sprite } from "pixi.js";
 import { AssetManager } from "./assets.js";
 import { WorldManager } from "./world.js";
+import { Anim } from "../utils/anim.js";
 
 export abstract class PlayerManager {
     static playerContainer: Container;
@@ -13,12 +14,13 @@ export abstract class PlayerManager {
     static playerX: number = 0;
     static playerY: number = 0;
 
+    private static basePlayerScale = 1;
+
     static createPlayer() {
         this.playerContainer = new Container();
         const parentContainer = WorldManager.worldContainer;
         this.absDefaultPlayerX = parentContainer.width / 2;
         this.absDefaultPlayerY = parentContainer.height / 2;
-        console.log(this.absDefaultPlayerX, this.absDefaultPlayerY);
         this.playerContainer.x = this.absDefaultPlayerX;
         this.playerContainer.y = this.absDefaultPlayerY;
         this.playerContainer.height = AssetManager.knight.width as number;
@@ -36,6 +38,7 @@ export abstract class PlayerManager {
         playerSprite.x = 0;
         playerSprite.y = 0;
         this.playerSprite = this.playerContainer.addChild(playerSprite);
+        this.basePlayerScale = this.playerSprite.scale.y;
     }
 
     static setPlayerPosition(x: number, y: number) {
@@ -67,5 +70,17 @@ export abstract class PlayerManager {
             texture = direction;
         }
         this.playerSprite.texture = AssetManager.knightTextures[texture];
+    }
+
+
+    static setPlayerAnimation(distance: number) {
+        const factor = 1 + Math.sin(distance / 50) / 25;
+        this.playerSprite.scale.y = this.basePlayerScale * factor;
+    }
+
+    static resetPlayerAnimation() {
+        Anim.tween(this.playerSprite.scale.y, this.basePlayerScale, 100).subscribe(v => {
+            this.playerSprite.scale.y = v;
+        });
     }
 }

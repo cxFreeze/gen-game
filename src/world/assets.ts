@@ -11,6 +11,7 @@ export interface GGAsset {
     safeZone: number;
     groundSafeZone: number;
     collisionZone?: number;
+    collisionZoneY?: number;
     level: AssetLevel;
     displacementRatio: number;
     sizeRatio: number;
@@ -22,6 +23,8 @@ export abstract class AssetManager {
     static forestGround: GGAsset;;
     static grass: GGAsset;
     static rock: GGAsset;
+    static brush: GGAsset;
+    static bush: GGAsset;
 
     static knightTextures: { front: Texture; back: Texture; side: Texture; };
 
@@ -46,7 +49,9 @@ export abstract class AssetManager {
             height: 280,
             width: 250,
             safeZone: 250,
-            groundSafeZone: 50,
+            groundSafeZone: 100,
+            collisionZone: 100,
+            collisionZoneY: 25,
             displacementRatio: 0.2,
             sizeRatio: 0.4,
             level: AssetLevel.player
@@ -78,6 +83,35 @@ export abstract class AssetManager {
             sizeRatio: 0.5,
             level: AssetLevel.ground
         }
+
+        const bushAsset = await Assets.load('./bush.png');
+        this.bush = {
+            name: 'bush',
+            texture: bushAsset,
+            height: 75,
+            width: 75,
+            safeZone: 75,
+            groundSafeZone: 75,
+            collisionZone: 0,
+            displacementRatio: 0.5,
+            sizeRatio: 0.7,
+            level: AssetLevel.player
+        }
+
+        const brushAsset = await Assets.load('./brush.png');
+        this.brush = {
+            name: 'brush',
+            texture: brushAsset,
+            height: 70,
+            width: 70,
+            safeZone: 70,
+            groundSafeZone: 70,
+            collisionZone: 0,
+            displacementRatio: 0.2,
+            sizeRatio: 0.5,
+            level: AssetLevel.player
+        }
+
 
         const knightFrontTxtr = await Assets.load('./knight/front.png');
         const knightBackTxtr = await Assets.load('./knight/back.png');

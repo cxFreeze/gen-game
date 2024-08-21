@@ -18,6 +18,7 @@ import { Random } from './utils/random.js';
     WorldManager.createWorld(app);
     PlayerManager.createPlayer();
     PlayerInputs.init();
+    PlayerMovements.init();
 
     WorldManager.generateWorld();
     app.ticker.add((time) => {
