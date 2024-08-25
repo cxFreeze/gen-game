@@ -1,4 +1,29 @@
-html, body {
+html,
+body {
     margin: 0;
     overflow: hidden;
+}
+
+#loading {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background: rgb(51, 79, 5);
+    color: white;
+    gap: 1.5rem;
+
+    font-family: fantasy;
+
+    img {
+        width: 150px;
+        height: 150px;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+        margin: 0;
+    }
 }

@@ -29,10 +29,10 @@ export abstract class AssetManager {
     static knightTextures: { front: Texture; back: Texture; side: Texture; };
 
     static async loadAssets() {
-        const groundTxtr: Texture = await Assets.load('./ground_texture.png');
+        const forestGroundTxtr: Texture = await Assets.load('./forest//ground_texture.png');
         this.forestGround = {
             name: 'ground',
-            texture: groundTxtr,
+            texture: forestGroundTxtr,
             height: 500,
             width: 500,
             safeZone: 500,
@@ -42,7 +42,7 @@ export abstract class AssetManager {
             level: AssetLevel.groundTexture
         }
 
-        const treeTxtr = await Assets.load('./tree.png');
+        const treeTxtr = await Assets.load('./forest/tree.png');
         this.tree = {
             name: 'tree',
             texture: treeTxtr,
@@ -50,14 +50,14 @@ export abstract class AssetManager {
             width: 250,
             safeZone: 250,
             groundSafeZone: 100,
-            collisionZone: 100,
+            collisionZone: 85,
             collisionZoneY: 25,
             displacementRatio: 0.2,
             sizeRatio: 0.4,
             level: AssetLevel.player
         }
 
-        const grassAsset = await Assets.load('./grass.png');
+        const grassAsset = await Assets.load('./forest//grass.png');
         this.grass = {
             name: 'grass',
             texture: grassAsset,
@@ -70,7 +70,7 @@ export abstract class AssetManager {
             level: AssetLevel.ground
         }
 
-        const rockAsset = await Assets.load('./rock.png');
+        const rockAsset = await Assets.load('./forest//rock.png');
         this.rock = {
             name: 'rock',
             texture: rockAsset,
@@ -78,13 +78,13 @@ export abstract class AssetManager {
             width: 50,
             safeZone: 75,
             groundSafeZone: 75,
-            collisionZone: 50,
+            collisionZone: 45,
             displacementRatio: 0.2,
             sizeRatio: 0.5,
             level: AssetLevel.ground
         }
 
-        const bushAsset = await Assets.load('./bush.png');
+        const bushAsset = await Assets.load('./forest//bush.png');
         this.bush = {
             name: 'bush',
             texture: bushAsset,
@@ -98,7 +98,7 @@ export abstract class AssetManager {
             level: AssetLevel.player
         }
 
-        const brushAsset = await Assets.load('./brush.png');
+        const brushAsset = await Assets.load('./forest//brush.png');
         this.brush = {
             name: 'brush',
             texture: brushAsset,

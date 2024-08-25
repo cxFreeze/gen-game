@@ -235,10 +235,15 @@ export abstract class WorldManager {
         if (asset.level !== AssetLevel.groundTexture) {
             bound -= asset.safeZone / 2 - 1;
         }
-        for (let i = -bound; i < bound; i += asset.safeZone) {
-            for (let j = -bound; j < bound; j += asset.safeZone) {
-                const absX = chunkX + i;
-                const absY = chunkY + j;
+
+        let xIndex = -bound;
+        while (xIndex < bound) {
+            let yIndex = -bound;
+            while (yIndex < bound) {
+                const absX = chunkX + xIndex;
+                const absY = chunkY + yIndex;
+
+                yIndex += asset.safeZone;
 
                 if (asset.level >= AssetLevel.ground && absX < this.spawnNoDrawZone && absY < this.spawnNoDrawZone && absX > -this.spawnNoDrawZone && absY > -this.spawnNoDrawZone) {
                     continue;
@@ -261,6 +266,7 @@ export abstract class WorldManager {
                     this.loadedChuncksItems[chunkX + '/' + chunkY].push({ sprite: item, asset });
                 }
             }
+            xIndex += asset.safeZone;
         }
     }
 
@@ -289,13 +295,9 @@ export abstract class WorldManager {
             obj1Y = y - height / 2;
         }
 
-        this.loadedChuncksItems[chunk].forEach((item) => {
-            if (!res) {
-                return;
-            }
-
+        this.loadedChuncksItems[chunk].some((item) => {
             if (item.asset.level === AssetLevel.groundTexture || item.asset.level === AssetLevel.sky || item.asset.name === asset.name) {
-                return;
+                return false;
             }
 
             const obj2Scale = item.sprite.height / item.asset.height;
@@ -314,7 +316,7 @@ export abstract class WorldManager {
             const D = obj2X + obj2SafeZone;
 
             if (B <= C || D <= A) {
-                return;
+                return false;
             }
 
             const E = obj1Y - 2 * obj1SafeZone;
@@ -323,10 +325,11 @@ export abstract class WorldManager {
             const H = obj2Y;
 
             if (F <= G || H <= E) {
-                return;
+                return false;
             }
 
             res = false;
+            return true;
         });
 
         return res;
@@ -341,20 +344,24 @@ export abstract class WorldManager {
         const playerX = x;
         const playerY = y;
 
-        this.loadedChuncksItems[this.currentChunk].forEach((item) => {
-            if (!res) {
-                return;
+        this.loadedChuncksItems[this.currentChunk].some((item) => {
+            if (item.asset.level === AssetLevel.groundTexture || item.asset.level === AssetLevel.sky) {
+                return false;
             }
 
-            if (item.asset.level === AssetLevel.groundTexture || item.asset.level === AssetLevel.sky) {
-                return;
+            if (item.asset.collisionZone === 0) {
+                return false;
             }
+
+            const objScale = item.sprite.height / item.asset.height;
 
             const objX = item.sprite.x;
             const objY = item.sprite.y;
 
-            const objSafeZoneX = (item.asset.collisionZone ?? item.asset.groundSafeZone) / 2;
-            const objSafeZoneY = (item.asset.collisionZoneY ?? 2 * objSafeZoneX) / 2;
+            const safeZoneValue = item.asset.collisionZone ?? item.asset.groundSafeZone ?? item.asset.safeZone;
+
+            const objSafeZoneX = (safeZoneValue / 2) * objScale;
+            const objSafeZoneY = ((item.asset.collisionZoneY ?? safeZoneValue) / 2) * objScale;
 
             const A = playerX - playerSafeZone;
             const B = playerX + playerSafeZone;
@@ -362,7 +369,7 @@ export abstract class WorldManager {
             const D = objX + objSafeZoneX;
 
             if (B <= C || D <= A) {
-                return;
+                return false;
             }
 
             const E = playerY - 2 * playerSafeZone;
@@ -371,10 +378,11 @@ export abstract class WorldManager {
             const H = objY;
 
             if (F <= G || H <= E) {
-                return;
+                return false;
             }
 
             res = false;
+            return true;
         });
 
         return res;
