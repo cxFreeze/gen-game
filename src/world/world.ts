@@ -1,12 +1,11 @@
 import { Application, Container, Graphics, Sprite, Text, Ticker } from "pixi.js";
 import { Random } from "../utils/random.js";
-import { AssetLevel, AssetManager, AssetZIndex, GGAsset } from "./assets.js";
+import { AssetLevel, AssetManager, AssetZIndex, BiomeType, GGAsset } from "./assets.js";
 
-enum BiomeType { forest = 1 };
 
 interface Biome {
-    ground: GGAsset;
-    items: { asset: GGAsset, drawRate: number }[];
+    ground: string;
+    items: { asset: string, drawRate: number }[];
 }
 
 interface LoadedSprite {
@@ -54,25 +53,25 @@ export abstract class WorldManager {
 
     static initBiomes() {
         const forestBiomes = {
-            ground: AssetManager.forestGround,
+            ground: 'ground',
             items: [{
-                asset: AssetManager.tree,
+                asset: 'tree',
                 drawRate: 0.2
             }, {
-                asset: AssetManager.rock,
+                asset: 'rock',
                 drawRate: 0.02
             },
             {
-                asset: AssetManager.bush,
+                asset: 'bush',
                 drawRate: 0.01
             },
             {
-                asset: AssetManager.brush,
+                asset: 'brush',
                 drawRate: 0.01
             },
                 /*
                 {
-                    asset: AssetManager.grass,
+                    asset: 'grass',
                     drawRate: 0.07
                 }
                  */
@@ -88,8 +87,8 @@ export abstract class WorldManager {
     static drawItem(asset: GGAsset, x: number, y: number, height: number, width: number, flip: boolean = false): Sprite | undefined {
         const item = new Sprite({ texture: asset.texture, anchor: { x: 0.5, y: 1 }, });
 
-        item.width = height;
-        item.height = width;
+        item.height = height;
+        item.width = width;
         item.x = x;
         item.y = y;
         item.zIndex = y - this.worldY;
@@ -101,7 +100,7 @@ export abstract class WorldManager {
         return this.worldContainer.addChild(item);
     }
 
-    static drawItemWithDeviation(asset: GGAsset, x: number, y: number): Sprite | undefined {
+    static drawItemWithDeviation(asset: GGAsset, x: number, y: number, chunckX: number, chunckY: number): Sprite | undefined {
         let deviationX = 0
         let deviationY = 0
 
@@ -134,6 +133,13 @@ export abstract class WorldManager {
         if (!this.isSpaceAvailable(x, y, asset, height)) {
             return;
         }
+
+        if (asset.level > AssetLevel.groundTexture && asset.level < AssetLevel.sky) {
+            if (this.isOutOfChunck(x, y, height, width, chunckX, chunckY)) {
+                return;
+            }
+        }
+
 
         return this.drawItem(asset, x, y, height, width, flip);
     }
@@ -230,43 +236,49 @@ export abstract class WorldManager {
 
     }
 
-    private static loadItemType(asset: GGAsset, chunkX: number, chunkY: number, probability: number) {
-        let bound = this.chunckSize / 2;
-        if (asset.level !== AssetLevel.groundTexture) {
-            bound -= asset.safeZone / 2 - 1;
-        }
-
+    private static loadItemType(asset: string, chunkX: number, chunkY: number, probability: number) {
+        const bound = this.chunckSize / 2;
         let xIndex = -bound;
+
         while (xIndex < bound) {
+
+            let biggestAsset = 0;
             let yIndex = -bound;
+
             while (yIndex < bound) {
                 const absX = chunkX + xIndex;
                 const absY = chunkY + yIndex;
 
-                yIndex += asset.safeZone;
+                const rAsset = AssetManager.getAsset(this.currentBiome, asset, asset + absX + absY);
 
-                if (asset.level >= AssetLevel.ground && absX < this.spawnNoDrawZone && absY < this.spawnNoDrawZone && absX > -this.spawnNoDrawZone && absY > -this.spawnNoDrawZone) {
+                yIndex += rAsset.safeZone;
+
+                if (rAsset.safeZone > biggestAsset) {
+                    biggestAsset = rAsset.safeZone;
+                }
+
+                if (rAsset.level >= AssetLevel.ground && absX < this.spawnNoDrawZone && absY < this.spawnNoDrawZone && absX > -this.spawnNoDrawZone && absY > -this.spawnNoDrawZone) {
                     continue;
                 }
 
-                if (this.randBoolItem(probability, asset.name, absX, absY)) {
-                    const item = this.drawItemWithDeviation(asset, absX, absY);
+                if (this.randBoolItem(probability, rAsset.name + 'draw', absX, absY)) {
+                    const item = this.drawItemWithDeviation(rAsset, absX, absY, chunkX, chunkY);
                     if (!item) {
                         continue;
                     }
-                    if (asset.level === AssetLevel.groundTexture) {
+                    if (rAsset.level === AssetLevel.groundTexture) {
                         item.zIndex = AssetZIndex.groundTexture;
                     }
-                    if (asset.level === AssetLevel.ground) {
+                    if (rAsset.level === AssetLevel.ground) {
                         item.zIndex = AssetZIndex.ground;
                     }
-                    else if (asset.level === AssetLevel.sky) {
+                    else if (rAsset.level === AssetLevel.sky) {
                         item.zIndex = AssetZIndex.sky;
                     }
-                    this.loadedChuncksItems[chunkX + '/' + chunkY].push({ sprite: item, asset });
+                    this.loadedChuncksItems[chunkX + '/' + chunkY].push({ sprite: item, asset: rAsset });
                 }
             }
-            xIndex += asset.safeZone;
+            xIndex += biggestAsset;
         }
     }
 
@@ -275,7 +287,6 @@ export abstract class WorldManager {
             return true;
         }
 
-        const safeZoneProp: 'safeZone' | 'groundSafeZone' = asset.level === AssetLevel.ground ? 'groundSafeZone' : 'safeZone';
 
         let res = true;
 
@@ -286,28 +297,26 @@ export abstract class WorldManager {
 
         const obj1Scale = height / asset.height;
 
-        const obj1SafeZone = (asset[safeZoneProp] / 2) * obj1Scale;
         const obj1X = x;
-        let obj1Y = y;
+        const obj1Y = y;
 
-        //center
-        if (safeZoneProp === 'safeZone') {
-            obj1Y = y - height / 2;
-        }
 
         this.loadedChuncksItems[chunk].some((item) => {
             if (item.asset.level === AssetLevel.groundTexture || item.asset.level === AssetLevel.sky || item.asset.name === asset.name) {
                 return false;
             }
 
+
+            const safeZoneProp: 'safeZone' | 'groundSafeZone' = asset.level === AssetLevel.large && item.asset.level === AssetLevel.large ? 'safeZone' : 'groundSafeZone';
+
+
+            const obj1SafeZone = (asset[safeZoneProp] / 2) * obj1Scale;
+
+
             const obj2Scale = item.sprite.height / item.asset.height;
 
             const obj2X = item.sprite.x;
-            let obj2Y = item.sprite.y;
-
-            if (safeZoneProp === 'safeZone') {
-                obj2Y = item.sprite.y - item.sprite.height / 2;
-            }
+            const obj2Y = item.sprite.y;
 
             const obj2SafeZone = (item.asset[safeZoneProp] / 2) * obj2Scale;
             const A = obj1X - obj1SafeZone;
@@ -386,6 +395,20 @@ export abstract class WorldManager {
         });
 
         return res;
+    }
+
+    private static isOutOfChunck(x: number, y: number, height: number, width: number, chuckX: number, chuckY: number) {
+        const bound = this.chunckSize / 2;
+
+        if (x + width / 2 > chuckX + bound || x - width / 2 < chuckX - bound) {
+            return true;
+        }
+
+        if (y - height / 2 > chuckY + bound || y - height < chuckY - bound) {
+            return true;
+        }
+
+        return false;
     }
 
 

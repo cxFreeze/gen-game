@@ -1,3 +1,8 @@
+@font-face {
+    font-family: stayPixel;
+    src: url(/fonts/StayPixel.ttf);
+}
+
 html,
 body {
     margin: 0;
@@ -15,15 +20,21 @@ body {
     color: white;
     gap: 1.5rem;
 
-    font-family: fantasy;
+    font-family: stayPixel;
 
     img {
-        width: 150px;
-        height: 150px;
+        width: 250px;
+        height: 250px;
+    }
+
+    h1 {
+        font-size: 8rem;
+        margin: 0;
+        margin-bottom: 3rem;
     }
 
     h2 {
-        font-size: 1.5rem;
+        font-size: 3rem;
         margin: 0;
     }
 }
