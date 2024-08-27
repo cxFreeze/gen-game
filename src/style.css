@@ -7,6 +7,11 @@ html,
 body {
     margin: 0;
     overflow: hidden;
+
+    * {
+        letter-spacing: 0.1em;
+        font-family: stayPixel;
+    }
 }
 
 #loading {
@@ -19,8 +24,6 @@ body {
     background: rgb(51, 79, 5);
     color: white;
     gap: 1.5rem;
-
-    font-family: stayPixel;
 
     img {
         width: 250px;
