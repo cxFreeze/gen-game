@@ -199,10 +199,6 @@ export abstract class AssetManager {
         if (items.length > 1) {
             const rand = Random.randomNumber(randSeed + "rndast") / 100;
             const index = Math.abs(Math.floor(rand * items.length - 0.01));
-
-            if (name === 'tree') {
-                console.log(index);
-            }
             return items[index];
         }
         return items[0];

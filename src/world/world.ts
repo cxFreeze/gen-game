@@ -64,17 +64,17 @@ export abstract class WorldManager {
             {
                 asset: 'bush',
                 drawRate: 0.01
-            },
+            }
+            /*
             {
                 asset: 'brush',
-                drawRate: 0.01
+                drawRate: 0.0
             },
-                /*
-                {
-                    asset: 'grass',
-                    drawRate: 0.07
-                }
-                 */
+            {
+                asset: 'grass',
+                drawRate: 0.07
+            }
+                */
             ]
         }
 
@@ -139,7 +139,6 @@ export abstract class WorldManager {
                 return;
             }
         }
-
 
         return this.drawItem(asset, x, y, height, width, flip);
     }
@@ -306,9 +305,7 @@ export abstract class WorldManager {
                 return false;
             }
 
-
             const safeZoneProp: 'safeZone' | 'groundSafeZone' = asset.level === AssetLevel.large && item.asset.level === AssetLevel.large ? 'safeZone' : 'groundSafeZone';
-
 
             const obj1SafeZone = (asset[safeZoneProp] / 2) * obj1Scale;
 
@@ -447,7 +444,6 @@ export abstract class WorldManager {
 
 
     // RAND FUNCTIONS
-
     private static randBoolItem(probability: number, itemType: string, x: number, y: number): boolean {
         return Random.randomBool(itemType + x + y, probability);
     }
@@ -455,5 +451,4 @@ export abstract class WorldManager {
     private static randNumberItem(itemType: string, x: number, y: number): number {
         return Random.randomNumber(itemType + x + y);
     }
-
 }
