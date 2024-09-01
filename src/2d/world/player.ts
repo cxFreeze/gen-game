@@ -1,7 +1,7 @@
 import { Container, Sprite } from "pixi.js";
 import { AssetManager } from "./assets.js";
 import { WorldManager } from "./world.js";
-import { Anim } from "../utils/anim.js";
+import { Anim } from "../../utils/anim.js";
 
 export abstract class PlayerManager {
     static playerContainer: Container;

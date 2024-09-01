@@ -21,7 +21,7 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    background: rgb(51, 79, 5);
+    background: #5B7D1B;
     color: white;
     gap: 1.5rem;
 
@@ -40,4 +40,12 @@ body {
         font-size: 3rem;
         margin: 0;
     }
+}
+
+#renderCanvas {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    margin: 0;
+    padding: 0;
 }

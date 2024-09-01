@@ -1,5 +1,5 @@
 import { Application, Container, Graphics, Sprite, Text, Ticker } from "pixi.js";
-import { Random } from "../utils/random.js";
+import { Random } from "../../utils/random.js";
 import { AssetLevel, AssetManager, AssetZIndex, BiomeType, GGAsset } from "./assets.js";
 
 
@@ -65,16 +65,16 @@ export abstract class WorldManager {
                 asset: 'bush',
                 drawRate: 0.01
             }
-            /*
-            {
-                asset: 'brush',
-                drawRate: 0.0
-            },
-            {
-                asset: 'grass',
-                drawRate: 0.07
-            }
-                */
+                /*
+                {
+                    asset: 'brush',
+                    drawRate: 0.0
+                },
+                {
+                    asset: 'grass',
+                    drawRate: 0.07
+                }
+                    */
             ]
         }
 

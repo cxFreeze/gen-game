@@ -1,5 +1,5 @@
 import { Assets, Texture } from "pixi.js";
-import { Random } from "../utils/random.js";
+import { Random } from "../../utils/random.js";
 
 export enum AssetLevel { groundTexture = 0, ground = 1, player = 2, large = 3, sky = 4 };
 export enum AssetZIndex { groundTexture = -200000, ground = -100000, sky = 100000 };
