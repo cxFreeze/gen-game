@@ -1,6 +1,6 @@
-import { Application, Container, Graphics, Sprite, Text, Ticker } from "pixi.js";
-import { Random } from "../../utils/random.js";
-import { AssetLevel, AssetManager, AssetZIndex, BiomeType, GGAsset } from "./assets.js";
+import { Application, Container, Graphics, Sprite, Text, Ticker } from 'pixi.js';
+import { Random } from '../../utils/random.js';
+import { AssetLevel, AssetManager, AssetZIndex, BiomeType, GGAsset } from './assets.js';
 
 
 interface Biome {
@@ -76,11 +76,11 @@ export abstract class WorldManager {
                 }
                     */
             ]
-        }
+        };
 
         this.biomes = {
             [BiomeType.forest]: forestBiomes
-        }
+        };
     }
 
 
@@ -101,8 +101,8 @@ export abstract class WorldManager {
     }
 
     static drawItemWithDeviation(asset: GGAsset, x: number, y: number, chunckX: number, chunckY: number): Sprite | undefined {
-        let deviationX = 0
-        let deviationY = 0
+        let deviationX = 0;
+        let deviationY = 0;
 
         let height = asset.height;
         let width = asset.width;
@@ -111,12 +111,12 @@ export abstract class WorldManager {
 
         if (this.enableDeviation) {
             if (asset.displacementRatio > 0) {
-                deviationX = 2 * asset.height * (this.randNumberItem(asset.name + 'deviationX', x, y) - 50) / 100 * asset.displacementRatio;
-                deviationY = 2 * asset.height * (this.randNumberItem(asset.name + 'deviationY', x, y) - 50) / 100 * asset.displacementRatio;
+                deviationX = 2 * asset.height * (this.randNumberItem(`${asset.name}deviationX`, x, y) - 50) / 100 * asset.displacementRatio;
+                deviationY = 2 * asset.height * (this.randNumberItem(`${asset.name}deviationY`, x, y) - 50) / 100 * asset.displacementRatio;
             }
 
             if (asset.sizeRatio > 0) {
-                let sizeRatio = 2 * asset.sizeRatio * (this.randNumberItem(asset.name + 'sizeRatio', x, y) - 50) / 100;
+                let sizeRatio = 2 * asset.sizeRatio * (this.randNumberItem(`${asset.name}sizeRatio`, x, y) - 50) / 100;
                 if (sizeRatio < 0) {
                     sizeRatio = 1 - (1 / (1 - sizeRatio));
                 }
@@ -124,7 +124,7 @@ export abstract class WorldManager {
                 width = asset.width * (1 + sizeRatio);
             }
 
-            flip = this.randBoolItem(0.4, asset.name + 'flip', x, y);
+            flip = this.randBoolItem(0.4, `${asset.name}flip`, x, y);
         }
 
         x = x + deviationX;
@@ -213,7 +213,9 @@ export abstract class WorldManager {
     }
 
     private static loadChunk(chunk: string) {
-        if (this.loadedChuncksItems[chunk]) { return };
+        if (this.loadedChuncksItems[chunk]) {
+            return;
+        };
         this.loadedChuncksItems[chunk] = [];
         const [x, y] = chunk.split('/').map((val) => parseInt(val));
 
@@ -260,7 +262,7 @@ export abstract class WorldManager {
                     continue;
                 }
 
-                if (this.randBoolItem(probability, rAsset.name + 'draw', absX, absY)) {
+                if (this.randBoolItem(probability, `${rAsset.name}draw`, absX, absY)) {
                     const item = this.drawItemWithDeviation(rAsset, absX, absY, chunkX, chunkY);
                     if (!item) {
                         continue;
@@ -274,7 +276,7 @@ export abstract class WorldManager {
                     else if (rAsset.level === AssetLevel.sky) {
                         item.zIndex = AssetZIndex.sky;
                     }
-                    this.loadedChuncksItems[chunkX + '/' + chunkY].push({ sprite: item, asset: rAsset });
+                    this.loadedChuncksItems[`${chunkX}/${chunkY}`].push({ sprite: item, asset: rAsset });
                 }
             }
             xIndex += biggestAsset;

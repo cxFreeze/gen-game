@@ -1,5 +1,5 @@
-import { AbstractMesh, Vector3 } from "babylonjs";
-import { Anim } from "../../utils/anim.js";
+import { AbstractMesh, Vector3 } from '@babylonjs/core';
+import { Anim } from '../../utils/anim.js';
 
 
 export abstract class MeshUtils {
@@ -15,7 +15,7 @@ export abstract class MeshUtils {
                 rotation += Math.PI * 2;
             }
             else {
-                rotation -= Math.PI * 2
+                rotation -= Math.PI * 2;
             }
         }
 

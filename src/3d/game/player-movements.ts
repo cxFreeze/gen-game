@@ -1,6 +1,6 @@
-import { PlayerDirection, PlayerManager } from "../world/player.js";
-import { WorldManager } from "../world/world.js";
-import { PlayerInputs } from "./player-inputs.js";
+import { PlayerDirection, PlayerManager } from '../world/player.js';
+import { WorldManager } from '../world/world.js';
+import { PlayerInputs } from './player-inputs.js';
 
 export abstract class PlayerMovements {
 
@@ -27,15 +27,15 @@ export abstract class PlayerMovements {
         }
 
         if (PlayerInputs.downArrowPressed) {
-            newY = newY - distance
+            newY = newY - distance;
         }
 
         if (PlayerInputs.leftArrowPressed) {
-            newX = newX + distance
+            newX = newX + distance;
         }
 
         if (PlayerInputs.rightArrowPressed) {
-            newX = newX - distance
+            newX = newX - distance;
         }
 
 
@@ -75,31 +75,7 @@ export abstract class PlayerMovements {
         }
 
         this.totalDistance += distance;
-
-        PlayerManager.setPlayerPosition(newX, newY, direction);
-        WorldManager.setCameraPosition(newX, newY);
-
-        /*
-        if (!WorldManager.isSpaceAvailableForPlayer(PlayerManager.playerMesh)) {
-
-            const deltaX = (newX - currentX);
-            const deltaY = (newY - currentY);
-
-            
-            let cnt = 1;
-            do {
-                const x = currentX - deltaX * cnt;
-                const y = currentY - deltaY * cnt;
-                console.log(deltaX * cnt, deltaY * cnt);
-                PlayerManager.setPlayerPosition(x, y, direction);
-                WorldManager.setCameraPosition(x, y);
-                cnt++;
-            } while (!WorldManager.isSpaceAvailableForPlayer(PlayerManager.playerMesh));
-             
-
-            PlayerManager.setPlayerPosition(currentX - deltaX * 5, currentY - deltaY * 5, direction);
-            WorldManager.setCameraPosition(currentX - deltaX * 5, currentY - deltaY * 5);
-        }
-        */
+        PlayerManager.movePlayer(newX - currentX, newY - currentY, direction);
+        WorldManager.setCameraPosition(PlayerManager.playerMesh.position.x, PlayerManager.playerMesh.position.z);
     }
 }

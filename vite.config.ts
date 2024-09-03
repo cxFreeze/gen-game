@@ -1,5 +1,6 @@
 const config = {
-  base: "./"
-}
+  base: './',
+  exclude: ['@babylonjs/havok']
+};
 
 export default config;

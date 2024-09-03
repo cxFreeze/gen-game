@@ -1,18 +1,20 @@
 import { Application } from 'pixi.js';
-import { AssetManager } from './2d/world/assets.js';
+import { PlayerInputs } from './2d/game/player-inputs.js';
 import { PlayerMovements } from './2d/game/player-movements.js';
+import { AssetManager } from './2d/world/assets.js';
 import { PlayerManager } from './2d/world/player.js';
 import { WorldManager } from './2d/world/world.js';
-import { PlayerInputs } from './2d/game/player-inputs.js';
 import { Random } from './utils/random.js';
 
-import 'babylonjs-loaders';
-import { AssetManager as AssetManager3D } from './3d/world/assets.js';
+import { DracoCompression, HemisphericLight, SpotLight, Vector3 } from '@babylonjs/core';
+import { Engine } from '@babylonjs/core/Engines/engine';
+import { Scene } from '@babylonjs/core/scene';
+import '@babylonjs/loaders/glTF';
+import { PlayerInputs as PlayerInputs3D } from './3d/game/player-inputs.js';
 import { PlayerMovements as PlayerMovements3D } from './3d/game/player-movements.js';
+import { AssetManager as AssetManager3D } from './3d/world/assets.js';
 import { PlayerManager as PlayerManager3D } from './3d/world/player.js';
 import { WorldManager as WorldManager3D } from './3d/world/world.js';
-import { PlayerInputs as PlayerInputs3D } from './3d/game/player-inputs.js';
-import { DracoCompression, Engine, HemisphericLight, Scene, Vector3 } from 'babylonjs';
 
 
 (async () => {
@@ -63,9 +65,9 @@ async function init2DApp() {
 
 DracoCompression.Configuration = {
     decoder: {
-        wasmUrl: "./babylon-draco-files/draco_wasm_wrapper_gltf.js",
-        wasmBinaryUrl: "./babylon-draco-files/draco_decoder_gltf.wasm",
-        fallbackUrl: "./babylon-draco-files/draco_decoder_gltf.js",
+        wasmUrl: './babylon-draco-files/draco_wasm_wrapper_gltf.js',
+        wasmBinaryUrl: './babylon-draco-files/draco_decoder_gltf.wasm',
+        fallbackUrl: './babylon-draco-files/draco_decoder_gltf.js',
     },
 };
 
@@ -74,15 +76,18 @@ async function init3DApp() {
 
     const engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
     const scene = new Scene(engine);
+
     scene.useRightHandedSystem = true;
 
     scene.collisionsEnabled = true;
 
-    new HemisphericLight('light1', new Vector3(0, 500, 0), scene);
+    new HemisphericLight('light1', new Vector3(0, 10, 0), scene);
+    const sun = new SpotLight('sun', new Vector3(0, -100, -100), new Vector3(0, -1, 0), Math.PI * 2, 1, scene);
+    sun.intensity = 1000;
 
     await AssetManager3D.loadAssets(scene);
     PlayerManager3D.createPlayer(scene);
-    WorldManager3D.createWorld(scene);
+    WorldManager3D.createWorld(scene, sun);
     PlayerInputs3D.init();
     WorldManager3D.generateWorld();
 
@@ -92,11 +97,6 @@ async function init3DApp() {
         PlayerMovements3D.updatePlayerPosition(time);
 
     });
-
-    setInterval(() => {
-        //console.log(PlayerManager3D.playerX, PlayerManager3D.playerY, 'count:', scene.meshes.length);
-    }, 1000);
-
 
     window.addEventListener('resize', () => {
         engine.resize();
