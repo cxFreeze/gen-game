@@ -1,7 +1,7 @@
-import { debounceTime, Subject } from "rxjs";
-import { PlayerManager } from "../world/player.js";
-import { WorldManager } from "../world/world.js";
-import { PlayerInputs } from "./player-inputs.js";
+import { debounceTime, Subject } from 'rxjs';
+import { PlayerManager } from '../world/player.js';
+import { WorldManager } from '../world/world.js';
+import { PlayerInputs } from './player-inputs.js';
 
 export abstract class PlayerMovements {
 
@@ -16,7 +16,7 @@ export abstract class PlayerMovements {
         this.resetPlayerAnimation$.pipe(debounceTime(100)).subscribe(() => {
             this.totalDistance = 0;
             PlayerManager.resetPlayerAnimation();
-        })
+        });
     }
 
     static updatePlayerPosition(time: number) {
@@ -39,15 +39,15 @@ export abstract class PlayerMovements {
         }
 
         if (PlayerInputs.downArrowPressed) {
-            newY = newY + distance
+            newY = newY + distance;
         }
 
         if (PlayerInputs.leftArrowPressed) {
-            newX = newX - distance
+            newX = newX - distance;
         }
 
         if (PlayerInputs.rightArrowPressed) {
-            newX = newX + distance
+            newX = newX + distance;
         }
 
         if (!WorldManager.isSpaceAvailableForPlayer(newX, newY)) {
