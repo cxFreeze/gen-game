@@ -6,9 +6,7 @@ import { PlayerManager } from './2d/world/player.js';
 import { WorldManager } from './2d/world/world.js';
 import { Random } from './utils/random.js';
 
-import { DracoCompression, HemisphericLight, SpotLight, Vector3 } from '@babylonjs/core';
-import { Engine } from '@babylonjs/core/Engines/engine';
-import { Scene } from '@babylonjs/core/scene';
+import { DracoCompression, Engine, HemisphericLight, Scene, SpotLight, Vector3 } from '@babylonjs/core';
 import '@babylonjs/loaders/glTF';
 import { PlayerInputs as PlayerInputs3D } from './3d/game/player-inputs.js';
 import { PlayerMovements as PlayerMovements3D } from './3d/game/player-movements.js';

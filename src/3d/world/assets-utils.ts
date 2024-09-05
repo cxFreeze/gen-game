@@ -10,6 +10,13 @@ export abstract class MeshUtils {
             return;
         }
 
+        if (mesh.rotation.y > Math.PI) {
+            mesh.rotation = new Vector3(0, mesh.rotation.y - 2 * Math.PI, 0);
+        }
+        else if (mesh.rotation.y < -Math.PI) {
+            mesh.rotation = new Vector3(0, mesh.rotation.y + 2 * Math.PI, 0);
+        }
+
         if (Math.abs(mesh.rotation.y - rotation) > Math.PI) {
             if (mesh.rotation.y > rotation) {
                 rotation += Math.PI * 2;
