@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@babylonjs/core": "^7.23.0",
+    "@babylonjs/inspector": "^7.24.0",
     "@babylonjs/loaders": "^7.23.0",
     "pixi.js": "^8.2.6",
     "rxjs": "^7.8.1"

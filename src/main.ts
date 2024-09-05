@@ -6,7 +6,9 @@ import { PlayerManager } from './2d/world/player.js';
 import { WorldManager } from './2d/world/world.js';
 import { Random } from './utils/random.js';
 
-import { DracoCompression, Engine, HemisphericLight, Scene, SpotLight, Vector3 } from '@babylonjs/core';
+import { DracoCompression, Engine, Scene } from '@babylonjs/core';
+import '@babylonjs/core/Debug/debugLayer';
+import '@babylonjs/inspector';
 import '@babylonjs/loaders/glTF';
 import { PlayerInputs as PlayerInputs3D } from './3d/game/player-inputs.js';
 import { PlayerMovements as PlayerMovements3D } from './3d/game/player-movements.js';
@@ -79,21 +81,29 @@ async function init3DApp() {
 
     scene.collisionsEnabled = true;
 
-    new HemisphericLight('light1', new Vector3(0, 10, 0), scene);
-    const sun = new SpotLight('sun', new Vector3(0, -100, -100), new Vector3(0, -1, 0), Math.PI * 2, 1, scene);
-    sun.intensity = 1000;
+    /*
+    Inspector.Show(scene, {
+        handleResize: true,
+        overlay: true,
+        globalRoot: document.getElementById('#root') || undefined,
+    });
+    */
+
+    WorldManager3D.createLightning();
 
     await AssetManager3D.loadAssets(scene);
+
     PlayerManager3D.createPlayer(scene);
-    WorldManager3D.createWorld(scene, sun);
+    WorldManager3D.createWorld(scene);
+
     PlayerInputs3D.init();
     WorldManager3D.generateWorld();
 
     engine.runRenderLoop(() => {
         scene.render();
         const time = engine.getDeltaTime();
+        PlayerInputs3D.checkJoystick();
         PlayerMovements3D.updatePlayerPosition(time);
-
     });
 
     window.addEventListener('resize', () => {

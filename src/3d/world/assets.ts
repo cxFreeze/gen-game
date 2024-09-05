@@ -1,4 +1,4 @@
-import { loadAssetContainerAsync, Material, Mesh, Scene, StandardMaterial, Texture } from '@babylonjs/core';
+import { Color3, loadAssetContainerAsync, Material, Mesh, Scene, StandardMaterial, Texture } from '@babylonjs/core';
 import { Random } from '../../utils/random.js';
 
 export enum BiomeType { forest = 1 };
@@ -147,6 +147,7 @@ export abstract class AssetManager {
     private static loadTextureAsset(name: string, path: string, scene: Scene): Material {
         const groundMat = new StandardMaterial(name, scene);
         groundMat.ambientTexture = new Texture(path, scene);
+        groundMat.specularColor = new Color3(0, 0, 0);
         return groundMat;
     }
 }

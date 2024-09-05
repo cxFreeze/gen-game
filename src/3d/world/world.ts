@@ -1,6 +1,7 @@
-import { AbstractMesh, GroundMesh, InstancedMesh, Material, MeshBuilder, Scene, ShadowGenerator, ShadowLight, UniversalCamera, Vector3 } from '@babylonjs/core';
+import { AbstractMesh, DirectionalLight, GroundMesh, HemisphericLight, InstancedMesh, Material, MeshBuilder, Scene, ShadowGenerator, UniversalCamera, Vector3 } from '@babylonjs/core';
 import { Random } from '../../utils/random.js';
 import { AssetManager, AssetType, BiomeType, GGA3DAsset } from './assets.js';
+import { PlayerManager } from './player.js';
 
 
 interface Biome {
@@ -31,8 +32,14 @@ export abstract class WorldManager {
 
     private static camera: UniversalCamera;
     private static cameraX: number = 0;
-    private static cameraY: number = 170;
-    private static cameraZ: number = -200;
+    private static cameraY: number = 250;
+    private static cameraZ: number = -220;
+
+    private static sun: DirectionalLight;
+    private static ambiantLight: HemisphericLight;
+    private static sunX: number = 0;
+    private static sunY: number = 500;
+    private static sunZ: number = -500;
 
     private static currentBiome: BiomeType = BiomeType.forest;
     private static currentChunk: string;
@@ -40,13 +47,23 @@ export abstract class WorldManager {
 
     private static biomes: { [key in BiomeType]: Biome };
 
-    static createWorld(scene: Scene, light: ShadowLight) {
+    static createWorld(scene: Scene) {
         this.initBiomes();
         this.scene = scene;
         this.camera = new UniversalCamera('camera', new Vector3(this.cameraX, this.cameraY, this.cameraZ), this.scene);
         this.camera.setTarget(new Vector3(20, 0, 0));
+    }
 
-        this.shadowGenerator = new ShadowGenerator(1024, light);
+    static createLightning() {
+        this.ambiantLight = new HemisphericLight('ambiantLight', new Vector3(0, 10, 0), this.scene);
+        this.ambiantLight.intensity = 0.8;
+        this.sun = new DirectionalLight('sun', new Vector3(0.5, -1, 0.5), this.scene);
+        this.sun.position = new Vector3(this.sunX, this.sunY, this.sunZ);
+        this.sun.intensity = 4;
+
+        this.shadowGenerator = new ShadowGenerator(4096, this.sun);
+        //this.shadowGenerator.useBlurExponentialShadowMap = true;
+        //this.shadowGenerator.blurScale = 4;
     }
 
     static initBiomes() {
@@ -182,6 +199,7 @@ export abstract class WorldManager {
 
     static generateWorld() {
         this.setCameraPosition(0, 0);
+        this.shadowGenerator.getShadowMap()?.renderList?.push(PlayerManager.playerMesh);
     }
 
     static setCameraPosition(x: number, y: number) {
@@ -190,6 +208,8 @@ export abstract class WorldManager {
 
         this.camera.position = new Vector3(x + this.cameraX, this.cameraY, y + this.cameraZ);
         this.camera.setTarget(new Vector3(x, 0, y));
+
+        this.sun.position = new Vector3(x + this.sunX, this.sunY, y + this.sunZ);
 
         const currentChunk = this.getCurrentChunk();
         if (currentChunk !== this.currentChunk) {

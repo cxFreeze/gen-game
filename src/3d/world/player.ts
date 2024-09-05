@@ -26,7 +26,7 @@ export abstract class PlayerManager {
 
         this.playerMesh.scaling = new Vector3(scale, scale, scale);
 
-        //this.playerMesh.rotation = new Vector3(0, 0, 0);
+        this.playerMesh.receiveShadows = true;
 
         this.playerMesh.checkCollisions = true;
         this.playerMesh.ellipsoid = new Vector3(scale, playerHeight / 2, scale);
@@ -87,7 +87,6 @@ export abstract class PlayerManager {
         const playPos = this.playerMesh.position.clone();
         this.playerMesh.moveWithCollisions(new Vector3(x, 0, y));
 
-        // revert move if going out of the ground
         if (this.playerMesh.position.y !== playPos.y) {
             this.playerMesh.position = playPos;
         }
