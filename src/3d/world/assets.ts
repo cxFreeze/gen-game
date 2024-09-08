@@ -1,10 +1,9 @@
-import { Color3, loadAssetContainerAsync, Material, Mesh, Scene, StandardMaterial, Texture } from '@babylonjs/core';
+import { AnimationGroup, Color3, loadAssetContainerAsync, Material, Mesh, Scene, StandardMaterial, Texture } from '@babylonjs/core';
 import { Random } from '../../utils/random.js';
 
 export enum BiomeType { forest = 1 };
 
 export type AssetType = 'ground' | 'tree' | 'rock' | 'stump';
-
 
 export interface GGA3DAsset {
     mesh?: Mesh;
@@ -35,6 +34,8 @@ export abstract class AssetManager {
             stump: new Array<GGA3DAsset>()
         }
     };
+
+    static animations: { [key: string]: AnimationGroup } = {};
 
     static player: Partial<GGA3DAsset>;
 
@@ -141,6 +142,12 @@ export abstract class AssetManager {
     private static async load3DAsset(path: string, scene: Scene): Promise<Mesh> {
         const container = await loadAssetContainerAsync(path, scene);
         const mesh = container.meshes[1] as Mesh;
+        container.animationGroups.forEach((anim) => {
+            anim.enableBlending = true;
+            anim.blendingSpeed = 0.06;
+            this.animations[anim.name] = anim;
+
+        });
         return mesh;
     }
 

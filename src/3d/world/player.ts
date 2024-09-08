@@ -15,6 +15,8 @@ export abstract class PlayerManager {
     static playerX: number = 0;
     static playerY: number = 0;
 
+    static currentAnimation: 'Running' | 'Idle' = 'Idle';
+
     private static currentRotateAnim$: Subscription | undefined;
 
     static createPlayer(scene: Scene) {
@@ -22,7 +24,7 @@ export abstract class PlayerManager {
         this.playerMesh = AssetManager.player.mesh!.clone('player');
 
         const playerHeight = scale * this.playerMesh.getBoundingInfo().boundingBox.maximumWorld.y;
-        this.playerMesh.position = new Vector3(this.absDefaultPlayerX, playerHeight, this.absDefaultPlayerY);
+        this.playerMesh.position = new Vector3(this.absDefaultPlayerX, playerHeight / 2, this.absDefaultPlayerY);
 
         this.playerMesh.scaling = new Vector3(scale, scale, scale);
 
@@ -83,7 +85,6 @@ export abstract class PlayerManager {
     }
 
     static movePlayer(x: number, y: number, direction: PlayerDirection) {
-
         const playPos = this.playerMesh.position.clone();
         this.playerMesh.moveWithCollisions(new Vector3(x, 0, y));
 
@@ -132,5 +133,17 @@ export abstract class PlayerManager {
 
             this.currentRotateAnim$ = MeshUtils.rotateMeshY(this.playerMesh, rotation, 10);
         }
+    }
+
+    static setPlayerAnimation(animName: 'Running' | 'Idle') {
+        const anim = AssetManager.animations[animName];
+        if (!anim || anim.isStarted) {
+            return;
+        }
+
+        AssetManager.animations[this.currentAnimation].stop();
+
+        this.currentAnimation = animName;
+        AssetManager.animations[animName].start(true);
     }
 }

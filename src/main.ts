@@ -82,12 +82,13 @@ async function init3DApp() {
     scene.collisionsEnabled = true;
 
     /*
-    Inspector.Show(scene, {
-        handleResize: true,
-        overlay: true,
-        globalRoot: document.getElementById('#root') || undefined,
-    });
-    */
+        Inspector.Show(scene, {
+            handleResize: true,
+            overlay: true,
+            globalRoot: document.getElementById('#root') || undefined,
+        });
+        */
+
 
     WorldManager3D.createLightning();
 

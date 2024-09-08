@@ -11,8 +11,11 @@ export abstract class PlayerMovements {
 
     static updatePlayerPosition(time: number) {
         if (!PlayerInputs.upArrowPressed && !PlayerInputs.downArrowPressed && !PlayerInputs.leftArrowPressed && !PlayerInputs.rightArrowPressed) {
+            PlayerManager.setPlayerAnimation('Idle');
             return;
         }
+
+        PlayerManager.setPlayerAnimation('Running');
 
         const distance = this.moveSpeed * (time / 1000);
 

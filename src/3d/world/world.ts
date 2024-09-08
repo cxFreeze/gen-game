@@ -1,4 +1,5 @@
-import { AbstractMesh, DirectionalLight, GroundMesh, HemisphericLight, InstancedMesh, Material, MeshBuilder, Scene, ShadowGenerator, UniversalCamera, Vector3 } from '@babylonjs/core';
+import { AbstractMesh, Animation, CubicEase, DirectionalLight, EasingFunction, GroundMesh, HemisphericLight, InstancedMesh, Material, MeshBuilder, Scene, ShadowGenerator, UniversalCamera, Vector3 } from '@babylonjs/core';
+import { timer } from 'rxjs';
 import { Random } from '../../utils/random.js';
 import { AssetManager, AssetType, BiomeType, GGA3DAsset } from './assets.js';
 import { PlayerManager } from './player.js';
@@ -35,6 +36,9 @@ export abstract class WorldManager {
     private static cameraY: number = 250;
     private static cameraZ: number = -220;
 
+    private static initCameraY: number = 40;
+    private static initCameraZ: number = 25;
+
     private static sun: DirectionalLight;
     private static ambiantLight: HemisphericLight;
     private static sunX: number = 0;
@@ -50,8 +54,7 @@ export abstract class WorldManager {
     static createWorld(scene: Scene) {
         this.initBiomes();
         this.scene = scene;
-        this.camera = new UniversalCamera('camera', new Vector3(this.cameraX, this.cameraY, this.cameraZ), this.scene);
-        this.camera.setTarget(new Vector3(20, 0, 0));
+        this.camera = new UniversalCamera('camera', new Vector3(0, 0, 0), this.scene);
     }
 
     static createLightning() {
@@ -62,8 +65,8 @@ export abstract class WorldManager {
         this.sun.intensity = 4;
 
         this.shadowGenerator = new ShadowGenerator(4096, this.sun);
-        //this.shadowGenerator.useBlurExponentialShadowMap = true;
-        //this.shadowGenerator.blurScale = 4;
+        this.shadowGenerator.useBlurExponentialShadowMap = true;
+        this.shadowGenerator.blurScale = 1;
     }
 
     static initBiomes() {
@@ -200,6 +203,24 @@ export abstract class WorldManager {
     static generateWorld() {
         this.setCameraPosition(0, 0);
         this.shadowGenerator.getShadowMap()?.renderList?.push(PlayerManager.playerMesh);
+
+        this.camera.position = new Vector3(0, this.initCameraY, this.initCameraZ);
+        //this.camera.setTarget(new Vector3(0, 30, 0));
+
+        const initRot = this.camera.rotation!.clone();
+
+        this.camera.rotation = initRot.clone().addInPlace(new Vector3(0, Math.PI, 0));
+
+        const ease = new CubicEase();
+        ease.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
+
+        timer(2000).subscribe(() => {
+            if (PlayerManager.playerX !== 0 || PlayerManager.playerY !== 0) {
+                return;
+            }
+            Animation.CreateAndStartAnimation('1', this.camera, 'position', 30, 120, this.camera.position!.clone(), new Vector3(this.cameraX, this.cameraY, this.cameraZ), 0, ease);
+            Animation.CreateAndStartAnimation('2', this.camera, 'rotation', 30, 120, this.camera.rotation!.clone(), initRot, 0, ease);
+        });
     }
 
     static setCameraPosition(x: number, y: number) {
@@ -207,7 +228,7 @@ export abstract class WorldManager {
         this.worldY = y;
 
         this.camera.position = new Vector3(x + this.cameraX, this.cameraY, y + this.cameraZ);
-        this.camera.setTarget(new Vector3(x, 0, y));
+        this.camera.setTarget(new Vector3(x, 20, y));
 
         this.sun.position = new Vector3(x + this.sunX, this.sunY, y + this.sunZ);
 
@@ -217,7 +238,6 @@ export abstract class WorldManager {
             this.loadChunksArroundCurrentLocation();
         }
     }
-
 
 
     // CHUNCK MANAGEMENT
@@ -298,7 +318,7 @@ export abstract class WorldManager {
 
                 ground.material = rAsset.material as Material;
                 ground.position = new Vector3(absX, 0, absY);
-                ground.checkCollisions = true;
+                //ground.checkCollisions = true;
                 ground.receiveShadows = true;
 
                 this.loadedChuncksItems[`${chunkX}/${chunkY}`].push({ mesh: ground, asset: rAsset });
