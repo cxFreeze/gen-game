@@ -5,15 +5,15 @@
 
 html,
 body {
+    font-family: 'Roboto', 'Open Sans', 'Helvetica Neue', sans-serif;
     margin: 0;
     overflow: hidden;
 
-    cursor: url('../images/cursor.png'), auto;
+    cursor: url('/images/cursor.png'), auto;
 
     #loading {
         letter-spacing: 0.1em;
         font-family: stayPixel;
-
     }
 
 }
@@ -52,4 +52,17 @@ body {
     display: block;
     margin: 0;
     padding: 0;
+}
+
+#renderInfo {
+    position: absolute;
+    background-color: #00000099;
+    border: 2px solid rgb(127, 127, 127);
+    text-align: center;
+    font-size: 16px;
+    color: white;
+    top: 10px;
+    right: 10px;
+    padding: 5px;
+    border-radius: 5px;
 }

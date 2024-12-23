@@ -1,12 +1,13 @@
-import { AnimationGroup, Color3, loadAssetContainerAsync, Material, Mesh, Scene, StandardMaterial, Texture } from '@babylonjs/core';
+import { AnimationGroup, Color3, loadAssetContainerAsync, Material, Mesh, Scene, SpriteManager, StandardMaterial, Texture } from '@babylonjs/core';
 import { Random } from '../../utils/random.js';
 
 export enum BiomeType { forest = 1 };
 
-export type AssetType = 'ground' | 'tree' | 'rock' | 'stump';
+export type AssetType = 'ground' | 'tree' | 'rock' | 'grass';
 
 export interface GGA3DAsset {
     mesh?: Mesh;
+    sprite?: SpriteManager;
     material?: Material;
     height: number;
     width: number;
@@ -15,7 +16,7 @@ export interface GGA3DAsset {
     safeZone: number;
     displacementRatio: number;
     sizeRatio: number;
-    type: 'ground' | 'item' | 'player';
+    type: 'ground' | 'item' | 'sprite' | 'player';
     ignoreCollisions?: boolean;
     maxVerticalDisplacement?: number;
 }
@@ -31,7 +32,7 @@ export abstract class AssetManager {
             ground: new Array<GGA3DAsset>(),
             tree: new Array<GGA3DAsset>(),
             rock: new Array<GGA3DAsset>(),
-            stump: new Array<GGA3DAsset>()
+            grass: new Array<GGA3DAsset>()
         }
     };
 
@@ -112,20 +113,21 @@ export abstract class AssetManager {
 
         this.worldsAssets[BiomeType.forest].rock.push(rock);
 
-        const stump: GGA3DAsset = {
-            name: 'stump',
-            mesh: await this.load3DAsset(`${this.Assets3dPath}/forest/stump.glb`, scene),
-            height: 50,
-            width: 50,
-            safeZone: 50,
-            displacementRatio: 0.6,
-            sizeRatio: 0.8,
-            scale: 50,
-            type: 'item',
-            maxVerticalDisplacement: 0.8
+        const spriteManager = new SpriteManager('grassManager', `${this.texturesPath}/grass.png`, 10000, { width: 200, height: 100 }, scene);
+        const grass: GGA3DAsset = {
+            name: 'grass',
+            sprite: spriteManager,
+            height: 10,
+            width: 20,
+            safeZone: 10,
+            displacementRatio: 0.2,
+            sizeRatio: 0.3,
+            scale: 1,
+            type: 'sprite',
+            ignoreCollisions: true,
         };
 
-        this.worldsAssets[BiomeType.forest].stump.push(stump);
+        this.worldsAssets[BiomeType.forest].grass.push(grass);
     }
 
     static getAsset(biome: BiomeType, name: AssetType, randSeed: string): GGA3DAsset {
@@ -139,6 +141,11 @@ export abstract class AssetManager {
         return items[0];
     }
 
+    static getFirstAsset(biome: BiomeType, name: AssetType): GGA3DAsset {
+        const items = this.worldsAssets[biome][name];
+        return items[0];
+    }
+
     private static async load3DAsset(path: string, scene: Scene): Promise<Mesh> {
         const container = await loadAssetContainerAsync(path, scene);
         const mesh = container.meshes[1] as Mesh;
@@ -146,8 +153,8 @@ export abstract class AssetManager {
             anim.enableBlending = true;
             anim.blendingSpeed = 0.06;
             this.animations[anim.name] = anim;
-
         });
+        mesh.receiveShadows = true;
         return mesh;
     }
 

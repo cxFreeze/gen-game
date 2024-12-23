@@ -2,6 +2,8 @@ import { VirtualJoystick } from '@babylonjs/core';
 
 export abstract class PlayerInputs {
 
+    private static disableJoystick: boolean = true;
+
     private static kUpArrowPressed: boolean = false;
     private static kDownArrowPressed: boolean = false;
     private static kLeftArrowPressed: boolean = false;
@@ -31,8 +33,10 @@ export abstract class PlayerInputs {
     private static joystick: VirtualJoystick;
 
     static init() {
-        this.joystick = new VirtualJoystick(true);
-        this.joystick.setJoystickSensibility(10);
+        if (!this.disableJoystick) {
+            this.joystick = new VirtualJoystick(true);
+            this.joystick.setJoystickSensibility(10);
+        }
 
         window.addEventListener('keydown', (event) => {
             if (event.key === 'ArrowUp') {
@@ -65,6 +69,9 @@ export abstract class PlayerInputs {
     }
 
     static checkJoystick() {
+        if (this.disableJoystick) {
+            return;
+        }
         if (this.joystick.pressed) {
             const direction = this.joystick.deltaPosition;
             this.jUpArrowPressed = direction.y > 0.5;

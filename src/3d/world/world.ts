@@ -1,8 +1,8 @@
-import { AbstractMesh, Animation, CubicEase, DirectionalLight, EasingFunction, GroundMesh, HemisphericLight, InstancedMesh, Material, MeshBuilder, Scene, ShadowGenerator, UniversalCamera, Vector3 } from '@babylonjs/core';
+import { AbstractMesh, Animation, CubicEase, DirectionalLight, EasingFunction, GroundMesh, HemisphericLight, InstancedMesh, Material, MeshBuilder, Scene, ShadowGenerator, Sprite, UniversalCamera, Vector3 } from '@babylonjs/core';
 import { timer } from 'rxjs';
-import { Random } from '../../utils/random.js';
 import { AssetManager, AssetType, BiomeType, GGA3DAsset } from './assets.js';
 import { PlayerManager } from './player.js';
+import { WorldUtils } from './world-utils.js';
 
 
 interface Biome {
@@ -10,10 +10,15 @@ interface Biome {
     items: BiomeItem[];
 }
 
-interface BiomeItem { asset: AssetType, drawRate: number, boostDrawRate?: number, boostDrawRateRate?: number };
+interface BiomeItem { asset: AssetType, drawCount: number, boostDrawCount?: number, boostDrawCountRate?: number };
 
 interface LoadedMesh {
     mesh: InstancedMesh | GroundMesh;
+    asset: GGA3DAsset;
+}
+
+interface LoadedSprite {
+    sprite: Sprite;
     asset: GGA3DAsset;
 }
 
@@ -33,8 +38,8 @@ export abstract class WorldManager {
 
     private static camera: UniversalCamera;
     private static cameraX: number = 0;
-    private static cameraY: number = 250;
-    private static cameraZ: number = -220;
+    private static cameraY: number = 220;
+    private static cameraZ: number = -200;
 
     private static initCameraY: number = 40;
     private static initCameraZ: number = 25;
@@ -47,7 +52,7 @@ export abstract class WorldManager {
 
     private static currentBiome: BiomeType = BiomeType.forest;
     private static currentChunk: string;
-    private static loadedChuncksItems: { [key: string]: LoadedMesh[] } = {};
+    private static loadedChuncksItems: { [key: string]: { meshes: LoadedMesh[], sprites: LoadedSprite[] } } = {};
 
     private static biomes: { [key in BiomeType]: Biome };
 
@@ -60,9 +65,10 @@ export abstract class WorldManager {
     static createLightning() {
         this.ambiantLight = new HemisphericLight('ambiantLight', new Vector3(0, 10, 0), this.scene);
         this.ambiantLight.intensity = 0.8;
+
         this.sun = new DirectionalLight('sun', new Vector3(0.5, -1, 0.5), this.scene);
         this.sun.position = new Vector3(this.sunX, this.sunY, this.sunZ);
-        this.sun.intensity = 4;
+        this.sun.intensity = 3;
 
         this.shadowGenerator = new ShadowGenerator(4096, this.sun);
         this.shadowGenerator.useBlurExponentialShadowMap = true;
@@ -76,33 +82,18 @@ export abstract class WorldManager {
 
                 {
                     asset: 'tree',
-                    drawRate: 0.1,
-                    boostDrawRate: 0.4,
-                    boostDrawRateRate: 0.2
+                    drawCount: 30,
+                    boostDrawCount: 90,
+                    boostDrawCountRate: 0.2
                 },
                 {
                     asset: 'rock',
-                    drawRate: 0.01
+                    drawCount: 7,
                 },
                 {
-                    asset: 'stump',
-                    drawRate: 0.01
-                },
-                /*
-                {
-                    asset: 'bush',
-                    drawRate: 0.01
+                    asset: 'grass',
+                    drawCount: 150
                 }
-                    
-                    {
-                        asset: 'brush',
-                        drawRate: 0.0
-                    },
-                    {
-                        asset: 'grass',
-                        drawRate: 0.07
-                    }
-                        */
             ]
         };
 
@@ -121,6 +112,8 @@ export abstract class WorldManager {
             return;
         }
 
+        item.receiveShadows = true;
+
         const ratio = asset.scale * sizeRatio;
         item.scaling = new Vector3(ratio, ratio, ratio);
 
@@ -131,7 +124,8 @@ export abstract class WorldManager {
 
         item.checkCollisions = !asset.ignoreCollisions;
 
-        this.shadowGenerator.getShadowMap()?.renderList?.push(item);
+        this.shadowGenerator.addShadowCaster(item);
+        item.receiveShadows = true;
 
         this.scene.addMesh(item);
         return item;
@@ -149,31 +143,18 @@ export abstract class WorldManager {
 
         if (this.enableDeviation) {
             if (asset.displacementRatio > 0) {
-                deviationX = 2 * asset.height * (this.randNumberItem(`${asset.name}deviationX`, x, y) - 50) / 100 * asset.displacementRatio;
-                deviationY = 2 * asset.height * (this.randNumberItem(`${asset.name}deviationY`, x, y) - 50) / 100 * asset.displacementRatio;
+                deviationX = WorldUtils.getDeviationX(asset, x, y);
+                deviationY = WorldUtils.getDeviationY(asset, x, y);;
             }
 
             if (asset.sizeRatio > 0) {
-                sizeRatio = 2 * asset.sizeRatio * (this.randNumberItem(`${asset.name}sizeRatio`, x, y) - 50) / 100;
-
-                if (sizeRatio < 0) {
-                    sizeRatio = 1 / (1 - sizeRatio);
-                }
-                else {
-                    sizeRatio = 1 + sizeRatio;
-                }
-
-                if (this.randNumberItem(`${asset.name}huge`, x, y) < 1) {
-                    sizeRatio = sizeRatio * 3;
-                }
+                sizeRatio = WorldUtils.getSizeRatio(asset, x, y);
             }
 
             if (asset.maxVerticalDisplacement && asset.maxVerticalDisplacement > 0) {
-                deviationZ = itemHeight * sizeRatio * asset.maxVerticalDisplacement * (this.randNumberItem(`${asset.name}deviationZ`, x, y)) / 100;
+                deviationZ = WorldUtils.getDeviationZ(asset, x, y, itemHeight, sizeRatio);
             }
-
-
-            rotation = this.randNumberItem(`${asset.name}rotate`, x, y) / 100 * Math.PI * 2;
+            rotation = WorldUtils.randNumberItem(`${asset.name}rotate`, x, y) / 100 * Math.PI * 2;
         }
 
         x = x + deviationX;
@@ -182,7 +163,6 @@ export abstract class WorldManager {
         itemHeight = itemHeight * sizeRatio;
 
         const z = itemHeight - deviationZ;
-
         const res = this.drawItem(asset, x, y, z, sizeRatio, rotation);
 
         if (!res) {
@@ -192,20 +172,75 @@ export abstract class WorldManager {
         res.computeWorldMatrix();
 
         if (!this.isSpaceAvailable(res, asset, x, y)) {
-            res.dispose();
-            res.isVisible = false;
+            this.deleteMeshFromScene(res);
             return undefined;
         }
 
         return res;
     }
 
+    static drawSprite(asset: GGA3DAsset, x: number, y: number, z: number, sizeRatio: number, rotate: number = 0, invert: boolean): Sprite | undefined {
+        const sprite = new Sprite(asset.name + this.cnt, asset.sprite!);
+
+        this.cnt++;
+
+        if (!sprite) {
+            return;
+        }
+
+        sprite.size = asset.height * asset.scale * sizeRatio;
+        sprite.position = new Vector3(x, sprite.size / 2 + z, y);
+        sprite.angle = rotate;
+        sprite.invertU = invert;
+
+        return sprite;
+    }
+
+    static drawSpriteWithDeviation(asset: GGA3DAsset, x: number, y: number): Sprite | undefined {
+        let deviationX = 0;
+        let deviationY = 0;
+        let deviationZ = -1;
+
+        let sizeRatio = 1;
+        let rotation = 0;
+        let invert = false;
+
+
+        if (this.enableDeviation) {
+            if (asset.displacementRatio > 0) {
+                deviationX = WorldUtils.getDeviationX(asset, x, y);
+                deviationY = WorldUtils.getDeviationY(asset, x, y);;
+            }
+
+            if (asset.sizeRatio > 0) {
+                sizeRatio = WorldUtils.getSizeRatio(asset, x, y, false);
+            }
+
+            if (asset.maxVerticalDisplacement && asset.maxVerticalDisplacement > 0) {
+                deviationZ = WorldUtils.getDeviationZ(asset, x, y, asset.height, sizeRatio);
+            }
+            rotation = (WorldUtils.randNumberItem(`${asset.name}rotate`, x, y) - 50) / 50 * (Math.PI / 16);
+            invert = WorldUtils.randBoolItem(asset.sizeRatio, `${asset.name}invert`, x, y);
+        }
+
+        x = x + deviationX;
+        y = y + deviationY;
+
+        const res = this.drawSprite(asset, x, y, deviationZ, sizeRatio, rotation, invert);
+
+        if (!res) {
+            return undefined;
+        }
+
+
+        return res;
+    }
+
     static generateWorld() {
         this.setCameraPosition(0, 0);
-        this.shadowGenerator.getShadowMap()?.renderList?.push(PlayerManager.playerMesh);
+        this.shadowGenerator.addShadowCaster(PlayerManager.playerMesh);
 
         this.camera.position = new Vector3(0, this.initCameraY, this.initCameraZ);
-        //this.camera.setTarget(new Vector3(0, 30, 0));
 
         const initRot = this.camera.rotation!.clone();
 
@@ -264,27 +299,47 @@ export abstract class WorldManager {
     }
 
     private static loadChunksArroundCurrentLocation() {
-        const chucks = this.getChunksToLoad();
+        const timeoutDelay = 200;
+        let timeout = 0;
+
+        const chuncks = this.getChunksToLoad();
+
         //unload 
         Object.keys(this.loadedChuncksItems).forEach((chunk) => {
-            if (!chucks.includes(chunk)) {
-                this.loadedChuncksItems[chunk].forEach((item) => {
-                    item.mesh.dispose();
-                });
-                delete this.loadedChuncksItems[chunk];
+            if (!chuncks.includes(chunk)) {
+                setTimeout(() => {
+                    this.unloadChunk(chunk);
+                }, timeout);
+                timeout += timeoutDelay;
             }
         });
+
         //load
-        chucks.forEach((chunk) => {
-            this.loadChunk(chunk);
+        chuncks.forEach((chunk) => {
+            if (!this.loadedChuncksItems[chunk]) {
+                setTimeout(() => {
+                    this.loadChunk(chunk);
+                }, timeout);
+                timeout += timeoutDelay;
+            }
         });
     }
 
+    private static unloadChunk(chunk: string) {
+        this.loadedChuncksItems[chunk].meshes.forEach((item) => {
+            this.deleteMeshFromScene(item.mesh);
+            item = null as any;
+        });
+
+        this.loadedChuncksItems[chunk].sprites.forEach((item) => {
+            this.deleteSpriteFromScene(item.sprite);
+            item = null as any;
+        });
+        delete this.loadedChuncksItems[chunk];
+    }
+
     private static loadChunk(chunk: string) {
-        if (this.loadedChuncksItems[chunk]) {
-            return;
-        };
-        this.loadedChuncksItems[chunk] = [];
+        this.loadedChuncksItems[chunk] = { meshes: [], sprites: [] };
         const [x, y] = chunk.split('/').map((val) => parseInt(val));
 
         this.loadGround(x, y);
@@ -318,10 +373,9 @@ export abstract class WorldManager {
 
                 ground.material = rAsset.material as Material;
                 ground.position = new Vector3(absX, 0, absY);
-                //ground.checkCollisions = true;
                 ground.receiveShadows = true;
 
-                this.loadedChuncksItems[`${chunkX}/${chunkY}`].push({ mesh: ground, asset: rAsset });
+                this.loadedChuncksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: ground, asset: rAsset });
             }
             xIndex += biggestAsset;
         }
@@ -336,14 +390,15 @@ export abstract class WorldManager {
     }
 
     private static loadItemType(item: BiomeItem, chunkX: number, chunkY: number): void {
+        let drawCount = item.drawCount;
 
-        let drawRate = item.drawRate;
-
-        if (item.boostDrawRate && item.boostDrawRateRate) {
-            if (this.randBoolItem(item.boostDrawRateRate, item.asset, chunkX, chunkY)) {
-                drawRate = item.boostDrawRateRate;
+        if (item.boostDrawCount && item.boostDrawCountRate) {
+            if (WorldUtils.randBoolItem(item.boostDrawCountRate, item.asset, chunkX, chunkY)) {
+                drawCount = item.boostDrawCount;
             }
         }
+
+        const drawRate = this.getDrawRate(item.asset, drawCount);
 
         const bound = this.chunckSize / 2 + 50;
         let xIndex = -bound;
@@ -365,18 +420,25 @@ export abstract class WorldManager {
                     biggestAsset = rAsset.safeZone;
                 }
 
-                if (absX < this.spawnNoDrawZone && absY < this.spawnNoDrawZone && absX > -this.spawnNoDrawZone && absY > -this.spawnNoDrawZone) {
+                if (rAsset.type === 'item' && absX < this.spawnNoDrawZone && absY < this.spawnNoDrawZone && absX > -this.spawnNoDrawZone && absY > -this.spawnNoDrawZone) {
                     continue;
                 }
 
-                if (this.randBoolItem(drawRate, `${rAsset.name}draw`, absX, absY)) {
-                    const item = this.drawItemWithDeviation(rAsset, absX, absY);
-
-                    if (!item) {
-                        continue;
+                if (WorldUtils.randBoolItem(drawRate, `${rAsset.name}draw`, absX, absY)) {
+                    if (rAsset.type === 'item') {
+                        const item = this.drawItemWithDeviation(rAsset, absX, absY);
+                        if (!item) {
+                            continue;
+                        }
+                        this.loadedChuncksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: item, asset: rAsset });
                     }
-
-                    this.loadedChuncksItems[`${chunkX}/${chunkY}`].push({ mesh: item, asset: rAsset });
+                    else if (rAsset.type === 'sprite') {
+                        const item = this.drawSpriteWithDeviation(rAsset, absX, absY);
+                        if (!item) {
+                            continue;
+                        }
+                        this.loadedChuncksItems[`${chunkX}/${chunkY}`].sprites.push({ sprite: item, asset: rAsset });
+                    }
                 }
             }
             xIndex += biggestAsset;
@@ -386,7 +448,7 @@ export abstract class WorldManager {
     private static isSpaceAvailable(mesh: AbstractMesh, asset: GGA3DAsset, x: number, y: number): boolean {
         let res = true;
         const chunk = this.getChunk(x, y);
-        const items = this.loadedChuncksItems[chunk];
+        const items = this.loadedChuncksItems[chunk]?.meshes;
 
         if (!items) {
             return true;
@@ -396,7 +458,7 @@ export abstract class WorldManager {
             if (item.asset.type === 'ground' || item.asset.name === asset.name) {
                 return false;
             }
-            if (mesh.intersectsMesh(item.mesh, true)) {
+            if (mesh.intersectsMesh(item.mesh as InstancedMesh, true)) {
                 res = false;
                 return true;
             }
@@ -405,13 +467,20 @@ export abstract class WorldManager {
         return res;
     }
 
-
-    // RAND FUNCTIONS
-    private static randBoolItem(probability: number, itemType: string, x: number, y: number): boolean {
-        return Random.randomBool(itemType + x + y, probability);
+    private static getDrawRate(type: AssetType, drawCount: number): number {
+        const mesh = AssetManager.getFirstAsset(this.currentBiome, type);
+        const maxDraw = (this.chunckSize * this.chunckSize) / (mesh.safeZone * mesh.safeZone);
+        return drawCount / maxDraw;
     }
 
-    private static randNumberItem(itemType: string, x: number, y: number): number {
-        return Random.randomNumber(itemType + x + y);
+    private static deleteMeshFromScene(mesh: AbstractMesh) {
+        this.scene.removeMesh(mesh);
+        mesh.dispose();
+        mesh = null as any;
+    }
+
+    private static deleteSpriteFromScene(sprite: Sprite) {
+        sprite.dispose();
+        sprite = null as any;
     }
 }

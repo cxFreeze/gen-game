@@ -1,6 +1,6 @@
 import { Mesh, Scene, Vector3 } from '@babylonjs/core';
 import { Subscription } from 'rxjs';
-import { MeshUtils } from './assets-utils.js';
+import { AssetUtils } from './assets-utils.js';
 import { AssetManager } from './assets.js';
 
 export type PlayerDirection = 'front' | 'back' | 'left' | 'right' | 'front-left' | 'front-right' | 'back-left' | 'back-right';
@@ -24,7 +24,8 @@ export abstract class PlayerManager {
         this.playerMesh = AssetManager.player.mesh!.clone('player');
 
         const playerHeight = scale * this.playerMesh.getBoundingInfo().boundingBox.maximumWorld.y;
-        this.playerMesh.position = new Vector3(this.absDefaultPlayerX, playerHeight / 2, this.absDefaultPlayerY);
+
+        this.playerMesh.position = new Vector3(this.absDefaultPlayerX, (playerHeight / 2) / scale, this.absDefaultPlayerY);
 
         this.playerMesh.scaling = new Vector3(scale, scale, scale);
 
@@ -80,7 +81,7 @@ export abstract class PlayerManager {
                     break;
             }
 
-            this.currentRotateAnim$ = MeshUtils.rotateMeshY(this.playerMesh, rotation, 10);
+            this.currentRotateAnim$ = AssetUtils.rotateMeshY(this.playerMesh, rotation, 10);
         }
     }
 
@@ -131,7 +132,7 @@ export abstract class PlayerManager {
                     break;
             }
 
-            this.currentRotateAnim$ = MeshUtils.rotateMeshY(this.playerMesh, rotation, 10);
+            this.currentRotateAnim$ = AssetUtils.rotateMeshY(this.playerMesh, rotation, 10);
         }
     }
 
