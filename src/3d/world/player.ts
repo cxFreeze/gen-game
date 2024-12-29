@@ -32,61 +32,12 @@ export abstract class PlayerManager {
         this.playerMesh.receiveShadows = true;
 
         this.playerMesh.checkCollisions = true;
-        this.playerMesh.ellipsoid = new Vector3(scale, playerHeight / 2, scale);
 
         scene.addMesh(this.playerMesh);
     }
 
-    static setPlayerPosition(x: number, y: number, direction: PlayerDirection) {
-        this.playerX = x;
-        this.playerY = y;
-
-        this.playerMesh.position.x = x;
-        this.playerMesh.position.z = y;
-
-
-        if (direction !== this.currentPlayerDirection) {
-            if (this.currentRotateAnim$) {
-                this.currentRotateAnim$.unsubscribe();
-            }
-
-            this.currentPlayerDirection = direction;
-
-            let rotation = 0;
-
-            switch (direction) {
-                case 'front':
-                    rotation = Math.PI;
-                    break;
-                case 'back':
-                    rotation = 0;
-                    break;
-                case 'left':
-                    rotation = Math.PI / 2;
-                    break;
-                case 'right':
-                    rotation = -Math.PI / 2;
-                    break;
-                case 'front-left':
-                    rotation = Math.PI / 4;
-                    break;
-                case 'front-right':
-                    rotation = - Math.PI / 4;
-                    break;
-                case 'back-left':
-                    rotation = Math.PI - Math.PI / 4;
-                    break;
-                case 'back-right':
-                    rotation = Math.PI + Math.PI / 4;
-                    break;
-            }
-
-            this.currentRotateAnim$ = AssetUtils.rotateMeshY(this.playerMesh, rotation, 10);
-        }
-    }
-
     static movePlayer(x: number, y: number, direction: PlayerDirection) {
-        const playPos = this.playerMesh.position.clone();
+        let playPos = this.playerMesh.position.clone();
         this.playerMesh.moveWithCollisions(new Vector3(x, 0, y));
 
         if (this.playerMesh.position.y !== playPos.y) {
@@ -95,6 +46,25 @@ export abstract class PlayerManager {
 
         this.playerX = this.playerMesh.position.x;
         this.playerY = this.playerMesh.position.z;
+
+        if (this.playerX === playPos.x && this.playerY === playPos.z && (x !== 0 && y !== 0)) {
+            playPos = this.playerMesh.position.clone();
+            this.playerMesh.moveWithCollisions(new Vector3(x, 0, 0));
+
+            if (this.playerMesh.position.y !== playPos.y) {
+                this.playerMesh.position = playPos;
+            }
+
+            if (this.playerMesh.position.x === playPos.x) {
+                playPos = this.playerMesh.position.clone();
+                this.playerMesh.moveWithCollisions(new Vector3(0, 0, y));
+
+                if (this.playerMesh.position.y !== playPos.y) {
+                    this.playerMesh.position = playPos;
+                }
+            }
+
+        }
 
         if (direction !== this.currentPlayerDirection) {
             if (this.currentRotateAnim$) {

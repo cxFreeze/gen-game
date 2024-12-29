@@ -3,6 +3,10 @@
     src: url(/fonts/StayPixel.ttf);
 }
 
+* {
+    box-sizing: border-box;
+}
+
 html,
 body {
     font-family: 'Roboto', 'Open Sans', 'Helvetica Neue', sans-serif;

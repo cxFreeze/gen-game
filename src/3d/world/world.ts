@@ -30,8 +30,10 @@ export abstract class WorldManager {
 
     private static enableDeviation = true;
 
-    private static readonly chunckSize = 800;
+    private static readonly chunckSize = 400;
     private static readonly spawnNoDrawZone = 100;
+
+    private static readonly itemLoadBatchSize = 50;
 
     static worldX: number = 0;
     static worldY: number = 0;
@@ -56,10 +58,39 @@ export abstract class WorldManager {
 
     private static biomes: { [key in BiomeType]: Biome };
 
+    private static renderQueue: Array<() => void> = [];
+
+
     static createWorld(scene: Scene) {
         this.initBiomes();
         this.scene = scene;
         this.camera = new UniversalCamera('camera', new Vector3(0, 0, 0), this.scene);
+
+        this.scene.onBeforeRenderObservable.add(() => {
+            for (let i = 0; i < this.itemLoadBatchSize; i++) {
+                if (this.renderQueue.length === 0) {
+                    break;
+                }
+                this.renderQueue.shift()!();
+            }
+
+            const time = performance.now() * 0.002; // Temps simulé (ralenti)
+            const waveSpeed = 0.5; // Vitesse de propagation de l'onde
+            const waveAmplitude = 0.05; // Amplitude du mouvement
+            const waveFrequency = 10; // Fréquence spatiale
+
+            // sprite animation
+            Object.keys(this.loadedChuncksItems).forEach((chunk) => {
+                this.loadedChuncksItems[chunk]?.sprites.forEach((item) => {
+                    const x = item.sprite.position.x;
+                    const z = item.sprite.position.z;
+                    const wave = Math.sin(x * waveFrequency + time * waveSpeed) *
+                        Math.cos(z * waveFrequency + time * waveSpeed) *
+                        waveAmplitude;
+                    item.sprite.angle = wave;
+                });
+            });
+        });
     }
 
     static createLightning() {
@@ -68,7 +99,7 @@ export abstract class WorldManager {
 
         this.sun = new DirectionalLight('sun', new Vector3(0.5, -1, 0.5), this.scene);
         this.sun.position = new Vector3(this.sunX, this.sunY, this.sunZ);
-        this.sun.intensity = 3;
+        this.sun.intensity = 2;
 
         this.shadowGenerator = new ShadowGenerator(4096, this.sun);
         this.shadowGenerator.useBlurExponentialShadowMap = true;
@@ -79,20 +110,19 @@ export abstract class WorldManager {
         const forestBiomes: Biome = {
             ground: 'ground',
             items: [
-
                 {
                     asset: 'tree',
-                    drawCount: 30,
-                    boostDrawCount: 90,
+                    drawCount: 40,
+                    boostDrawCount: 100,
                     boostDrawCountRate: 0.2
                 },
                 {
                     asset: 'rock',
-                    drawCount: 7,
+                    drawCount: 8,
                 },
                 {
                     asset: 'grass',
-                    drawCount: 150
+                    drawCount: 80
                 }
             ]
         };
@@ -232,7 +262,6 @@ export abstract class WorldManager {
             return undefined;
         }
 
-
         return res;
     }
 
@@ -290,8 +319,8 @@ export abstract class WorldManager {
     private static getChunksToLoad() {
         const [currentChuckX, currentChuckY] = this.currentChunk.split('/').map((val) => parseInt(val));
         const chucks = [];
-        for (let i = -1; i < 2; i++) {
-            for (let j = -1; j < 2; j++) {
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
                 chucks.push(`${currentChuckX + i * this.chunckSize}/${currentChuckY + j * this.chunckSize}`);
             }
         }
@@ -299,7 +328,7 @@ export abstract class WorldManager {
     }
 
     private static loadChunksArroundCurrentLocation() {
-        const timeoutDelay = 200;
+        const timeoutDelay = 50;
         let timeout = 0;
 
         const chuncks = this.getChunksToLoad();
@@ -326,19 +355,28 @@ export abstract class WorldManager {
     }
 
     private static unloadChunk(chunk: string) {
-        this.loadedChuncksItems[chunk].meshes.forEach((item) => {
-            this.deleteMeshFromScene(item.mesh);
-            item = null as any;
-        });
+        if (!this.loadedChuncksItems[chunk]) {
+            return;
+        }
 
-        this.loadedChuncksItems[chunk].sprites.forEach((item) => {
-            this.deleteSpriteFromScene(item.sprite);
-            item = null as any;
+        this.renderQueue.push(() => {
+            this.loadedChuncksItems[chunk].meshes.forEach((item) => {
+                this.deleteMeshFromScene(item.mesh);
+                item = null as never;
+            });
+
+            this.loadedChuncksItems[chunk].sprites.forEach((item) => {
+                this.deleteSpriteFromScene(item.sprite);
+                item = null as never;
+            });
+            delete this.loadedChuncksItems[chunk];
         });
-        delete this.loadedChuncksItems[chunk];
     }
 
     private static loadChunk(chunk: string) {
+        if (this.loadedChuncksItems[chunk]) {
+            return;
+        }
         this.loadedChuncksItems[chunk] = { meshes: [], sprites: [] };
         const [x, y] = chunk.split('/').map((val) => parseInt(val));
 
@@ -352,12 +390,12 @@ export abstract class WorldManager {
         const bound = this.chunckSize / 2;
         let xIndex = -bound;
 
-        while (xIndex < bound) {
+        while (xIndex <= bound) {
 
             let biggestAsset = 0;
             let yIndex = -bound;
 
-            while (yIndex < bound) {
+            while (yIndex <= bound) {
                 const absX = chunkX + xIndex;
                 const absY = chunkY + yIndex;
 
@@ -425,20 +463,23 @@ export abstract class WorldManager {
                 }
 
                 if (WorldUtils.randBoolItem(drawRate, `${rAsset.name}draw`, absX, absY)) {
-                    if (rAsset.type === 'item') {
-                        const item = this.drawItemWithDeviation(rAsset, absX, absY);
-                        if (!item) {
-                            continue;
+                    this.renderQueue.push(() => {
+                        if (!this.loadedChuncksItems[`${chunkX}/${chunkY}`]) {
+                            return;
                         }
-                        this.loadedChuncksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: item, asset: rAsset });
-                    }
-                    else if (rAsset.type === 'sprite') {
-                        const item = this.drawSpriteWithDeviation(rAsset, absX, absY);
-                        if (!item) {
-                            continue;
+                        if (rAsset.type === 'item') {
+                            const item = this.drawItemWithDeviation(rAsset, absX, absY);
+                            if (item) {
+                                this.loadedChuncksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: item, asset: rAsset });
+                            }
                         }
-                        this.loadedChuncksItems[`${chunkX}/${chunkY}`].sprites.push({ sprite: item, asset: rAsset });
-                    }
+                        else if (rAsset.type === 'sprite') {
+                            const item = this.drawSpriteWithDeviation(rAsset, absX, absY);
+                            if (item) {
+                                this.loadedChuncksItems[`${chunkX}/${chunkY}`].sprites.push({ sprite: item, asset: rAsset });
+                            }
+                        }
+                    });
                 }
             }
             xIndex += biggestAsset;
@@ -469,18 +510,18 @@ export abstract class WorldManager {
 
     private static getDrawRate(type: AssetType, drawCount: number): number {
         const mesh = AssetManager.getFirstAsset(this.currentBiome, type);
-        const maxDraw = (this.chunckSize * this.chunckSize) / (mesh.safeZone * mesh.safeZone);
+        const maxDraw = (1000 * 1000) / (mesh.safeZone * mesh.safeZone);
         return drawCount / maxDraw;
     }
 
     private static deleteMeshFromScene(mesh: AbstractMesh) {
         this.scene.removeMesh(mesh);
         mesh.dispose();
-        mesh = null as any;
+        mesh = null as never;
     }
 
     private static deleteSpriteFromScene(sprite: Sprite) {
         sprite.dispose();
-        sprite = null as any;
+        sprite = null as never;
     }
 }

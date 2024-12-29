@@ -19,7 +19,7 @@ const showInspector = false;
     await init3DApp();
     setTimeout(() => {
         hideLoadingScreen();
-    }, 1000);
+    }, 2000);
 })();
 
 
