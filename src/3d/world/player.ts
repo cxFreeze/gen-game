@@ -30,7 +30,6 @@ export abstract class PlayerManager {
         this.playerMesh.scaling = new Vector3(scale, scale, scale);
 
         this.playerMesh.receiveShadows = true;
-
         this.playerMesh.checkCollisions = true;
 
         scene.addMesh(this.playerMesh);

@@ -1,4 +1,4 @@
-import { AbstractMesh, Animation, CubicEase, DirectionalLight, EasingFunction, GroundMesh, HemisphericLight, InstancedMesh, Material, MeshBuilder, Scene, ShadowGenerator, Sprite, UniversalCamera, Vector3 } from '@babylonjs/core';
+import { AbstractMesh, Animation, CubicEase, DirectionalLight, EasingFunction, GroundMesh, HemisphericLight, InstancedMesh, Material, MeshBuilder, Ray, Scene, ShadowGenerator, Sprite, UniversalCamera, Vector3 } from '@babylonjs/core';
 import { timer } from 'rxjs';
 import { AssetManager, AssetType, BiomeType, GGA3DAsset } from './assets.js';
 import { PlayerManager } from './player.js';
@@ -56,6 +56,8 @@ export abstract class WorldManager {
     private static currentChunk: string;
     private static loadedChuncksItems: { [key: string]: { meshes: LoadedMesh[], sprites: LoadedSprite[] } } = {};
 
+    private static transparentMeshes = new Set<AbstractMesh>();
+
     private static biomes: { [key in BiomeType]: Biome };
 
     private static renderQueue: Array<() => void> = [];
@@ -66,7 +68,7 @@ export abstract class WorldManager {
         this.scene = scene;
         this.camera = new UniversalCamera('camera', new Vector3(0, 0, 0), this.scene);
 
-        this.scene.onBeforeRenderObservable.add(() => {
+        this.scene.onBeforeRenderObservable.add((scene) => {
             for (let i = 0; i < this.itemLoadBatchSize; i++) {
                 if (this.renderQueue.length === 0) {
                     break;
@@ -74,9 +76,14 @@ export abstract class WorldManager {
                 this.renderQueue.shift()!();
             }
 
+            if (scene.getFrameId() % 10 === 0) {
+                this.setCameraObstacleSemiTransparent();
+            }
+
+
             const time = performance.now() * 0.002; // Temps simulé (ralenti)
             const waveSpeed = 0.5; // Vitesse de propagation de l'onde
-            const waveAmplitude = 0.05; // Amplitude du mouvement
+            const waveAmplitude = 0.08; // Amplitude du mouvement
             const waveFrequency = 10; // Fréquence spatiale
 
             // sprite animation
@@ -104,6 +111,7 @@ export abstract class WorldManager {
         this.shadowGenerator = new ShadowGenerator(4096, this.sun);
         this.shadowGenerator.useBlurExponentialShadowMap = true;
         this.shadowGenerator.blurScale = 1;
+        this.shadowGenerator.transparencyShadow = true;
     }
 
     static initBiomes() {
@@ -360,6 +368,9 @@ export abstract class WorldManager {
         }
 
         this.renderQueue.push(() => {
+            if (!this.loadedChuncksItems[chunk]) {
+                return;
+            }
             this.loadedChuncksItems[chunk].meshes.forEach((item) => {
                 this.deleteMeshFromScene(item.mesh);
                 item = null as never;
@@ -462,6 +473,10 @@ export abstract class WorldManager {
                     continue;
                 }
 
+                if (!this.loadedChuncksItems[`${chunkX}/${chunkY}`]) {
+                    return;
+                }
+
                 if (WorldUtils.randBoolItem(drawRate, `${rAsset.name}draw`, absX, absY)) {
                     this.renderQueue.push(() => {
                         if (!this.loadedChuncksItems[`${chunkX}/${chunkY}`]) {
@@ -523,5 +538,41 @@ export abstract class WorldManager {
     private static deleteSpriteFromScene(sprite: Sprite) {
         sprite.dispose();
         sprite = null as never;
+    }
+
+
+
+    private static setCameraObstacleSemiTransparent() {
+        const ray = new Ray(this.camera.position, this.camera.target.subtract(this.camera.position).normalize());
+
+        const hitResults = this.scene.multiPickWithRay(ray, (mesh) => mesh.name !== 'player');
+
+        // Rendre semi-transparent les obstacles entre la caméra et le joueur
+        const currentMeshes = new Set();
+        if (hitResults) {
+            for (const hit of hitResults) {
+                if (!hit.pickedPoint || hit.pickedPoint.y < 20) {
+                    continue;
+                }
+                const mesh = hit.pickedMesh;
+                currentMeshes.add(mesh);
+
+                if (!this.transparentMeshes.has(mesh!)) {
+                    const newMesh = WorldUtils.setMeshTransparent(mesh!, this.scene);
+                    this.transparentMeshes.add(mesh!);
+                    if (newMesh) {
+                        this.shadowGenerator.addShadowCaster(newMesh);
+                    }
+                }
+            }
+        }
+
+        // Réinitialiser les meshes qui ne sont plus dans le rayon
+        for (const mesh of this.transparentMeshes) {
+            if (!currentMeshes.has(mesh)) {
+                WorldUtils.resetMeshTransparency(mesh, this.scene);
+                this.transparentMeshes.delete(mesh);
+            }
+        }
     }
 }

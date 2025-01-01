@@ -5,6 +5,7 @@ import { Inspector } from '@babylonjs/inspector';
 import '@babylonjs/loaders/glTF';
 import { PlayerInputs as PlayerInputs3D } from './3d/game/player-inputs.js';
 import { PlayerMovements as PlayerMovements3D } from './3d/game/player-movements.js';
+import { ShadersManager } from './3d/shaders.js';
 import { AssetManager as AssetManager3D } from './3d/world/assets.js';
 import { PlayerManager as PlayerManager3D } from './3d/world/player.js';
 import { WorldManager as WorldManager3D } from './3d/world/world.js';
@@ -39,6 +40,7 @@ DracoCompression.Configuration = {
 };
 
 async function init3DApp() {
+    ShadersManager.loadShaders();
     const canvas = document.getElementById('renderCanvas') as HTMLCanvasElement;
 
     const engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });

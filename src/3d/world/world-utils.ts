@@ -1,3 +1,4 @@
+import { AbstractMesh, InstancedMesh, Scene } from '@babylonjs/core';
 import { Random } from '../../utils/random';
 import { GGA3DAsset } from './assets';
 
@@ -42,5 +43,40 @@ export abstract class WorldUtils {
 
     public static randNumberItem(itemType: string, x: number, y: number): number {
         return Random.randomNumber(itemType + x + y);
+    }
+
+    // OTHER FUNCTIONS
+
+    public static setMeshTransparent(mesh: AbstractMesh, scene: Scene): AbstractMesh | undefined {
+        if (!mesh.material || !(mesh instanceof InstancedMesh) || (mesh as any)._ghostMesh) {
+            return undefined;
+        }
+
+        const ghostMesh = mesh.sourceMesh.clone(`ghost${mesh.name}`);
+        ghostMesh.position = mesh.position;
+        ghostMesh.rotation = mesh.rotation;
+        ghostMesh.scaling = mesh.scaling;
+
+        ghostMesh.visibility = 0.1;
+        scene.addMesh(ghostMesh);
+
+        (mesh as any)._ghostMesh = ghostMesh;
+
+        mesh.isVisible = false;
+
+        return ghostMesh;
+    }
+
+
+    public static resetMeshTransparency(mesh: AbstractMesh, scene: Scene): void {
+        mesh.isVisible = true;
+
+        if (!(mesh instanceof InstancedMesh) || !(mesh as any)._ghostMesh) {
+            return;
+        }
+
+        scene.removeMesh((mesh as any)._ghostMesh);
+        (mesh as any)._ghostMesh.dispose();
+        (mesh as any)._ghostMesh = null;
     }
 }
