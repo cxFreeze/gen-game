@@ -169,7 +169,7 @@ export abstract class WorldManager {
         return item;
     }
 
-    static drawItemWithDeviation(asset: GGA3DAsset, x: number, y: number): InstancedMesh | undefined {
+    static drawItemWithDeviation(asset: GGA3DAsset, x: number, y: number, chunkX: number, chunkY: number): InstancedMesh | undefined {
         let deviationX = 0;
         let deviationY = 0;
         let deviationZ = 0;
@@ -201,6 +201,21 @@ export abstract class WorldManager {
         itemHeight = itemHeight * sizeRatio;
 
         const z = itemHeight - deviationZ;
+
+        if (x < chunkX - this.chunckSize / 2) {
+            x = chunkX - this.chunckSize / 2;
+        }
+        else if (x > chunkX + this.chunckSize / 2) {
+            x = chunkX + this.chunckSize / 2;
+        }
+
+        if (y < chunkY - this.chunckSize / 2) {
+            y = chunkY - this.chunckSize / 2;
+        }
+        else if (y > chunkY + this.chunckSize / 2) {
+            y = chunkY + this.chunckSize / 2;
+        }
+
         const res = this.drawItem(asset, x, y, z, sizeRatio, rotation);
 
         if (!res) {
@@ -234,7 +249,7 @@ export abstract class WorldManager {
         return sprite;
     }
 
-    static drawSpriteWithDeviation(asset: GGA3DAsset, x: number, y: number): Sprite | undefined {
+    static drawSpriteWithDeviation(asset: GGA3DAsset, x: number, y: number, chunkX: number, chunkY: number): Sprite | undefined {
         let deviationX = 0;
         let deviationY = 0;
         let deviationZ = -1;
@@ -263,6 +278,14 @@ export abstract class WorldManager {
 
         x = x + deviationX;
         y = y + deviationY;
+
+        if (x < chunkX - this.chunckSize / 2 || x > chunkX + this.chunckSize / 2) {
+            x = x - 2 * deviationX;
+        }
+
+        if (y < chunkY - this.chunckSize / 2 || y > chunkY + this.chunckSize / 2) {
+            y = y - 2 * deviationY;
+        }
 
         const res = this.drawSprite(asset, x, y, deviationZ, sizeRatio, rotation, invert);
 
@@ -449,7 +472,7 @@ export abstract class WorldManager {
 
         const drawRate = this.getDrawRate(item.asset, drawCount);
 
-        const bound = this.chunckSize / 2 + 50;
+        const bound = this.chunckSize / 2;
         let xIndex = -bound;
 
         while (xIndex < bound) {
@@ -483,13 +506,13 @@ export abstract class WorldManager {
                             return;
                         }
                         if (rAsset.type === 'item') {
-                            const item = this.drawItemWithDeviation(rAsset, absX, absY);
+                            const item = this.drawItemWithDeviation(rAsset, absX, absY, chunkX, chunkY);
                             if (item) {
                                 this.loadedChuncksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: item, asset: rAsset });
                             }
                         }
                         else if (rAsset.type === 'sprite') {
-                            const item = this.drawSpriteWithDeviation(rAsset, absX, absY);
+                            const item = this.drawSpriteWithDeviation(rAsset, absX, absY, chunkX, chunkY);
                             if (item) {
                                 this.loadedChuncksItems[`${chunkX}/${chunkY}`].sprites.push({ sprite: item, asset: rAsset });
                             }

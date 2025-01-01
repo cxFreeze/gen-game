@@ -56,13 +56,13 @@ export abstract class WorldUtils {
         ghostMesh.position = mesh.position;
         ghostMesh.rotation = mesh.rotation;
         ghostMesh.scaling = mesh.scaling;
+        ghostMesh.visibility = 0.2;
+        ghostMesh.receiveShadows = true;
 
-        ghostMesh.visibility = 0.1;
         scene.addMesh(ghostMesh);
+        mesh.isVisible = false;
 
         (mesh as any)._ghostMesh = ghostMesh;
-
-        mesh.isVisible = false;
 
         return ghostMesh;
     }
