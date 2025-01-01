@@ -1,5 +1,6 @@
-import { Mesh, Scene, Vector3 } from '@babylonjs/core';
+import { Mesh, Vector3 } from '@babylonjs/core';
 import { Subscription } from 'rxjs';
+import { App } from '../../app.js';
 import { AssetUtils } from './assets-utils.js';
 import { AssetManager } from './assets.js';
 
@@ -19,7 +20,7 @@ export abstract class PlayerManager {
 
     private static currentRotateAnim$: Subscription | undefined;
 
-    static createPlayer(scene: Scene) {
+    static createPlayer() {
         const scale = AssetManager.player.scale!;
         this.playerMesh = AssetManager.player.mesh!.clone('player');
 
@@ -32,7 +33,7 @@ export abstract class PlayerManager {
         this.playerMesh.receiveShadows = true;
         this.playerMesh.checkCollisions = true;
 
-        scene.addMesh(this.playerMesh);
+        App.scene.addMesh(this.playerMesh);
     }
 
     static movePlayer(x: number, y: number, direction: PlayerDirection) {

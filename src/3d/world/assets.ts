@@ -1,25 +1,9 @@
-import { AnimationGroup, Color3, loadAssetContainerAsync, Material, Mesh, Scene, SpriteManager, StandardMaterial, Texture } from '@babylonjs/core';
+import { AnimationGroup, Color3, loadAssetContainerAsync, Material, Mesh, SpriteManager, StandardMaterial, Texture } from '@babylonjs/core';
+import { App } from '../../app.js';
+import { AssetType, BiomeType, GGA3DAsset } from '../../interfaces.js';
 import { Random } from '../../utils/random.js';
 
-export enum BiomeType { forest = 1 };
 
-export type AssetType = 'ground' | 'tree' | 'rock' | 'grass';
-
-export interface GGA3DAsset {
-    mesh?: Mesh;
-    sprite?: SpriteManager;
-    material?: Material;
-    height: number;
-    width: number;
-    name: string;
-    scale: number;
-    safeZone: number;
-    displacementRatio: number;
-    sizeRatio: number;
-    type: 'ground' | 'item' | 'sprite' | 'player';
-    ignoreCollisions?: boolean;
-    maxVerticalDisplacement?: number;
-}
 
 
 export abstract class AssetManager {
@@ -40,9 +24,9 @@ export abstract class AssetManager {
 
     static player: Partial<GGA3DAsset>;
 
-    static async loadAssets(scene: Scene) {
+    static async loadAssets() {
         this.player = {
-            mesh: await this.load3DAsset(`${this.Assets3dPath}/player.glb`, scene),
+            mesh: await this.load3DAsset(`${this.Assets3dPath}/player.glb`),
             height: 100,
             width: 60,
             name: 'player',
@@ -50,13 +34,13 @@ export abstract class AssetManager {
             type: 'player',
         };
 
-        await this.loadForestAssets(scene);
+        await this.loadForestAssets();
     }
 
-    private static async loadForestAssets(scene: Scene) {
+    private static async loadForestAssets() {
         const forestGround: GGA3DAsset = {
             name: 'ground',
-            material: this.loadTextureAsset('forestGround', `${this.texturesPath}/forest/ground_texture3d.jpg`, scene),
+            material: this.loadTextureAsset('forestGround', `${this.texturesPath}/forest/ground_texture3d.jpg`),
             height: 400,
             width: 400,
             safeZone: 400,
@@ -71,7 +55,7 @@ export abstract class AssetManager {
 
         const tree: GGA3DAsset = {
             name: 'tree',
-            mesh: await this.load3DAsset(`${this.Assets3dPath}/forest/tree1.glb`, scene),
+            mesh: await this.load3DAsset(`${this.Assets3dPath}/forest/tree1.glb`),
             height: 50,
             width: 50,
             safeZone: 50,
@@ -84,7 +68,7 @@ export abstract class AssetManager {
 
         const tree2: GGA3DAsset = {
             name: 'tree2',
-            mesh: await this.load3DAsset(`${this.Assets3dPath}/forest/tree2.glb`, scene),
+            mesh: await this.load3DAsset(`${this.Assets3dPath}/forest/tree2.glb`),
             height: 50,
             width: 50,
             safeZone: 50,
@@ -100,7 +84,7 @@ export abstract class AssetManager {
 
         const rock: GGA3DAsset = {
             name: 'rock',
-            mesh: await this.load3DAsset(`${this.Assets3dPath}/forest/rock.glb`, scene),
+            mesh: await this.load3DAsset(`${this.Assets3dPath}/forest/rock.glb`),
             height: 50,
             width: 50,
             safeZone: 20,
@@ -113,12 +97,12 @@ export abstract class AssetManager {
 
         this.worldsAssets[BiomeType.forest].rock.push(rock);
 
-        const spriteManager = new SpriteManager('grassManager', `${this.texturesPath}/grass.png`, 10000, { width: 200, height: 100 }, scene);
+        const spriteManager = new SpriteManager('grassManager', `${this.texturesPath}/grass.png`, 10000, { width: 156, height: 156 }, App.scene);
         const grass: GGA3DAsset = {
             name: 'grass',
             sprite: spriteManager,
-            height: 10,
-            width: 20,
+            height: 15,
+            width: 15,
             safeZone: 10,
             displacementRatio: 0.2,
             sizeRatio: 0.3,
@@ -146,8 +130,8 @@ export abstract class AssetManager {
         return items[0];
     }
 
-    private static async load3DAsset(path: string, scene: Scene): Promise<Mesh> {
-        const container = await loadAssetContainerAsync(path, scene);
+    private static async load3DAsset(path: string): Promise<Mesh> {
+        const container = await loadAssetContainerAsync(path, App.scene);
         const mesh = container.meshes[1] as Mesh;
         container.animationGroups.forEach((anim) => {
             anim.enableBlending = true;
@@ -158,9 +142,9 @@ export abstract class AssetManager {
         return mesh;
     }
 
-    private static loadTextureAsset(name: string, path: string, scene: Scene): Material {
-        const groundMat = new StandardMaterial(name, scene);
-        groundMat.ambientTexture = new Texture(path, scene);
+    private static loadTextureAsset(name: string, path: string): Material {
+        const groundMat = new StandardMaterial(name, App.scene);
+        groundMat.ambientTexture = new Texture(path, App.scene);
         groundMat.specularColor = new Color3(0, 0, 0);
         return groundMat;
     }

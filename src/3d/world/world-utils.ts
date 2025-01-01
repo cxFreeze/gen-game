@@ -1,6 +1,7 @@
-import { AbstractMesh, InstancedMesh, Scene } from '@babylonjs/core';
+import { AbstractMesh, InstancedMesh } from '@babylonjs/core';
+import { App } from '../../app';
+import { GGA3DAsset } from '../../interfaces';
 import { Random } from '../../utils/random';
-import { GGA3DAsset } from './assets';
 
 export abstract class WorldUtils {
     // DEVIATION FUNCTIONS
@@ -47,7 +48,7 @@ export abstract class WorldUtils {
 
     // OTHER FUNCTIONS
 
-    public static setMeshTransparent(mesh: AbstractMesh, scene: Scene): AbstractMesh | undefined {
+    public static setMeshTransparent(mesh: AbstractMesh): AbstractMesh | undefined {
         if (!mesh.material || !(mesh instanceof InstancedMesh) || (mesh as any)._ghostMesh) {
             return undefined;
         }
@@ -59,7 +60,7 @@ export abstract class WorldUtils {
         ghostMesh.visibility = 0.2;
         ghostMesh.receiveShadows = true;
 
-        scene.addMesh(ghostMesh);
+        App.scene.addMesh(ghostMesh);
         mesh.isVisible = false;
 
         (mesh as any)._ghostMesh = ghostMesh;
@@ -68,14 +69,14 @@ export abstract class WorldUtils {
     }
 
 
-    public static resetMeshTransparency(mesh: AbstractMesh, scene: Scene): void {
+    public static resetMeshTransparency(mesh: AbstractMesh): void {
         mesh.isVisible = true;
 
         if (!(mesh instanceof InstancedMesh) || !(mesh as any)._ghostMesh) {
             return;
         }
 
-        scene.removeMesh((mesh as any)._ghostMesh);
+        App.scene.removeMesh((mesh as any)._ghostMesh);
         (mesh as any)._ghostMesh.dispose();
         (mesh as any)._ghostMesh = null;
     }

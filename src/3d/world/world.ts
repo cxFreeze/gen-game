@@ -1,31 +1,13 @@
-import { AbstractMesh, Animation, CubicEase, DirectionalLight, EasingFunction, GroundMesh, HemisphericLight, InstancedMesh, Material, MeshBuilder, Ray, Scene, ShadowGenerator, Sprite, UniversalCamera, Vector3 } from '@babylonjs/core';
+import { AbstractMesh, Animation, CubicEase, EasingFunction, InstancedMesh, Material, MeshBuilder, Ray, Sprite, UniversalCamera, Vector3 } from '@babylonjs/core';
 import { timer } from 'rxjs';
-import { AssetManager, AssetType, BiomeType, GGA3DAsset } from './assets.js';
+import { App } from '../../app.js';
+import { AssetType, Biome, BiomeItem, BiomeType, GGA3DAsset, LoadedMesh, LoadedSprite } from '../../interfaces.js';
+import { AssetManager } from './assets.js';
+import { LightingManager } from './lighting.js';
 import { PlayerManager } from './player.js';
 import { WorldUtils } from './world-utils.js';
 
-
-interface Biome {
-    ground: AssetType;
-    items: BiomeItem[];
-}
-
-interface BiomeItem { asset: AssetType, drawCount: number, boostDrawCount?: number, boostDrawCountRate?: number };
-
-interface LoadedMesh {
-    mesh: InstancedMesh | GroundMesh;
-    asset: GGA3DAsset;
-}
-
-interface LoadedSprite {
-    sprite: Sprite;
-    asset: GGA3DAsset;
-}
-
 export abstract class WorldManager {
-    static scene: Scene;
-    static shadowGenerator: ShadowGenerator;
-
     static cnt = 0;
 
     private static enableDeviation = true;
@@ -46,12 +28,6 @@ export abstract class WorldManager {
     private static initCameraY: number = 40;
     private static initCameraZ: number = 25;
 
-    private static sun: DirectionalLight;
-    private static ambiantLight: HemisphericLight;
-    private static sunX: number = 0;
-    private static sunY: number = 500;
-    private static sunZ: number = -500;
-
     private static currentBiome: BiomeType = BiomeType.forest;
     private static currentChunk: string;
     private static loadedChuncksItems: { [key: string]: { meshes: LoadedMesh[], sprites: LoadedSprite[] } } = {};
@@ -62,13 +38,11 @@ export abstract class WorldManager {
 
     private static renderQueue: Array<() => void> = [];
 
-
-    static createWorld(scene: Scene) {
+    static createWorld() {
         this.initBiomes();
-        this.scene = scene;
-        this.camera = new UniversalCamera('camera', new Vector3(0, 0, 0), this.scene);
+        this.camera = new UniversalCamera('camera', new Vector3(0, 0, 0), App.scene);
 
-        this.scene.onBeforeRenderObservable.add((scene) => {
+        App.scene.onBeforeRenderObservable.add((scene) => {
             for (let i = 0; i < this.itemLoadBatchSize; i++) {
                 if (this.renderQueue.length === 0) {
                     break;
@@ -83,7 +57,7 @@ export abstract class WorldManager {
 
             const time = performance.now() * 0.002; // Temps simulé (ralenti)
             const waveSpeed = 0.5; // Vitesse de propagation de l'onde
-            const waveAmplitude = 0.08; // Amplitude du mouvement
+            const waveAmplitude = 0.07; // Amplitude du mouvement
             const waveFrequency = 10; // Fréquence spatiale
 
             // sprite animation
@@ -100,19 +74,7 @@ export abstract class WorldManager {
         });
     }
 
-    static createLightning() {
-        this.ambiantLight = new HemisphericLight('ambiantLight', new Vector3(0, 10, 0), this.scene);
-        this.ambiantLight.intensity = 0.8;
 
-        this.sun = new DirectionalLight('sun', new Vector3(0.5, -1, 0.5), this.scene);
-        this.sun.position = new Vector3(this.sunX, this.sunY, this.sunZ);
-        this.sun.intensity = 2;
-
-        this.shadowGenerator = new ShadowGenerator(4096, this.sun);
-        this.shadowGenerator.useBlurExponentialShadowMap = true;
-        this.shadowGenerator.blurScale = 1;
-        this.shadowGenerator.transparencyShadow = true;
-    }
 
     static initBiomes() {
         const forestBiomes: Biome = {
@@ -162,10 +124,10 @@ export abstract class WorldManager {
 
         item.checkCollisions = !asset.ignoreCollisions;
 
-        this.shadowGenerator.addShadowCaster(item);
+        LightingManager.shadowGenerator.addShadowCaster(item);
         item.receiveShadows = true;
 
-        this.scene.addMesh(item);
+        App.scene.addMesh(item);
         return item;
     }
 
@@ -298,7 +260,7 @@ export abstract class WorldManager {
 
     static generateWorld() {
         this.setCameraPosition(0, 0);
-        this.shadowGenerator.addShadowCaster(PlayerManager.playerMesh);
+        LightingManager.shadowGenerator.addShadowCaster(PlayerManager.playerMesh);
 
         this.camera.position = new Vector3(0, this.initCameraY, this.initCameraZ);
 
@@ -325,7 +287,7 @@ export abstract class WorldManager {
         this.camera.position = new Vector3(x + this.cameraX, this.cameraY, y + this.cameraZ);
         this.camera.setTarget(new Vector3(x, 20, y));
 
-        this.sun.position = new Vector3(x + this.sunX, this.sunY, y + this.sunZ);
+        LightingManager.setSunPosition(x, y);
 
         const currentChunk = this.getCurrentChunk();
         if (currentChunk !== this.currentChunk) {
@@ -441,7 +403,7 @@ export abstract class WorldManager {
                     biggestAsset = rAsset.safeZone;
                 }
 
-                const ground = MeshBuilder.CreateGround('ground', { width: rAsset.width, height: rAsset.height }, this.scene);
+                const ground = MeshBuilder.CreateGround('ground', { width: rAsset.width, height: rAsset.height }, App.scene);
 
                 ground.material = rAsset.material as Material;
                 ground.position = new Vector3(absX, 0, absY);
@@ -553,7 +515,7 @@ export abstract class WorldManager {
     }
 
     private static deleteMeshFromScene(mesh: AbstractMesh) {
-        this.scene.removeMesh(mesh);
+        App.scene.removeMesh(mesh);
         mesh.dispose();
         mesh = null as never;
     }
@@ -568,7 +530,7 @@ export abstract class WorldManager {
     private static setCameraObstacleSemiTransparent() {
         const ray = new Ray(this.camera.position, this.camera.target.subtract(this.camera.position).normalize());
 
-        const hitResults = this.scene.multiPickWithRay(ray, (mesh) => mesh.name !== 'player');
+        const hitResults = App.scene.multiPickWithRay(ray, (mesh) => mesh.name !== 'player');
 
         // Rendre semi-transparent les obstacles entre la caméra et le joueur
         const currentMeshes = new Set();
@@ -581,10 +543,10 @@ export abstract class WorldManager {
                 currentMeshes.add(mesh);
 
                 if (!this.transparentMeshes.has(mesh!)) {
-                    const newMesh = WorldUtils.setMeshTransparent(mesh!, this.scene);
+                    const newMesh = WorldUtils.setMeshTransparent(mesh!);
                     this.transparentMeshes.add(mesh!);
                     if (newMesh) {
-                        this.shadowGenerator.addShadowCaster(newMesh);
+                        LightingManager.shadowGenerator.addShadowCaster(newMesh);
                     }
                 }
             }
@@ -593,7 +555,7 @@ export abstract class WorldManager {
         // Réinitialiser les meshes qui ne sont plus dans le rayon
         for (const mesh of this.transparentMeshes) {
             if (!currentMeshes.has(mesh)) {
-                WorldUtils.resetMeshTransparency(mesh, this.scene);
+                WorldUtils.resetMeshTransparency(mesh);
                 this.transparentMeshes.delete(mesh);
             }
         }
