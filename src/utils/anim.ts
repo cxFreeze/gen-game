@@ -1,6 +1,11 @@
-import { animationFrames, endWith, map, takeWhile } from "rxjs";
+import { CubicEase, EasingFunction } from '@babylonjs/core';
+import { animationFrames, endWith, map, takeWhile } from 'rxjs';
+
+const ease = new CubicEase();
+ease.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
 
 export abstract class Anim {
+    static cubicEaseInOut = ease;
 
     static tween(start: number, end: number, duration: number) {
         const diff = end - start;

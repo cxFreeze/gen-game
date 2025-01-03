@@ -6,6 +6,7 @@ import { AssetManager } from './3d/world/assets';
 import { LightingManager } from './3d/world/lighting';
 import { PlayerManager } from './3d/world/player';
 import { WorldManager } from './3d/world/world';
+import { Debug } from './debug';
 
 export abstract class App {
 
@@ -19,8 +20,6 @@ export abstract class App {
         return this._engine;
     }
 
-    private static showInspector = false;
-
     public static async init3DApp() {
         const canvas = document.getElementById('renderCanvas');
         if (!(canvas instanceof HTMLCanvasElement)) {
@@ -33,7 +32,7 @@ export abstract class App {
         this._scene.useRightHandedSystem = true;
         this._scene.collisionsEnabled = true;
 
-        if (this.showInspector) {
+        if (Debug.showInspector) {
             Inspector.Show(this._scene, {
                 handleResize: true,
                 overlay: true,
@@ -50,16 +49,22 @@ export abstract class App {
         PlayerInputs.init();
         WorldManager.generateWorld();
 
-        const divFps = document.getElementById('fps') as HTMLElement;
 
         this._engine.runRenderLoop(() => {
             this._scene.render();
             const time = this._engine.getDeltaTime();
             PlayerInputs.checkJoystick();
             PlayerMovements.updatePlayerPosition(time);
-
-            divFps.innerHTML = `${this._engine.getFps().toFixed()} fps`;
         });
+
+        if (Debug.showFps) {
+            const divFps = document.getElementById('fps') as HTMLElement;
+            this._engine.runRenderLoop(() => {
+                if (this._engine.frameId % 10 === 0) {
+                    divFps.innerHTML = `${this._engine.getFps().toFixed()} fps`;
+                }
+            });
+        }
 
         window.addEventListener('resize', () => {
             this._engine.resize();
