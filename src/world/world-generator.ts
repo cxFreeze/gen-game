@@ -1,13 +1,13 @@
 import { AbstractMesh, InstancedMesh, Material, MeshBuilder, Ray, Sprite, Vector3 } from '@babylonjs/core';
-import { App } from '../../app';
-import { AssetType, BiomeItem, GGA3DAsset, LoadedMesh, LoadedSprite } from '../../interfaces';
+import { App } from '../app';
+import { AssetType, BiomeItem, GGA3DAsset, LoadedMesh, LoadedSprite } from '../interfaces';
+import { Random } from '../utils/random';
 import { AssetManager } from './assets';
 import { LightingManager } from './lighting';
 import { PlayerManager } from './player';
 import { WorldManager } from './world';
-import { WorldUtils } from './world-utils';
 
-export abstract class WorldGeneration {
+export abstract class WorldGenerator {
 
     static itemCnt = 0;
 
@@ -196,7 +196,7 @@ export abstract class WorldGeneration {
         let drawCount = item.drawCount;
 
         if (item.boostDrawCount && item.boostDrawCountRate) {
-            if (WorldUtils.randBoolItem(item.boostDrawCountRate, item.asset, chunkX, chunkY)) {
+            if (this.randBoolItem(item.boostDrawCountRate, item.asset, chunkX, chunkY)) {
                 drawCount = item.boostDrawCount;
             }
         }
@@ -231,7 +231,7 @@ export abstract class WorldGeneration {
                     return;
                 }
 
-                if (WorldUtils.randBoolItem(drawRate, `${rAsset.name}draw`, absX, absY)) {
+                if (this.randBoolItem(drawRate, `${rAsset.name}draw`, absX, absY)) {
                     this.renderQueue.push(() => {
                         if (!this.loadedChuncksItems[`${chunkX}/${chunkY}`]) {
                             return;
@@ -297,18 +297,18 @@ export abstract class WorldGeneration {
 
         if (this.enableDeviation) {
             if (asset.displacementRatio > 0) {
-                deviationX = WorldUtils.getDeviationX(asset, x, y);
-                deviationY = WorldUtils.getDeviationY(asset, x, y);;
+                deviationX = this.getDeviationX(asset, x, y);
+                deviationY = this.getDeviationY(asset, x, y);;
             }
 
             if (asset.sizeRatio > 0) {
-                sizeRatio = WorldUtils.getSizeRatio(asset, x, y);
+                sizeRatio = this.getSizeRatio(asset, x, y);
             }
 
             if (asset.maxVerticalDisplacement && asset.maxVerticalDisplacement > 0) {
-                deviationZ = WorldUtils.getDeviationZ(asset, x, y, itemHeight, sizeRatio);
+                deviationZ = this.getDeviationZ(asset, x, y, itemHeight, sizeRatio);
             }
-            rotation = WorldUtils.randNumberItem(`${asset.name}rotate`, x, y) / 100 * Math.PI * 2;
+            rotation = this.randNumberItem(`${asset.name}rotate`, x, y) / 100 * Math.PI * 2;
         }
 
         x = x + deviationX;
@@ -377,19 +377,19 @@ export abstract class WorldGeneration {
 
         if (this.enableDeviation) {
             if (asset.displacementRatio > 0) {
-                deviationX = WorldUtils.getDeviationX(asset, x, y);
-                deviationY = WorldUtils.getDeviationY(asset, x, y);;
+                deviationX = this.getDeviationX(asset, x, y);
+                deviationY = this.getDeviationY(asset, x, y);;
             }
 
             if (asset.sizeRatio > 0) {
-                sizeRatio = WorldUtils.getSizeRatio(asset, x, y, false);
+                sizeRatio = this.getSizeRatio(asset, x, y, false);
             }
 
             if (asset.maxVerticalDisplacement && asset.maxVerticalDisplacement > 0) {
-                deviationZ = WorldUtils.getDeviationZ(asset, x, y, asset.height, sizeRatio);
+                deviationZ = this.getDeviationZ(asset, x, y, asset.height, sizeRatio);
             }
-            rotation = (WorldUtils.randNumberItem(`${asset.name}rotate`, x, y) - 50) / 50 * (Math.PI / 16);
-            invert = WorldUtils.randBoolItem(asset.sizeRatio, `${asset.name}invert`, x, y);
+            rotation = (this.randNumberItem(`${asset.name}rotate`, x, y) - 50) / 50 * (Math.PI / 16);
+            invert = this.randBoolItem(asset.sizeRatio, `${asset.name}invert`, x, y);
         }
 
         x = x + deviationX;
@@ -468,7 +468,7 @@ export abstract class WorldGeneration {
                 currentMeshes.add(mesh);
 
                 if (!this.transparentMeshes.has(mesh!)) {
-                    const newMesh = WorldUtils.setMeshTransparent(mesh!);
+                    const newMesh = this.setMeshTransparent(mesh!);
                     this.transparentMeshes.add(mesh!);
                     if (newMesh) {
                         LightingManager.shadowGenerator.addShadowCaster(newMesh);
@@ -479,9 +479,86 @@ export abstract class WorldGeneration {
 
         for (const mesh of this.transparentMeshes) {
             if (!currentMeshes.has(mesh)) {
-                WorldUtils.resetMeshTransparency(mesh);
+                this.resetMeshTransparency(mesh);
                 this.transparentMeshes.delete(mesh);
             }
         }
+    }
+
+    // DEVIATION FUNCTIONS
+
+    private static getDeviationX(asset: GGA3DAsset, x: number, y: number): number {
+        return 2 * asset.height * (this.randNumberItem(`${asset.name}deviationX`, x, y) - 50) / 100 * asset.displacementRatio;
+    }
+
+    private static getDeviationY(asset: GGA3DAsset, x: number, y: number): number {
+        return 2 * asset.height * (this.randNumberItem(`${asset.name}deviationY`, x, y) - 50) / 100 * asset.displacementRatio;
+    }
+
+    private static getDeviationZ(asset: GGA3DAsset, x: number, y: number, height: number, sizeRatio: number): number {
+        return height * sizeRatio * asset.maxVerticalDisplacement! * (this.randNumberItem(`${asset.name}deviationZ`, x, y)) / 100;
+    }
+
+    private static getSizeRatio(asset: GGA3DAsset, x: number, y: number, useHugeFactor: boolean = true): number {
+        const hugeFactor = 3;
+
+        let sizeRatio = asset.sizeRatio * (this.randNumberItem(`${asset.name}sizeRatio`, x, y) - 50) / 50;
+
+        if (sizeRatio < 0) {
+            sizeRatio = 1 / (1 - sizeRatio);
+        }
+        else {
+            sizeRatio = 1 + sizeRatio;
+        }
+
+        if (useHugeFactor && this.randNumberItem(`${asset.name}huge`, x, y) < 1) {
+            sizeRatio = sizeRatio * hugeFactor;
+        }
+
+        return sizeRatio;
+    }
+
+    // RAND FUNCTIONS
+    private static randBoolItem(probability: number, itemType: string, x: number, y: number): boolean {
+        return Random.randomBool(itemType + x + y, probability);
+    }
+
+    private static randNumberItem(itemType: string, x: number, y: number): number {
+        return Random.randomNumber(itemType + x + y);
+    }
+
+    // OTHER FUNCTIONS
+
+    private static setMeshTransparent(mesh: AbstractMesh): AbstractMesh | undefined {
+        if (!mesh || !mesh.material || !(mesh instanceof InstancedMesh) || (mesh as any)._ghostMesh) {
+            return undefined;
+        }
+
+        const ghostMesh = mesh.sourceMesh.clone(`ghost${mesh.name}`);
+        ghostMesh.position = mesh.position;
+        ghostMesh.rotation = mesh.rotation;
+        ghostMesh.scaling = mesh.scaling;
+        ghostMesh.visibility = 0.2;
+        ghostMesh.receiveShadows = true;
+
+        App.scene.addMesh(ghostMesh);
+        mesh.isVisible = false;
+
+        (mesh as any)._ghostMesh = ghostMesh;
+
+        return ghostMesh;
+    }
+
+
+    private static resetMeshTransparency(mesh: AbstractMesh): void {
+        mesh.isVisible = true;
+
+        if (!(mesh instanceof InstancedMesh) || !(mesh as any)._ghostMesh) {
+            return;
+        }
+
+        App.scene.removeMesh((mesh as any)._ghostMesh);
+        (mesh as any)._ghostMesh.dispose();
+        (mesh as any)._ghostMesh = null;
     }
 }

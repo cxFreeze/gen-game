@@ -1,11 +1,11 @@
 import { Animation, UniversalCamera, Vector3 } from '@babylonjs/core';
 import { timer } from 'rxjs';
-import { App } from '../../app.js';
-import { Biome, BiomeType } from '../../interfaces.js';
-import { Anim } from '../../utils/anim.js';
+import { App } from '../app.js';
+import { Biome, BiomeType } from '../interfaces.js';
+import { Anim } from '../utils/anim.js';
 import { LightingManager } from './lighting.js';
 import { PlayerManager } from './player.js';
-import { WorldGeneration } from './world-generation.js';
+import { WorldGenerator } from './world-generator.js';
 
 export abstract class WorldManager {
 
@@ -57,7 +57,7 @@ export abstract class WorldManager {
     }
 
     static generateWorld() {
-        WorldGeneration.initRenderLoopExtras();
+        WorldGenerator.initRenderLoopExtras();
         this.setCameraPosition(0, 0);
         LightingManager.shadowGenerator.addShadowCaster(PlayerManager.playerMesh);
 
@@ -82,6 +82,6 @@ export abstract class WorldManager {
         this.camera.setTarget(PlayerManager.playerMesh.position);
 
         LightingManager.setSunPosition(x, y);
-        WorldGeneration.generateWorld();
+        WorldGenerator.generateWorld();
     }
 }

@@ -1,7 +1,7 @@
 import { AnimationGroup, Color3, loadAssetContainerAsync, Material, Mesh, SpriteManager, StandardMaterial, Texture } from '@babylonjs/core';
-import { App } from '../../app.js';
-import { AssetType, BiomeType, GGA3DAsset } from '../../interfaces.js';
-import { Random } from '../../utils/random.js';
+import { App } from '../app.js';
+import { AssetType, BiomeType, GGA3DAsset } from '../interfaces.js';
+import { Random } from '../utils/random.js';
 
 
 

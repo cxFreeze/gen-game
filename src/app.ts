@@ -1,12 +1,12 @@
 import { Engine, Scene } from '@babylonjs/core';
 import { Inspector } from '@babylonjs/inspector';
-import { PlayerInputs } from './3d/game/player-inputs';
-import { PlayerMovements } from './3d/game/player-movements';
-import { AssetManager } from './3d/world/assets';
-import { LightingManager } from './3d/world/lighting';
-import { PlayerManager } from './3d/world/player';
-import { WorldManager } from './3d/world/world';
 import { Debug } from './debug';
+import { PlayerInputs } from './game/player-inputs';
+import { PlayerMovements } from './game/player-movements';
+import { AssetManager } from './world/assets';
+import { LightingManager } from './world/lighting';
+import { PlayerManager } from './world/player';
+import { WorldManager } from './world/world';
 
 export abstract class App {
 
@@ -20,7 +20,7 @@ export abstract class App {
         return this._engine;
     }
 
-    public static async init3DApp() {
+    public static async initApp() {
         const canvas = document.getElementById('renderCanvas');
         if (!(canvas instanceof HTMLCanvasElement)) {
             throw new Error('Render canvas not found or is not a canvas element');
@@ -48,7 +48,6 @@ export abstract class App {
         WorldManager.createWorld();
         PlayerInputs.init();
         WorldManager.generateWorld();
-
 
         this._engine.runRenderLoop(() => {
             this._scene.render();

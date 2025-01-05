@@ -1,7 +1,7 @@
 import { Mesh, MeshBuilder, Vector3 } from '@babylonjs/core';
 import { Subscription } from 'rxjs';
-import { App } from '../../app.js';
-import { Debug } from '../../debug.js';
+import { App } from '../app.js';
+import { Debug } from '../debug.js';
 import { AssetUtils } from './assets-utils.js';
 import { AssetManager } from './assets.js';
 

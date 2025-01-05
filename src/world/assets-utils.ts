@@ -1,5 +1,5 @@
 import { AbstractMesh, Vector3 } from '@babylonjs/core';
-import { Anim } from '../../utils/anim.js';
+import { Anim } from '../utils/anim.js';
 
 
 export abstract class AssetUtils {

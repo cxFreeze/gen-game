@@ -15,7 +15,8 @@ DracoCompression.Configuration = {
 
 (async () => {
     Random.setSeed();
-    await App.init3DApp();
+    App.initApp();
+
     setTimeout(() => {
         hideLoadingScreen();
     }, 2000);
