@@ -1,7 +1,7 @@
 import { Effect } from '@babylonjs/core';
 
 
-export abstract class ShadersManager {
+export class ShadersManager {
     // Shaders
 
     public static loadShaders() {

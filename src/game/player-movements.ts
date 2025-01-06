@@ -2,25 +2,40 @@ import { PlayerDirection, PlayerManager } from '../world/player.js';
 import { WorldManager } from '../world/world.js';
 import { PlayerInputs } from './player-inputs.js';
 
-export abstract class PlayerMovements {
+export class PlayerMovements {
 
-    private static diagonalRatio: number = Math.sqrt(2);
-    private static moveSpeed: number = 100; // px per second
+    private readonly diagonalRatio: number = Math.sqrt(2);
+    private readonly moveSpeed: number = 100; // px per second
 
-    private static totalDistance: number = 0;
+    private totalDistance: number = 0;
 
-    static updatePlayerPosition(time: number) {
+    private readonly worldManager = WorldManager.getInstance();
+    private readonly playerManager = PlayerManager.getInstance();
+
+    private static instance: PlayerMovements;
+    static getInstance(): PlayerMovements {
+        if (!this.instance) {
+            this.instance = new PlayerMovements();
+        }
+        return this.instance;
+    }
+
+    private constructor() {
+
+    }
+
+    updatePlayerPosition(time: number) {
         if (!PlayerInputs.upArrowPressed && !PlayerInputs.downArrowPressed && !PlayerInputs.leftArrowPressed && !PlayerInputs.rightArrowPressed) {
-            PlayerManager.setPlayerAnimation('Idle');
+            this.playerManager.setPlayerAnimation('Idle');
             return;
         }
 
-        PlayerManager.setPlayerAnimation('Running');
+        this.playerManager.setPlayerAnimation('Running');
 
         const distance = this.moveSpeed * (time / 1000);
 
-        const currentX = PlayerManager.playerX;
-        const currentY = PlayerManager.playerY;
+        const currentX = this.playerManager.playerX;
+        const currentY = this.playerManager.playerY;
 
         let newX = currentX;
         let newY = currentY;
@@ -78,7 +93,7 @@ export abstract class PlayerMovements {
         }
 
         this.totalDistance += distance;
-        PlayerManager.movePlayer(newX - currentX, newY - currentY, direction);
-        WorldManager.setCameraPosition(PlayerManager.playerMesh.position.x, PlayerManager.playerMesh.position.z);
+        this.playerManager.movePlayer(newX - currentX, newY - currentY, direction);
+        this.worldManager.setCameraPosition(this.playerManager.playerMesh.position.x, this.playerManager.playerMesh.position.z);
     }
 }

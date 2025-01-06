@@ -70,3 +70,26 @@ body {
     padding: 5px;
     border-radius: 5px;
 }
+
+#debug-panel {
+    display: none;
+    position: absolute;
+    background-color: #00000099;
+    border: 2px solid rgb(127, 127, 127);
+    text-align: center;
+    font-size: 16px;
+    color: white;
+    top: 10px;
+    left: 10px;
+    padding: 5px;
+    border-radius: 5px;
+
+    button {
+        background-color: #e50a0a99;
+        border: 2px solid rgb(127, 127, 127);
+        color: white;
+        padding: 5px;
+        border-radius: 5px;
+        margin: 5px;
+    }
+}

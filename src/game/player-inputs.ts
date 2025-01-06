@@ -1,6 +1,7 @@
 import { VirtualJoystick } from '@babylonjs/core';
+import { DebugManager } from '../debug';
 
-export abstract class PlayerInputs {
+export class PlayerInputs {
 
     private static disableJoystick: boolean = true;
 
@@ -33,6 +34,8 @@ export abstract class PlayerInputs {
     private static joystick: VirtualJoystick;
 
     static init() {
+        const debugManager = DebugManager.getInstance();
+
         if (!this.disableJoystick) {
             this.joystick = new VirtualJoystick(true);
             this.joystick.setJoystickSensibility(10);
@@ -64,6 +67,12 @@ export abstract class PlayerInputs {
             }
             if (event.key === 'ArrowRight') {
                 this.kRightArrowPressed = false;
+            }
+        });
+
+        window.addEventListener('keypress', (event) => {
+            if (event.key === '$') {
+                debugManager.toggleDebugPanel();
             }
         });
     }

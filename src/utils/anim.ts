@@ -4,7 +4,7 @@ import { animationFrames, endWith, map, takeWhile } from 'rxjs';
 const ease = new CubicEase();
 ease.setEasingMode(EasingFunction.EASINGMODE_EASEINOUT);
 
-export abstract class Anim {
+export class Anim {
     static cubicEaseInOut = ease;
 
     static tween(start: number, end: number, duration: number) {

@@ -1,43 +1,51 @@
-import { AbstractMesh, InstancedMesh, Material, MeshBuilder, Ray, Sprite, Vector3 } from '@babylonjs/core';
+import { AbstractMesh, InstancedMesh, Material, MeshBuilder, Sprite, Vector3 } from '@babylonjs/core';
 import { App } from '../app';
-import { AssetType, BiomeItem, GGA3DAsset, LoadedMesh, LoadedSprite } from '../interfaces';
+import { AssetType, BiomeItem, BiomeType, GGA3DAsset, LoadedMesh, LoadedSprite } from '../interfaces';
 import { Random } from '../utils/random';
 import { AssetManager } from './assets';
+import { Biomes } from './biomes';
 import { LightingManager } from './lighting';
-import { PlayerManager } from './player';
-import { WorldManager } from './world';
 
-export abstract class WorldGenerator {
+export class WorldGenerator {
 
-    static itemCnt = 0;
+    private itemCnt = 0;
 
-    private static enableDeviation = true;
+    private readonly enableDeviation = true;
 
-    private static readonly chunckSize = 400;
-    private static readonly spawnNoDrawZone = 100;
+    private readonly chunckSize = 400;
+    private readonly spawnNoDrawZone = 100;
 
-    private static readonly itemLoadBatchSize = 50;
+    private readonly itemLoadBatchSize = 50;
 
-    private static currentChunk: string;
-    private static loadedChuncksItems: { [key: string]: { meshes: LoadedMesh[], sprites: LoadedSprite[] } } = {};
+    private readonly currentBiome = BiomeType.forest;
 
-    private static transparentMeshes = new Set<AbstractMesh>();
+    private currentChunk: string;
+    private readonly loadedChuncksItems: { [key: string]: { meshes: LoadedMesh[], sprites: LoadedSprite[] } } = {};
 
-    private static renderQueue: Array<() => void> = [];
+    private readonly renderQueue: Array<() => void> = [];
 
-    static initRenderLoopExtras() {
-        App.scene.onBeforeRenderObservable.add((scene) => {
+    private readonly lightingManager = LightingManager.getInstance();
+
+    private static instance: WorldGenerator;
+    static getInstance(): WorldGenerator {
+        if (!this.instance) {
+            this.instance = new WorldGenerator();
+        }
+        return this.instance;
+    }
+
+    private constructor() {
+        this.initRenderLoopExtras();
+    }
+
+    private initRenderLoopExtras() {
+        App.scene.onBeforeRenderObservable.add(() => {
             for (let i = 0; i < this.itemLoadBatchSize; i++) {
                 if (this.renderQueue.length === 0) {
                     break;
                 }
                 this.renderQueue.shift()!();
             }
-
-            if (scene.getFrameId() % 10 === 0) {
-                this.setCameraObstacleSemiTransparent();
-            }
-
 
             const time = performance.now() * 0.002; // Temps simulé (ralenti)
             const waveSpeed = 0.5; // Vitesse de propagation de l'onde
@@ -61,17 +69,17 @@ export abstract class WorldGenerator {
 
     // CHUNCK MANAGEMENT
 
-    private static getCurrentChunk() {
-        return this.getChunk(WorldManager.worldX, WorldManager.worldY);
+    private getCurrentChunk(x: number, y: number) {
+        return this.getChunk(x, y);
     }
 
-    private static getChunk(x: number, y: number) {
+    private getChunk(x: number, y: number) {
         const chuckX = Math.round(x / this.chunckSize) * this.chunckSize;
         const chuckY = Math.round(y / this.chunckSize) * this.chunckSize;
         return `${chuckX}/${chuckY}`;
     }
 
-    private static getChunksToLoad() {
+    private getChunksToLoad() {
         const [currentChuckX, currentChuckY] = this.currentChunk.split('/').map((val) => parseInt(val));
         const chucks = [];
         for (let i = -1; i <= 1; i++) {
@@ -82,8 +90,8 @@ export abstract class WorldGenerator {
         return chucks;
     }
 
-    static generateWorld() {
-        const currentChunk = this.getCurrentChunk();
+    generateWorld(x: number, y: number) {
+        const currentChunk = this.getCurrentChunk(x, y);
         if (currentChunk === this.currentChunk) {
             return;
         }
@@ -116,7 +124,7 @@ export abstract class WorldGenerator {
         });
     }
 
-    private static unloadChunk(chunk: string) {
+    private unloadChunk(chunk: string) {
         if (!this.loadedChuncksItems[chunk]) {
             return;
         }
@@ -138,7 +146,7 @@ export abstract class WorldGenerator {
         });
     }
 
-    private static loadChunk(chunk: string) {
+    private loadChunk(chunk: string) {
         if (this.loadedChuncksItems[chunk]) {
             return;
         }
@@ -149,8 +157,8 @@ export abstract class WorldGenerator {
         this.loadItems(x, y);
     }
 
-    private static loadGround(chunkX: number, chunkY: number): void {
-        const asset = WorldManager.biomes[WorldManager.currentBiome].ground;
+    private loadGround(chunkX: number, chunkY: number): void {
+        const asset = Biomes.biomes[this.currentBiome].ground;
 
         const bound = this.chunckSize / 2;
         let xIndex = -bound;
@@ -164,7 +172,7 @@ export abstract class WorldGenerator {
                 const absX = chunkX + xIndex;
                 const absY = chunkY + yIndex;
 
-                const rAsset = AssetManager.getAsset(WorldManager.currentBiome, asset, asset + absX + absY);
+                const rAsset = AssetManager.getAsset(this.currentBiome, asset, asset + absX + absY);
 
                 yIndex += rAsset.safeZone;
 
@@ -186,13 +194,13 @@ export abstract class WorldGenerator {
 
     // ITEMS MANAGEMENT
 
-    private static loadItems(chunkX: number, chunkY: number) {
-        WorldManager.biomes[WorldManager.currentBiome].items.forEach((item) => {
+    private loadItems(chunkX: number, chunkY: number) {
+        Biomes.biomes[this.currentBiome].items.forEach((item) => {
             this.loadItemType(item, chunkX, chunkY);
         });
     }
 
-    private static loadItemType(item: BiomeItem, chunkX: number, chunkY: number): void {
+    private loadItemType(item: BiomeItem, chunkX: number, chunkY: number): void {
         let drawCount = item.drawCount;
 
         if (item.boostDrawCount && item.boostDrawCountRate) {
@@ -215,7 +223,7 @@ export abstract class WorldGenerator {
                 const absX = chunkX + xIndex;
                 const absY = chunkY + yIndex;
 
-                const rAsset = AssetManager.getAsset(WorldManager.currentBiome, item.asset, item.asset + absX + absY);
+                const rAsset = AssetManager.getAsset(this.currentBiome, item.asset, item.asset + absX + absY);
 
                 yIndex += rAsset.safeZone;
 
@@ -257,7 +265,7 @@ export abstract class WorldGenerator {
 
     /// DRAWING
 
-    private static drawItem(asset: GGA3DAsset, x: number, y: number, z: number, sizeRatio: number, rotate: number = 0): InstancedMesh | undefined {
+    private drawItem(asset: GGA3DAsset, x: number, y: number, z: number, sizeRatio: number, rotate: number = 0): InstancedMesh | undefined {
         const item = asset.mesh?.createInstance(asset.name + this.itemCnt);
 
         this.itemCnt++;
@@ -265,8 +273,6 @@ export abstract class WorldGenerator {
         if (!item) {
             return;
         }
-
-        item.receiveShadows = true;
 
         const ratio = asset.scale * sizeRatio;
         item.scaling = new Vector3(ratio, ratio, ratio);
@@ -278,14 +284,14 @@ export abstract class WorldGenerator {
 
         item.checkCollisions = !asset.ignoreCollisions;
 
-        LightingManager.shadowGenerator.addShadowCaster(item);
+        this.lightingManager.shadowGenerator.addShadowCaster(item);
         item.receiveShadows = true;
 
         App.scene.addMesh(item);
         return item;
     }
 
-    private static drawItemWithDeviation(asset: GGA3DAsset, x: number, y: number, chunkX: number, chunkY: number): InstancedMesh | undefined {
+    private drawItemWithDeviation(asset: GGA3DAsset, x: number, y: number, chunkX: number, chunkY: number): InstancedMesh | undefined {
         let deviationX = 0;
         let deviationY = 0;
         let deviationZ = 0;
@@ -348,7 +354,7 @@ export abstract class WorldGenerator {
         return res;
     }
 
-    private static drawSprite(asset: GGA3DAsset, x: number, y: number, z: number, sizeRatio: number, rotate: number = 0, invert: boolean): Sprite | undefined {
+    private drawSprite(asset: GGA3DAsset, x: number, y: number, z: number, sizeRatio: number, rotate: number = 0, invert: boolean): Sprite | undefined {
         const sprite = new Sprite(asset.name + this.itemCnt, asset.sprite!);
 
         this.itemCnt++;
@@ -365,7 +371,7 @@ export abstract class WorldGenerator {
         return sprite;
     }
 
-    private static drawSpriteWithDeviation(asset: GGA3DAsset, x: number, y: number, chunkX: number, chunkY: number): Sprite | undefined {
+    private drawSpriteWithDeviation(asset: GGA3DAsset, x: number, y: number, chunkX: number, chunkY: number): Sprite | undefined {
         let deviationX = 0;
         let deviationY = 0;
         let deviationZ = -1;
@@ -414,7 +420,7 @@ export abstract class WorldGenerator {
 
     // UTILS
 
-    private static isSpaceAvailable(mesh: AbstractMesh, asset: GGA3DAsset, x: number, y: number): boolean {
+    private isSpaceAvailable(mesh: AbstractMesh, asset: GGA3DAsset, x: number, y: number): boolean {
         let res = true;
         const chunk = this.getChunk(x, y);
         const items = this.loadedChuncksItems[chunk]?.meshes;
@@ -436,70 +442,38 @@ export abstract class WorldGenerator {
         return res;
     }
 
-    private static getDrawRate(type: AssetType, drawCount: number): number {
-        const mesh = AssetManager.getFirstAsset(WorldManager.currentBiome, type);
+    private getDrawRate(type: AssetType, drawCount: number): number {
+        const mesh = AssetManager.getFirstAsset(this.currentBiome, type);
         const maxDraw = (1000 * 1000) / (mesh.safeZone * mesh.safeZone);
         return drawCount / maxDraw;
     }
 
-    private static deleteMeshFromScene(mesh: AbstractMesh) {
+    private deleteMeshFromScene(mesh: AbstractMesh) {
         App.scene.removeMesh(mesh);
         mesh.dispose();
         mesh = null as never;
     }
 
-    private static deleteSpriteFromScene(sprite: Sprite) {
+    private deleteSpriteFromScene(sprite: Sprite) {
         sprite.dispose();
         sprite = null as never;
     }
 
-    private static setCameraObstacleSemiTransparent() {
-        const ray = new Ray(WorldManager.camera.position, PlayerManager.playerMesh.position.subtract(WorldManager.camera.position).normalize());
-
-        const hitResults = App.scene.multiPickWithRay(ray, (mesh) => mesh.name !== 'player');
-
-        const currentMeshes = new Set();
-        if (hitResults) {
-            for (const hit of hitResults) {
-                if (!hit.pickedPoint || hit.pickedPoint.y < 20) {
-                    continue;
-                }
-                const mesh = hit.pickedMesh;
-                currentMeshes.add(mesh);
-
-                if (!this.transparentMeshes.has(mesh!)) {
-                    const newMesh = this.setMeshTransparent(mesh!);
-                    this.transparentMeshes.add(mesh!);
-                    if (newMesh) {
-                        LightingManager.shadowGenerator.addShadowCaster(newMesh);
-                    }
-                }
-            }
-        }
-
-        for (const mesh of this.transparentMeshes) {
-            if (!currentMeshes.has(mesh)) {
-                this.resetMeshTransparency(mesh);
-                this.transparentMeshes.delete(mesh);
-            }
-        }
-    }
-
     // DEVIATION FUNCTIONS
 
-    private static getDeviationX(asset: GGA3DAsset, x: number, y: number): number {
+    private getDeviationX(asset: GGA3DAsset, x: number, y: number): number {
         return 2 * asset.height * (this.randNumberItem(`${asset.name}deviationX`, x, y) - 50) / 100 * asset.displacementRatio;
     }
 
-    private static getDeviationY(asset: GGA3DAsset, x: number, y: number): number {
+    private getDeviationY(asset: GGA3DAsset, x: number, y: number): number {
         return 2 * asset.height * (this.randNumberItem(`${asset.name}deviationY`, x, y) - 50) / 100 * asset.displacementRatio;
     }
 
-    private static getDeviationZ(asset: GGA3DAsset, x: number, y: number, height: number, sizeRatio: number): number {
+    private getDeviationZ(asset: GGA3DAsset, x: number, y: number, height: number, sizeRatio: number): number {
         return height * sizeRatio * asset.maxVerticalDisplacement! * (this.randNumberItem(`${asset.name}deviationZ`, x, y)) / 100;
     }
 
-    private static getSizeRatio(asset: GGA3DAsset, x: number, y: number, useHugeFactor: boolean = true): number {
+    private getSizeRatio(asset: GGA3DAsset, x: number, y: number, useHugeFactor: boolean = true): number {
         const hugeFactor = 3;
 
         let sizeRatio = asset.sizeRatio * (this.randNumberItem(`${asset.name}sizeRatio`, x, y) - 50) / 50;
@@ -519,46 +493,11 @@ export abstract class WorldGenerator {
     }
 
     // RAND FUNCTIONS
-    private static randBoolItem(probability: number, itemType: string, x: number, y: number): boolean {
+    private randBoolItem(probability: number, itemType: string, x: number, y: number): boolean {
         return Random.randomBool(itemType + x + y, probability);
     }
 
-    private static randNumberItem(itemType: string, x: number, y: number): number {
+    private randNumberItem(itemType: string, x: number, y: number): number {
         return Random.randomNumber(itemType + x + y);
-    }
-
-    // OTHER FUNCTIONS
-
-    private static setMeshTransparent(mesh: AbstractMesh): AbstractMesh | undefined {
-        if (!mesh || !mesh.material || !(mesh instanceof InstancedMesh) || (mesh as any)._ghostMesh) {
-            return undefined;
-        }
-
-        const ghostMesh = mesh.sourceMesh.clone(`ghost${mesh.name}`);
-        ghostMesh.position = mesh.position;
-        ghostMesh.rotation = mesh.rotation;
-        ghostMesh.scaling = mesh.scaling;
-        ghostMesh.visibility = 0.2;
-        ghostMesh.receiveShadows = true;
-
-        App.scene.addMesh(ghostMesh);
-        mesh.isVisible = false;
-
-        (mesh as any)._ghostMesh = ghostMesh;
-
-        return ghostMesh;
-    }
-
-
-    private static resetMeshTransparency(mesh: AbstractMesh): void {
-        mesh.isVisible = true;
-
-        if (!(mesh instanceof InstancedMesh) || !(mesh as any)._ghostMesh) {
-            return;
-        }
-
-        App.scene.removeMesh((mesh as any)._ghostMesh);
-        (mesh as any)._ghostMesh.dispose();
-        (mesh as any)._ghostMesh = null;
     }
 }

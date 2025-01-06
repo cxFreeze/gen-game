@@ -2,36 +2,46 @@ import { Mesh, MeshBuilder, Vector3 } from '@babylonjs/core';
 import { Subscription } from 'rxjs';
 import { App } from '../app.js';
 import { Debug } from '../debug.js';
-import { AssetUtils } from './assets-utils.js';
+import { AssetUtils } from '../utils/assets-utils.js';
 import { AssetManager } from './assets.js';
+import { LightingManager } from './lighting.js';
 
 export type PlayerDirection = 'front' | 'back' | 'left' | 'right' | 'front-left' | 'front-right' | 'back-left' | 'back-right';
 
-export abstract class PlayerManager {
-    private static _playerMesh: Mesh;
-    static get playerMesh() {
+export class PlayerManager {
+    private _playerMesh: Mesh;
+    get playerMesh() {
         return this._playerMesh;
     }
 
-    private static currentPlayerDirection: PlayerDirection;
+    private currentPlayerDirection: PlayerDirection;
 
-    private static absDefaultPlayerX: number = 0;
-    private static absDefaultPlayerY: number = 0;
+    playerX: number = 0;
+    playerY: number = 0;
 
-    static playerX: number = 0;
-    static playerY: number = 0;
+    private currentAnimation: 'Running' | 'Idle' = 'Idle';
 
-    private static currentAnimation: 'Running' | 'Idle' = 'Idle';
+    private currentRotateAnim$: Subscription | undefined;
 
-    private static currentRotateAnim$: Subscription | undefined;
+    private readonly lightingManager = LightingManager.getInstance();
 
-    static createPlayer() {
+    private static instance: PlayerManager;
+    static getInstance(): PlayerManager {
+        if (!this.instance) {
+            this.instance = new PlayerManager();
+        }
+        return this.instance;
+    }
+
+    private constructor() { }
+
+    createPlayer() {
         const scale = AssetManager.player.scale!;
         this._playerMesh = AssetManager.player.mesh!.clone('player');
 
         const playerHeight = scale * this._playerMesh.getBoundingInfo().boundingBox.maximumWorld.y;
 
-        this._playerMesh.position = new Vector3(this.absDefaultPlayerX, (playerHeight / 2) / scale, this.absDefaultPlayerY);
+        this._playerMesh.position = new Vector3(this.playerX, (playerHeight / 2) / scale, this.playerY);
 
         this._playerMesh.scaling = new Vector3(scale, scale, scale);
 
@@ -48,9 +58,10 @@ export abstract class PlayerManager {
         }
 
         App.scene.addMesh(this._playerMesh);
+        this.lightingManager.shadowGenerator.addShadowCaster(this._playerMesh);
     }
 
-    static movePlayer(x: number, y: number, direction: PlayerDirection) {
+    movePlayer(x: number, y: number, direction: PlayerDirection) {
         let playPos = this._playerMesh.position.clone();
         this._playerMesh.moveWithCollisions(new Vector3(x, 0, y));
 
@@ -120,7 +131,7 @@ export abstract class PlayerManager {
         }
     }
 
-    static setPlayerAnimation(animName: 'Running' | 'Idle') {
+    setPlayerAnimation(animName: 'Running' | 'Idle') {
         const anim = AssetManager.animations[animName];
         if (!anim || anim.isStarted) {
             return;

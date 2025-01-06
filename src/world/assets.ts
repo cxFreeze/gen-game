@@ -6,12 +6,12 @@ import { Random } from '../utils/random.js';
 
 
 
-export abstract class AssetManager {
+export class AssetManager {
 
-    private static Assets3dPath = './3d';
-    private static texturesPath = './textures';
+    private static readonly Assets3dPath = './3d';
+    private static readonly texturesPath = './textures';
 
-    private static worldsAssets: { [key in BiomeType]: { [key in AssetType]: Array<GGA3DAsset> } } = {
+    private static readonly worldsAssets: { [key in BiomeType]: { [key in AssetType]: Array<GGA3DAsset> } } = {
         [BiomeType.forest]: {
             ground: new Array<GGA3DAsset>(),
             tree: new Array<GGA3DAsset>(),

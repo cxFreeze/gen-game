@@ -8,7 +8,7 @@ import { LightingManager } from './world/lighting';
 import { PlayerManager } from './world/player';
 import { WorldManager } from './world/world';
 
-export abstract class App {
+export class App {
 
     private static _scene: Scene;
     public static get scene() {
@@ -32,6 +32,16 @@ export abstract class App {
         this._scene.useRightHandedSystem = true;
         this._scene.collisionsEnabled = true;
 
+
+        const lightingManager = LightingManager.getInstance();
+        lightingManager.createLightning();
+        await AssetManager.loadAssets();
+
+        const playerManager = PlayerManager.getInstance();
+        playerManager.createPlayer();
+        const worldManager = WorldManager.getInstance();
+        const playerMovements = PlayerMovements.getInstance();
+
         if (Debug.showInspector) {
             Inspector.Show(this._scene, {
                 handleResize: true,
@@ -40,20 +50,14 @@ export abstract class App {
             });
         }
 
-        LightingManager.createLightning();
-
-        await AssetManager.loadAssets();
-
-        PlayerManager.createPlayer();
-        WorldManager.createWorld();
+        worldManager.generateWorld();
         PlayerInputs.init();
-        WorldManager.generateWorld();
 
         this._engine.runRenderLoop(() => {
             this._scene.render();
             const time = this._engine.getDeltaTime();
             PlayerInputs.checkJoystick();
-            PlayerMovements.updatePlayerPosition(time);
+            playerMovements.updatePlayerPosition(time);
         });
 
         if (Debug.showFps) {

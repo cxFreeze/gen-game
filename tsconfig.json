@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "ES6",
     "useDefineForClassFields": true,
+    "strictPropertyInitialization": false,
     "module": "ES6",
     "lib": [
       "ES2020",
@@ -18,7 +19,7 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
   },
   "include": [
     "src"
