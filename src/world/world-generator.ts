@@ -1,7 +1,9 @@
 import { AbstractMesh, InstancedMesh, Material, MeshBuilder, Sprite, Vector3 } from '@babylonjs/core';
 import { App } from '../app';
 import { AssetType, BiomeItem, BiomeType, GGA3DAsset, LoadedMesh, LoadedSprite } from '../interfaces';
+import { Params } from '../params';
 import { Random } from '../utils/random';
+import { WorldUtils } from '../utils/world-utils';
 import { AssetManager } from './assets';
 import { Biomes } from './biomes';
 import { LightingManager } from './lighting';
@@ -12,10 +14,10 @@ export class WorldGenerator {
 
     private readonly enableDeviation = true;
 
-    private readonly chunckSize = 400;
-    private readonly spawnNoDrawZone = 100;
-
-    private readonly itemLoadBatchSize = 50;
+    private readonly chunckSize = Params.chunckSize;
+    private readonly bchunckSize = Params.bchunckSize;
+    private readonly spawnNoDrawZone = Params.spawnNoDrawZone;
+    private readonly itemLoadBatchSize = Params.itemLoadBatchSize;
 
     private readonly currentBiome = BiomeType.forest;
 
@@ -69,14 +71,16 @@ export class WorldGenerator {
 
     // CHUNCK MANAGEMENT
 
-    private getCurrentChunk(x: number, y: number) {
-        return this.getChunk(x, y);
-    }
-
     private getChunk(x: number, y: number) {
         const chuckX = Math.round(x / this.chunckSize) * this.chunckSize;
         const chuckY = Math.round(y / this.chunckSize) * this.chunckSize;
         return `${chuckX}/${chuckY}`;
+    }
+
+    private getBchunk(x: number, y: number) {
+        const bchuckX = Math.round(x / this.bchunckSize) * this.bchunckSize;
+        const bchuckY = Math.round(y / this.bchunckSize) * this.bchunckSize;
+        return `${bchuckX}/${bchuckY}`;
     }
 
     private getChunksToLoad() {
@@ -91,14 +95,14 @@ export class WorldGenerator {
     }
 
     generateWorld(x: number, y: number) {
-        const currentChunk = this.getCurrentChunk(x, y);
+        const currentChunk = this.getChunk(x, y);
         if (currentChunk === this.currentChunk) {
             return;
         }
 
         this.currentChunk = currentChunk;
 
-        const timeoutDelay = 50;
+        const timeoutDelay = 100;
         let timeout = 0;
 
         const chuncks = this.getChunksToLoad();
@@ -153,26 +157,29 @@ export class WorldGenerator {
         this.loadedChuncksItems[chunk] = { meshes: [], sprites: [] };
         const [x, y] = chunk.split('/').map((val) => parseInt(val));
 
+        if (!WorldUtils.isInWorldBounds(x, y)) {
+            this.loadGround(x, y, AssetManager.waterGround);
+            return;
+        }
         this.loadGround(x, y);
         this.loadItems(x, y);
     }
 
-    private loadGround(chunkX: number, chunkY: number): void {
-        const asset = Biomes.biomes[this.currentBiome].ground;
+    private loadGround(chunkX: number, chunkY: number, asset: GGA3DAsset | null = null): void {
+        const assetType = Biomes.biomes[this.currentBiome].ground;
 
         const bound = this.chunckSize / 2;
         let xIndex = -bound;
 
-        while (xIndex <= bound) {
-
+        while (xIndex < bound) {
             let biggestAsset = 0;
             let yIndex = -bound;
 
-            while (yIndex <= bound) {
+            while (yIndex < bound) {
                 const absX = chunkX + xIndex;
                 const absY = chunkY + yIndex;
 
-                const rAsset = AssetManager.getAsset(this.currentBiome, asset, asset + absX + absY);
+                const rAsset = asset ?? AssetManager.getAsset(this.currentBiome, assetType, assetType + absX + absY);
 
                 yIndex += rAsset.safeZone;
 
@@ -183,7 +190,7 @@ export class WorldGenerator {
                 const ground = MeshBuilder.CreateGround('ground', { width: rAsset.width, height: rAsset.height }, App.scene);
 
                 ground.material = rAsset.material as Material;
-                ground.position = new Vector3(absX, 0, absY);
+                ground.position = new Vector3(absX + rAsset.width / 2, 0, absY + rAsset.height / 2);
                 ground.receiveShadows = true;
 
                 this.loadedChuncksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: ground, asset: rAsset });
@@ -204,7 +211,7 @@ export class WorldGenerator {
         let drawCount = item.drawCount;
 
         if (item.boostDrawCount && item.boostDrawCountRate) {
-            if (this.randBoolItem(item.boostDrawCountRate, item.asset, chunkX, chunkY)) {
+            if (this.randBoolItem(item.boostDrawCountRate, item.asset + this.getBchunk(chunkX, chunkY), 0, 0)) {
                 drawCount = item.boostDrawCount;
             }
         }
@@ -409,6 +416,10 @@ export class WorldGenerator {
             y = y - 2 * deviationY;
         }
 
+        if (!WorldUtils.isInWorldBounds(x, y)) {
+            return undefined;
+        }
+
         const res = this.drawSprite(asset, x, y, deviationZ, sizeRatio, rotation, invert);
 
         if (!res) {
@@ -424,6 +435,10 @@ export class WorldGenerator {
         let res = true;
         const chunk = this.getChunk(x, y);
         const items = this.loadedChuncksItems[chunk]?.meshes;
+
+        if (!WorldUtils.isInWorldBounds(x, y)) {
+            return false;
+        }
 
         if (!items) {
             return true;

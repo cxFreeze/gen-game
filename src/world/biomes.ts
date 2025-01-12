@@ -9,7 +9,7 @@ export class Biomes {
                 {
                     asset: 'tree',
                     drawCount: 40,
-                    boostDrawCount: 100,
+                    boostDrawCount: 150,
                     boostDrawCountRate: 0.2
                 },
                 {

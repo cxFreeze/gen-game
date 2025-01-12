@@ -3,6 +3,7 @@ import { Subscription } from 'rxjs';
 import { App } from '../app.js';
 import { Debug } from '../debug.js';
 import { AssetUtils } from '../utils/assets-utils.js';
+import { WorldUtils } from '../utils/world-utils.js';
 import { AssetManager } from './assets.js';
 import { LightingManager } from './lighting.js';
 
@@ -62,31 +63,22 @@ export class PlayerManager {
     }
 
     movePlayer(x: number, y: number, direction: PlayerDirection) {
-        let playPos = this._playerMesh.position.clone();
+        let oldPos = this._playerMesh.position.clone();
         this._playerMesh.moveWithCollisions(new Vector3(x, 0, y));
-
-        if (this._playerMesh.position.y !== playPos.y) {
-            this._playerMesh.position = playPos;
-        }
+        this.resetPlayerPositionIfInvalid(oldPos);
 
         this.playerX = this._playerMesh.position.x;
         this.playerY = this._playerMesh.position.z;
 
-        if (this.playerX === playPos.x && this.playerY === playPos.z && (x !== 0 && y !== 0)) {
-            playPos = this._playerMesh.position.clone();
+        if (this.playerX === oldPos.x && this.playerY === oldPos.z && (x !== 0 && y !== 0)) {
+            oldPos = this._playerMesh.position.clone();
             this._playerMesh.moveWithCollisions(new Vector3(x, 0, 0));
+            this.resetPlayerPositionIfInvalid(oldPos);
 
-            if (this._playerMesh.position.y !== playPos.y) {
-                this._playerMesh.position = playPos;
-            }
-
-            if (this._playerMesh.position.x === playPos.x) {
-                playPos = this._playerMesh.position.clone();
+            if (this._playerMesh.position.x === oldPos.x) {
+                oldPos = this._playerMesh.position.clone();
                 this._playerMesh.moveWithCollisions(new Vector3(0, 0, y));
-
-                if (this._playerMesh.position.y !== playPos.y) {
-                    this._playerMesh.position = playPos;
-                }
+                this.resetPlayerPositionIfInvalid(oldPos);
             }
 
         }
@@ -141,5 +133,11 @@ export class PlayerManager {
 
         this.currentAnimation = animName;
         AssetManager.animations[animName].start(true);
+    }
+
+    resetPlayerPositionIfInvalid(oldPosition: Vector3): void {
+        if (this._playerMesh.position.y !== oldPosition.y || !WorldUtils.isInWorldBounds(this._playerMesh.position.x, this._playerMesh.position.z)) {
+            this._playerMesh.position = oldPosition;
+        }
     }
 }

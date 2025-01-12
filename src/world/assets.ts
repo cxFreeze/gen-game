@@ -4,8 +4,6 @@ import { AssetType, BiomeType, GGA3DAsset } from '../interfaces.js';
 import { Random } from '../utils/random.js';
 
 
-
-
 export class AssetManager {
 
     private static readonly Assets3dPath = './3d';
@@ -24,6 +22,8 @@ export class AssetManager {
 
     static player: Partial<GGA3DAsset>;
 
+    static waterGround: GGA3DAsset;
+
     static async loadAssets() {
         this.player = {
             mesh: await this.load3DAsset(`${this.Assets3dPath}/player.glb`),
@@ -34,16 +34,28 @@ export class AssetManager {
             type: 'player',
         };
 
+        this.waterGround = {
+            name: 'waterGround',
+            material: this.loadTextureAsset('waterGround', `${this.texturesPath}/water_texture.jpg`),
+            height: 200,
+            width: 200,
+            safeZone: 200,
+            displacementRatio: 0,
+            sizeRatio: 0,
+            scale: 1,
+            type: 'ground'
+        };
+
         await this.loadForestAssets();
     }
 
     private static async loadForestAssets() {
         const forestGround: GGA3DAsset = {
             name: 'ground',
-            material: this.loadTextureAsset('forestGround', `${this.texturesPath}/forest/ground_texture3d.jpg`),
-            height: 400,
-            width: 400,
-            safeZone: 400,
+            material: this.loadTextureAsset('forestGround', `${this.texturesPath}/forest/ground_texture.jpg`),
+            height: 200,
+            width: 200,
+            safeZone: 200,
             displacementRatio: 0,
             sizeRatio: 0,
             scale: 1,
@@ -138,6 +150,7 @@ export class AssetManager {
             anim.blendingSpeed = 0.06;
             this.animations[anim.name] = anim;
         });
+
         mesh.receiveShadows = true;
         return mesh;
     }
