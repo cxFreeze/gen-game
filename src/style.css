@@ -5,6 +5,7 @@
 
 * {
     box-sizing: border-box;
+    cursor: url('/images/cursor.png'), auto;
 }
 
 html,
@@ -13,7 +14,6 @@ body {
     margin: 0;
     overflow: hidden;
 
-    cursor: url('/images/cursor.png'), auto;
 
     #loading {
         letter-spacing: 0.1em;
@@ -50,7 +50,7 @@ body {
     }
 }
 
-#renderCanvas {
+#render-canvas {
     width: 100vw;
     height: 100vh;
     display: block;
@@ -58,38 +58,97 @@ body {
     padding: 0;
 }
 
-#renderInfo {
+.box {
     position: absolute;
     background-color: #00000099;
     border: 2px solid rgb(127, 127, 127);
     text-align: center;
     font-size: 16px;
     color: white;
+    padding: 5px;
+    border-radius: 12px;
+}
+
+#render-info {
     top: 10px;
     right: 10px;
-    padding: 5px;
-    border-radius: 5px;
 }
 
 #debug-panel {
     display: none;
-    position: absolute;
-    background-color: #00000099;
-    border: 2px solid rgb(127, 127, 127);
-    text-align: center;
-    font-size: 16px;
-    color: white;
     top: 10px;
     left: 10px;
-    padding: 5px;
-    border-radius: 5px;
+    padding: 16px;
+
+    h3 {
+        margin: 0;
+        margin-bottom: 8px;
+    }
 
     button {
-        background-color: #e50a0a99;
-        border: 2px solid rgb(127, 127, 127);
-        color: white;
-        padding: 5px;
-        border-radius: 5px;
-        margin: 5px;
+        margin-top: 16px;
     }
+}
+
+button {
+    position: relative;
+    display: inline-block;
+    outline: none;
+    border: none;
+    vertical-align: middle;
+    text-decoration: none;
+    font-size: inherit;
+    font-family: inherit;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 1.15em 2em;
+    border-radius: 0.75em;
+    transform-style: preserve-3d;
+    transition: transform 0.15s ease-out, background 0.15s ease-out;
+    color: rgb(190, 133, 11);
+    background: rgb(255, 239, 204);
+    border: 2px solid rgb(222, 156, 13);
+    margin-bottom: 0.75em;
+}
+
+
+button::before {
+    position: absolute;
+    content: "";
+    width: 100%;
+    height: 100%;
+    inset: 0px;
+    border-radius: inherit;
+    transform: translate3d(0px, 0.75em, -1em);
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+    background: rgb(255, 215, 128);
+    box-shadow: rgb(222, 156, 13) 0px 0px 0px 2px;
+}
+
+button:hover {
+    transform: translateY(0.25em);
+}
+
+button:active {
+    transform: translateY(0.35em);
+}
+
+button:hover::before {
+    transform: translate3d(0px, 0.5em, -1em);
+}
+
+button:active::before {
+    transform: translate3d(0px, 0.4em, -1em);
+}
+
+.btn-small {
+    font-size: 8px;
+}
+
+.btn-medium {
+    font-size: 16px;
+}
+
+.btn-big {
+    font-size: 32px;
 }

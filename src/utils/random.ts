@@ -55,8 +55,6 @@ export abstract class Random {
     static randomBool(input: string, probability: number): boolean {
         return this.seededRand(input) < probability;
     }
-
-
 }
 
 

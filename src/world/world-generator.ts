@@ -238,7 +238,7 @@ export class WorldGenerator {
                     biggestAsset = rAsset.safeZone;
                 }
 
-                if (rAsset.type === 'item' && absX < this.spawnNoDrawZone && absY < this.spawnNoDrawZone && absX > -this.spawnNoDrawZone && absY > -this.spawnNoDrawZone) {
+                if (rAsset.type === 'item' && absX < Params.playerInitX + this.spawnNoDrawZone && absY < Params.playerInitX + this.spawnNoDrawZone && absX > Params.playerInitY - this.spawnNoDrawZone && absY > Params.playerInitY - this.spawnNoDrawZone) {
                     continue;
                 }
 

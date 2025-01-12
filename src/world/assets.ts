@@ -1,4 +1,5 @@
-import { AnimationGroup, Color3, loadAssetContainerAsync, Material, Mesh, SpriteManager, StandardMaterial, Texture } from '@babylonjs/core';
+import { AnimationGroup, Color3, loadAssetContainerAsync, Material, Mesh, SpriteManager, StandardMaterial, Texture, Vector2 } from '@babylonjs/core';
+import { WaterMaterial } from '@babylonjs/materials';
 import { App } from '../app.js';
 import { AssetType, BiomeType, GGA3DAsset } from '../interfaces.js';
 import { Random } from '../utils/random.js';
@@ -159,6 +160,19 @@ export class AssetManager {
         const groundMat = new StandardMaterial(name, App.scene);
         groundMat.ambientTexture = new Texture(path, App.scene);
         groundMat.specularColor = new Color3(0, 0, 0);
+        return groundMat;
+    }
+
+    private static loadWaterTextureAsset(name: string, path: string): Material {
+        const groundMat = new WaterMaterial(name, App.scene);
+        groundMat.bumpTexture = new Texture(path, App.scene);
+        groundMat.windForce = 10;
+        groundMat.waveHeight = 5;
+        groundMat.waveLength = 1000;
+        groundMat.bumpHeight = 10;
+        groundMat.windDirection = new Vector2(1, 1);
+        groundMat.waterColor = new Color3(0, 0.1, 0);
+        groundMat.colorBlendFactor = 0.8;
         return groundMat;
     }
 }

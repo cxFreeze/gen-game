@@ -3,6 +3,7 @@ import { Inspector } from '@babylonjs/inspector';
 import { Debug } from './debug';
 import { PlayerInputs } from './game/player-inputs';
 import { PlayerMovements } from './game/player-movements';
+import { Params } from './params';
 import { AssetManager } from './world/assets';
 import { LightingManager } from './world/lighting';
 import { PlayerManager } from './world/player';
@@ -21,7 +22,8 @@ export class App {
     }
 
     public static async initApp() {
-        const canvas = document.getElementById('renderCanvas');
+        Params.initPlayerInitPos();
+        const canvas = document.getElementById('render-canvas');
         if (!(canvas instanceof HTMLCanvasElement)) {
             throw new Error('Render canvas not found or is not a canvas element');
         }
@@ -59,15 +61,6 @@ export class App {
             PlayerInputs.checkJoystick();
             playerMovements.updatePlayerPosition(time);
         });
-
-        if (Debug.showFps) {
-            const divFps = document.getElementById('fps') as HTMLElement;
-            this._engine.runRenderLoop(() => {
-                if (this._engine.frameId % 10 === 0) {
-                    divFps.innerHTML = `${this._engine.getFps().toFixed()} fps`;
-                }
-            });
-        }
 
         window.addEventListener('resize', () => {
             this._engine.resize();

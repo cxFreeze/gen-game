@@ -1,7 +1,8 @@
 import { Mesh, MeshBuilder, Vector3 } from '@babylonjs/core';
-import { Subscription } from 'rxjs';
+import { BehaviorSubject, Subscription, take } from 'rxjs';
 import { App } from '../app.js';
 import { Debug } from '../debug.js';
+import { Params } from '../params.js';
 import { AssetUtils } from '../utils/assets-utils.js';
 import { WorldUtils } from '../utils/world-utils.js';
 import { AssetManager } from './assets.js';
@@ -15,13 +16,18 @@ export class PlayerManager {
         return this._playerMesh;
     }
 
+    private _playerMoved: boolean = false;
+    private _playerMoved$: BehaviorSubject<boolean> = new BehaviorSubject(false);
+    get playerMoved$() {
+        return this._playerMoved$.pipe(take(2));
+    }
+
     private currentPlayerDirection: PlayerDirection;
 
-    playerX: number = 0;
-    playerY: number = 0;
+    playerX: number = Params.playerInitX;
+    playerY: number = Params.playerInitY;
 
     private currentAnimation: 'Running' | 'Idle' = 'Idle';
-
     private currentRotateAnim$: Subscription | undefined;
 
     private readonly lightingManager = LightingManager.getInstance();
@@ -43,7 +49,6 @@ export class PlayerManager {
         const playerHeight = scale * this._playerMesh.getBoundingInfo().boundingBox.maximumWorld.y;
 
         this._playerMesh.position = new Vector3(this.playerX, (playerHeight / 2) / scale, this.playerY);
-
         this._playerMesh.scaling = new Vector3(scale, scale, scale);
 
         this._playerMesh.receiveShadows = true;
@@ -63,6 +68,11 @@ export class PlayerManager {
     }
 
     movePlayer(x: number, y: number, direction: PlayerDirection) {
+        if (!this._playerMoved) {
+            this._playerMoved = true;
+            this._playerMoved$.next(true);
+        }
+
         let oldPos = this._playerMesh.position.clone();
         this._playerMesh.moveWithCollisions(new Vector3(x, 0, y));
         this.resetPlayerPositionIfInvalid(oldPos);

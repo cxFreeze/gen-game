@@ -7,10 +7,11 @@ export class Debug {
     static showInspector = false;
     static showFps = true;
     static showPlayerCollider = false;
+    static showDebugPanel = true;
 }
 
 export class DebugManager {
-    debugPanel = false;
+    debugPanel = Debug.showDebugPanel;
     show3DItem = true;
     skyView = false;
 
@@ -31,6 +32,27 @@ export class DebugManager {
         document.getElementById('debug-hide-duck')!.addEventListener('click', () => this.toggleCharMesh());
         document.getElementById('debug-hide-3d')!.addEventListener('click', () => this.toggle3ditems());
         document.getElementById('debug-sky-view')!.addEventListener('click', () => this.toggleSkyview());
+
+        if (Debug.showFps) {
+            const divFps = document.getElementById('render-fps') as HTMLElement;
+            App.engine.runRenderLoop(() => {
+                if (App.engine.frameId % 10 === 0) {
+                    divFps.innerHTML = `${App.engine.getFps().toFixed()} fps`;
+                }
+            });
+        }
+
+        document.getElementById('debug-panel')!.style.display = this.debugPanel ? 'block' : 'none';
+
+        const worldInfos = document.getElementById('debug-world-infos') as HTMLElement;
+        App.engine.runRenderLoop(() => {
+            if (!this.debugPanel) {
+                return;
+            }
+            if (App.engine.frameId % 10 === 0) {
+                worldInfos.innerHTML = `position : ${this.worldManager.worldX.toFixed(0)} / ${this.worldManager.worldY.toFixed(0)}`;
+            }
+        });
     }
 
     toggleDebugPanel() {
