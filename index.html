@@ -6,8 +6,8 @@
   <link rel="icon" type="image/x-icon" href="./favicon.ico">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GEN-GAME</title>
-  <script type="module" crossorigin src="./assets/index-DVUR_O45.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-DA9oC8zj.css">
+  <script type="module" crossorigin src="./assets/index-xeBwSEwY.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DSef7LuO.css">
 </head>
 
 <body>
@@ -17,22 +17,19 @@
       <h2>LOADING...</h2>
   </div>
 
-  <div id="debug-panel">
-    <h1>DEBUG PANEL</h1>
-    <img width="100px"
-      src="https://file.aiquickdraw.com/imgcompressed/img/compressed_1211a6e4f578608199a5cb3a25aaba75.webp" />
-    <br>
-    <button id="debug-hide-shadows">Hide shadows</button>
-    <button id="debug-hide-duck">Hide duck</button>
-    <button id="debug-hide-3d">Hide trees</button>
-    <button id="debug-sky-view">Sky view</button>
-
+  <div class="box" id="debug-panel">
+    <h3>DEBUG PANEL</h3>
+    <div id="debug-world-infos"></div>
+    <button class="btn-small" id="debug-hide-shadows">Hide shadows</button>
+    <button class="btn-small" id="debug-hide-duck">Hide duck</button>
+    <button class="btn-small" id="debug-hide-3d">Hide trees</button>
+    <button class="btn-small" id="debug-sky-view">Sky view</button>
+  </div>
+  <div class="box" id="render-info">
+    <div id="render-fps"></div>
   </div>
 
-  <canvas id="renderCanvas"></canvas>
-  <div id="renderInfo">
-    <div id="fps"></div>
-  </div>
+  <canvas id="render-canvas"></canvas>
 </body>
 
 </html>
