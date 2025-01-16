@@ -7,7 +7,7 @@ export class Debug {
     static showInspector = false;
     static showFps = true;
     static showPlayerCollider = false;
-    static showDebugPanel = true;
+    static showDebugPanel = false;
 }
 
 export class DebugManager {

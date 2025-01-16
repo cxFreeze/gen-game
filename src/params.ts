@@ -6,12 +6,13 @@ export class Params {
     static readonly bchunckSize = 800;
     static readonly worldSize = 12 * 2 * this.chunckSize; // EVEN NUMBER
     static readonly safeDrawWorldSize = Params.worldSize - Params.chunckSize - 30;
-    static readonly spawnNoDrawZone = 60;
+    static readonly spawnNoDrawZone = 50;
     static readonly itemLoadBatchSize = 50;
 
     // PLAYER
     static playerInitX: number = 0;
     static playerInitY: number = 0;
+    static playerMoveSpeed: number = 80; // px per second
 
     static initPlayerInitPos() {
         Params.playerInitX = Random.randomNumber('playerInitX') / 100 * Params.safeDrawWorldSize - Params.safeDrawWorldSize / 2;

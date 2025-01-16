@@ -1,3 +1,4 @@
+import { Params } from '../params.js';
 import { PlayerDirection, PlayerManager } from '../world/player.js';
 import { WorldManager } from '../world/world.js';
 import { PlayerInputs } from './player-inputs.js';
@@ -5,7 +6,7 @@ import { PlayerInputs } from './player-inputs.js';
 export class PlayerMovements {
 
     private readonly diagonalRatio: number = Math.sqrt(2);
-    private readonly moveSpeed: number = 100; // px per second
+    private readonly moveSpeed: number = Params.playerMoveSpeed;
 
     private totalDistance: number = 0;
 

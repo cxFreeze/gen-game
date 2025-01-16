@@ -54,11 +54,11 @@ export class PlayerManager {
         this._playerMesh.receiveShadows = true;
         this._playerMesh.checkCollisions = true;
         this._playerMesh.ellipsoid = new Vector3(3, 10, 3);
-        this._playerMesh.ellipsoidOffset = new Vector3(0, 5, 2);
+        this._playerMesh.ellipsoidOffset = new Vector3(0, 5, 0);
 
         if (Debug.showPlayerCollider) {
             const ellipsoid = MeshBuilder.CreateSphere('debug', { diameterX: (this._playerMesh.ellipsoid.x * 2) / scale, diameterY: (this._playerMesh.ellipsoid.y * 2) / scale, diameterZ: (this._playerMesh.ellipsoid.z * 2) / scale, segments: 16 }, App.scene);
-            ellipsoid.position.copyFrom(this._playerMesh.position);
+            ellipsoid.position = new Vector3(0, (playerHeight / 2) / scale, 0);
             ellipsoid.position.addInPlace(this._playerMesh.ellipsoidOffset.divide(new Vector3(scale, scale, scale)));
             ellipsoid.parent = this._playerMesh;
         }
@@ -75,12 +75,14 @@ export class PlayerManager {
 
         let oldPos = this._playerMesh.position.clone();
         this._playerMesh.moveWithCollisions(new Vector3(x, 0, y));
+
+
         this.resetPlayerPositionIfInvalid(oldPos);
 
-        this.playerX = this._playerMesh.position.x;
-        this.playerY = this._playerMesh.position.z;
+        const tempX = this._playerMesh.position.x;
+        const tempY = this._playerMesh.position.z;
 
-        if (this.playerX === oldPos.x && this.playerY === oldPos.z && (x !== 0 && y !== 0)) {
+        if (tempX === oldPos.x && tempY === oldPos.z && (x !== 0 && y !== 0)) {
             oldPos = this._playerMesh.position.clone();
             this._playerMesh.moveWithCollisions(new Vector3(x, 0, 0));
             this.resetPlayerPositionIfInvalid(oldPos);
@@ -90,8 +92,10 @@ export class PlayerManager {
                 this._playerMesh.moveWithCollisions(new Vector3(0, 0, y));
                 this.resetPlayerPositionIfInvalid(oldPos);
             }
-
         }
+
+        this.playerX = this._playerMesh.position.x;
+        this.playerY = this._playerMesh.position.z;
 
         if (direction !== this.currentPlayerDirection) {
             if (this.currentRotateAnim$) {

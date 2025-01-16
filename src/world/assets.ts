@@ -1,5 +1,4 @@
-import { AnimationGroup, Color3, loadAssetContainerAsync, Material, Mesh, SpriteManager, StandardMaterial, Texture, Vector2 } from '@babylonjs/core';
-import { WaterMaterial } from '@babylonjs/materials';
+import { AnimationGroup, Color3, loadAssetContainerAsync, Material, Mesh, SpriteManager, StandardMaterial, Texture } from '@babylonjs/core';
 import { App } from '../app.js';
 import { AssetType, BiomeType, GGA3DAsset } from '../interfaces.js';
 import { Random } from '../utils/random.js';
@@ -19,10 +18,10 @@ export class AssetManager {
         }
     };
 
+    static readonly assets: { [key: string]: Partial<GGA3DAsset> } = {};
+
     static animations: { [key: string]: AnimationGroup } = {};
-
     static player: Partial<GGA3DAsset>;
-
     static waterGround: GGA3DAsset;
 
     static async loadAssets() {
@@ -110,6 +109,17 @@ export class AssetManager {
 
         this.worldsAssets[BiomeType.forest].rock.push(rock);
 
+        const fence: Partial<GGA3DAsset> = {
+            name: 'fence',
+            mesh: await this.load3DAsset(`${this.Assets3dPath}/fence.glb`),
+            safeZone: 0,
+            scale: 22,
+            type: 'item'
+        };
+
+        this.assets.fence = fence;
+
+
         const spriteManager = new SpriteManager('grassManager', `${this.texturesPath}/grass.png`, 10000, { width: 156, height: 156 }, App.scene);
         const grass: GGA3DAsset = {
             name: 'grass',
@@ -163,6 +173,7 @@ export class AssetManager {
         return groundMat;
     }
 
+    /*
     private static loadWaterTextureAsset(name: string, path: string): Material {
         const groundMat = new WaterMaterial(name, App.scene);
         groundMat.bumpTexture = new Texture(path, App.scene);
@@ -175,6 +186,7 @@ export class AssetManager {
         groundMat.colorBlendFactor = 0.8;
         return groundMat;
     }
+        */
 }
 
 

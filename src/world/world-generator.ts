@@ -38,6 +38,8 @@ export class WorldGenerator {
 
     private constructor() {
         this.initRenderLoopExtras();
+
+        this.loadFences();
     }
 
     private initRenderLoopExtras() {
@@ -192,11 +194,50 @@ export class WorldGenerator {
                 ground.material = rAsset.material as Material;
                 ground.position = new Vector3(absX + rAsset.width / 2, 0, absY + rAsset.height / 2);
                 ground.receiveShadows = true;
+                ground.isPickable = false;
 
                 this.loadedChuncksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: ground, asset: rAsset });
             }
             xIndex += biggestAsset;
         }
+    }
+
+    private loadFences() {
+        const fence = AssetManager.assets.fence;
+
+        const worldSize = Params.safeDrawWorldSize + 20;
+
+        const fenceWidth = fence.mesh?.getBoundingInfo().boundingBox.maximumWorld.x! * fence.scale! * 2;
+
+        let y = -worldSize / 2;
+        let x = -worldSize / 2;
+
+        while (y < worldSize / 2) {
+            this.drawItem(fence as GGA3DAsset, x, y, 0, 1, Math.PI / 2, true);
+            y += fenceWidth!;
+        }
+
+        y = -worldSize / 2;
+        x = worldSize / 2;
+        while (y < worldSize / 2) {
+            this.drawItem(fence as GGA3DAsset, x, y, 0, 1, Math.PI / 2, true);
+            y += fenceWidth!;
+        }
+
+        y = -worldSize / 2;
+        x = -worldSize / 2;
+        while (x < worldSize / 2) {
+            this.drawItem(fence as GGA3DAsset, x, y, 0, 1, 0, true);
+            x += fenceWidth!;
+        }
+
+        y = worldSize / 2;
+        x = -worldSize / 2;
+        while (x < worldSize / 2) {
+            this.drawItem(fence as GGA3DAsset, x, y, 0, 1, 0, true);
+            x += fenceWidth!;
+        }
+
     }
 
     // ITEMS MANAGEMENT
@@ -238,7 +279,7 @@ export class WorldGenerator {
                     biggestAsset = rAsset.safeZone;
                 }
 
-                if (rAsset.type === 'item' && absX < Params.playerInitX + this.spawnNoDrawZone && absY < Params.playerInitX + this.spawnNoDrawZone && absX > Params.playerInitY - this.spawnNoDrawZone && absY > Params.playerInitY - this.spawnNoDrawZone) {
+                if (rAsset.type === 'item' && absX < Params.playerInitX + this.spawnNoDrawZone && absX > Params.playerInitX - this.spawnNoDrawZone && absY < Params.playerInitY + this.spawnNoDrawZone && absY > Params.playerInitY - this.spawnNoDrawZone) {
                     continue;
                 }
 
@@ -272,7 +313,7 @@ export class WorldGenerator {
 
     /// DRAWING
 
-    private drawItem(asset: GGA3DAsset, x: number, y: number, z: number, sizeRatio: number, rotate: number = 0): InstancedMesh | undefined {
+    private drawItem(asset: GGA3DAsset, x: number, y: number, z: number, sizeRatio: number, rotate: number = 0, disableShadows = false): InstancedMesh | undefined {
         const item = asset.mesh?.createInstance(asset.name + this.itemCnt);
 
         this.itemCnt++;
@@ -291,8 +332,9 @@ export class WorldGenerator {
 
         item.checkCollisions = !asset.ignoreCollisions;
 
-        this.lightingManager.shadowGenerator.addShadowCaster(item);
-        item.receiveShadows = true;
+        if (!disableShadows) {
+            this.lightingManager.shadowGenerator.addShadowCaster(item);
+        }
 
         App.scene.addMesh(item);
         return item;
