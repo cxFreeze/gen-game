@@ -1,11 +1,12 @@
-import { AbstractMesh, InstancedMesh, Material, MeshBuilder, Sprite, Vector3 } from '@babylonjs/core';
-import { App } from '../app';
-import { AssetType, BiomeItem, BiomeType, GGA3DAsset, LoadedMesh, LoadedSprite } from '../interfaces';
-import { Params } from '../params';
+import { AbstractMesh, InstancedMesh, Sprite, Vector3 } from '@babylonjs/core';
+import { App } from '../core/app';
+import { Params } from '../core/params';
+import { BiomeAssetType, BiomeItem, BiomeType, LoadedMesh, LoadedSprite } from '../models/interfaces';
 import { Random } from '../utils/random';
 import { WorldUtils } from '../utils/world-utils';
 import { AssetManager } from './assets';
 import { Biomes } from './biomes';
+import { GG3DAsset, GGAsset, GGSpriteAsset } from './GGAsset';
 import { LightingManager } from './lighting';
 
 export class WorldGenerator {
@@ -160,14 +161,14 @@ export class WorldGenerator {
         const [x, y] = chunk.split('/').map((val) => parseInt(val));
 
         if (!WorldUtils.isInWorldBounds(x, y)) {
-            this.loadGround(x, y, AssetManager.waterGround);
+            this.loadGround(x, y, AssetManager.worldAssets.ocean);
             return;
         }
         this.loadGround(x, y);
         this.loadItems(x, y);
     }
 
-    private loadGround(chunkX: number, chunkY: number, asset: GGA3DAsset | null = null): void {
+    private loadGround(chunkX: number, chunkY: number, asset: GG3DAsset | null = null): void {
         const assetType = Biomes.biomes[this.currentBiome].ground;
 
         const bound = this.chunckSize / 2;
@@ -181,7 +182,7 @@ export class WorldGenerator {
                 const absX = chunkX + xIndex;
                 const absY = chunkY + yIndex;
 
-                const rAsset = asset ?? AssetManager.getAsset(this.currentBiome, assetType, assetType + absX + absY);
+                const rAsset = asset ?? AssetManager.getAsset(this.currentBiome, assetType, assetType + absX + absY) as GG3DAsset;
 
                 yIndex += rAsset.safeZone;
 
@@ -189,13 +190,12 @@ export class WorldGenerator {
                     biggestAsset = rAsset.safeZone;
                 }
 
-                const ground = MeshBuilder.CreateGround('ground', { width: rAsset.width, height: rAsset.height }, App.scene);
 
-                ground.material = rAsset.material as Material;
+                const ground = rAsset.mesh.createInstance(rAsset.name + this.itemCnt);
+                this.itemCnt++;
+
+
                 ground.position = new Vector3(absX + rAsset.width / 2, 0, absY + rAsset.height / 2);
-                ground.receiveShadows = true;
-                ground.isPickable = false;
-
                 this.loadedChuncksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: ground, asset: rAsset });
             }
             xIndex += biggestAsset;
@@ -203,38 +203,46 @@ export class WorldGenerator {
     }
 
     private loadFences() {
-        const fence = AssetManager.assets.fence;
+        const fence = AssetManager.worldAssets.fence;
 
         const worldSize = Params.safeDrawWorldSize + 20;
 
-        const fenceWidth = fence.mesh?.getBoundingInfo().boundingBox.maximumWorld.x! * fence.scale! * 2;
+        // ajust scale to match world size multiple
+        const fenceOriginalWidth = fence.sizeX;
+        let fenceWidth = fenceOriginalWidth * fence.scale;
+        const numFences = Math.floor(worldSize / fenceWidth);
+        fenceWidth = worldSize / numFences;
+        fence.scale = fenceWidth / fenceOriginalWidth;
 
-        let y = -worldSize / 2;
-        let x = -worldSize / 2;
+        const origDrawPointVariable = -worldSize / 2 + fenceWidth / 2;
+        const origDrawPointConst = worldSize / 2;
+
+        let y = origDrawPointVariable;
+        let x = -origDrawPointConst;
 
         while (y < worldSize / 2) {
-            this.drawItem(fence as GGA3DAsset, x, y, 0, 1, Math.PI / 2, true);
+            this.drawItem(fence, x, y, 0, 1, Math.PI / 2);
             y += fenceWidth!;
         }
 
-        y = -worldSize / 2;
-        x = worldSize / 2;
+        y = origDrawPointVariable;
+        x = origDrawPointConst;
         while (y < worldSize / 2) {
-            this.drawItem(fence as GGA3DAsset, x, y, 0, 1, Math.PI / 2, true);
+            this.drawItem(fence, x, y, 0, 1, Math.PI / 2);
             y += fenceWidth!;
         }
 
-        y = -worldSize / 2;
-        x = -worldSize / 2;
+        y = -origDrawPointConst;
+        x = origDrawPointVariable;
         while (x < worldSize / 2) {
-            this.drawItem(fence as GGA3DAsset, x, y, 0, 1, 0, true);
+            this.drawItem(fence, x, y, 0);
             x += fenceWidth!;
         }
 
-        y = worldSize / 2;
-        x = -worldSize / 2;
+        y = origDrawPointConst;
+        x = origDrawPointVariable;
         while (x < worldSize / 2) {
-            this.drawItem(fence as GGA3DAsset, x, y, 0, 1, 0, true);
+            this.drawItem(fence, x, y, 0);
             x += fenceWidth!;
         }
 
@@ -292,13 +300,13 @@ export class WorldGenerator {
                         if (!this.loadedChuncksItems[`${chunkX}/${chunkY}`]) {
                             return;
                         }
-                        if (rAsset.type === 'item') {
+                        if (rAsset instanceof GG3DAsset && rAsset.type === 'item') {
                             const item = this.drawItemWithDeviation(rAsset, absX, absY, chunkX, chunkY);
                             if (item) {
                                 this.loadedChuncksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: item, asset: rAsset });
                             }
                         }
-                        else if (rAsset.type === 'sprite') {
+                        else if (rAsset instanceof GGSpriteAsset && rAsset.type === 'sprite') {
                             const item = this.drawSpriteWithDeviation(rAsset, absX, absY, chunkX, chunkY);
                             if (item) {
                                 this.loadedChuncksItems[`${chunkX}/${chunkY}`].sprites.push({ sprite: item, asset: rAsset });
@@ -313,7 +321,7 @@ export class WorldGenerator {
 
     /// DRAWING
 
-    private drawItem(asset: GGA3DAsset, x: number, y: number, z: number, sizeRatio: number, rotate: number = 0, disableShadows = false): InstancedMesh | undefined {
+    private drawItem(asset: GG3DAsset, x: number, y: number, z: number, sizeRatio: number = 1, rotate: number = 0): InstancedMesh | undefined {
         const item = asset.mesh?.createInstance(asset.name + this.itemCnt);
 
         this.itemCnt++;
@@ -331,8 +339,9 @@ export class WorldGenerator {
         }
 
         item.checkCollisions = !asset.ignoreCollisions;
+        item.isPickable = asset.isPickable;
 
-        if (!disableShadows) {
+        if (!asset.disableShadow) {
             this.lightingManager.shadowGenerator.addShadowCaster(item);
         }
 
@@ -340,7 +349,7 @@ export class WorldGenerator {
         return item;
     }
 
-    private drawItemWithDeviation(asset: GGA3DAsset, x: number, y: number, chunkX: number, chunkY: number): InstancedMesh | undefined {
+    private drawItemWithDeviation(asset: GG3DAsset, x: number, y: number, chunkX: number, chunkY: number): InstancedMesh | undefined {
         let deviationX = 0;
         let deviationY = 0;
         let deviationZ = 0;
@@ -403,8 +412,8 @@ export class WorldGenerator {
         return res;
     }
 
-    private drawSprite(asset: GGA3DAsset, x: number, y: number, z: number, sizeRatio: number, rotate: number = 0, invert: boolean): Sprite | undefined {
-        const sprite = new Sprite(asset.name + this.itemCnt, asset.sprite!);
+    private drawSprite(asset: GGSpriteAsset, x: number, y: number, z: number, sizeRatio: number, rotate: number = 0, invert: boolean): Sprite | undefined {
+        const sprite = new Sprite(asset.name + this.itemCnt, asset.sprite);
 
         this.itemCnt++;
 
@@ -420,7 +429,7 @@ export class WorldGenerator {
         return sprite;
     }
 
-    private drawSpriteWithDeviation(asset: GGA3DAsset, x: number, y: number, chunkX: number, chunkY: number): Sprite | undefined {
+    private drawSpriteWithDeviation(asset: GGSpriteAsset, x: number, y: number, chunkX: number, chunkY: number): Sprite | undefined {
         let deviationX = 0;
         let deviationY = 0;
         let deviationZ = -1;
@@ -473,7 +482,7 @@ export class WorldGenerator {
 
     // UTILS
 
-    private isSpaceAvailable(mesh: AbstractMesh, asset: GGA3DAsset, x: number, y: number): boolean {
+    private isSpaceAvailable(mesh: AbstractMesh, asset: GG3DAsset, x: number, y: number): boolean {
         let res = true;
         const chunk = this.getChunk(x, y);
         const items = this.loadedChuncksItems[chunk]?.meshes;
@@ -499,7 +508,7 @@ export class WorldGenerator {
         return res;
     }
 
-    private getDrawRate(type: AssetType, drawCount: number): number {
+    private getDrawRate(type: BiomeAssetType, drawCount: number): number {
         const mesh = AssetManager.getFirstAsset(this.currentBiome, type);
         const maxDraw = (1000 * 1000) / (mesh.safeZone * mesh.safeZone);
         return drawCount / maxDraw;
@@ -518,21 +527,19 @@ export class WorldGenerator {
 
     // DEVIATION FUNCTIONS
 
-    private getDeviationX(asset: GGA3DAsset, x: number, y: number): number {
-        return 2 * asset.height * (this.randNumberItem(`${asset.name}deviationX`, x, y) - 50) / 100 * asset.displacementRatio;
+    private getDeviationX(asset: GGAsset, x: number, y: number): number {
+        return 2 * asset.safeZone * (this.randNumberItem(`${asset.name}deviationX`, x, y) - 50) / 100 * asset.displacementRatio;
     }
 
-    private getDeviationY(asset: GGA3DAsset, x: number, y: number): number {
-        return 2 * asset.height * (this.randNumberItem(`${asset.name}deviationY`, x, y) - 50) / 100 * asset.displacementRatio;
+    private getDeviationY(asset: GGAsset, x: number, y: number): number {
+        return 2 * asset.safeZone * (this.randNumberItem(`${asset.name}deviationY`, x, y) - 50) / 100 * asset.displacementRatio;
     }
 
-    private getDeviationZ(asset: GGA3DAsset, x: number, y: number, height: number, sizeRatio: number): number {
-        return height * sizeRatio * asset.maxVerticalDisplacement! * (this.randNumberItem(`${asset.name}deviationZ`, x, y)) / 100;
+    private getDeviationZ(asset: GGAsset, x: number, y: number, height: number, sizeRatio: number): number {
+        return height * sizeRatio * asset.maxVerticalDisplacement * (this.randNumberItem(`${asset.name}deviationZ`, x, y)) / 100;
     }
 
-    private getSizeRatio(asset: GGA3DAsset, x: number, y: number, useHugeFactor: boolean = true): number {
-        const hugeFactor = 3;
-
+    private getSizeRatio(asset: GGAsset, x: number, y: number, useHugeFactor: boolean = true): number {
         let sizeRatio = asset.sizeRatio * (this.randNumberItem(`${asset.name}sizeRatio`, x, y) - 50) / 50;
 
         if (sizeRatio < 0) {
@@ -542,8 +549,8 @@ export class WorldGenerator {
             sizeRatio = 1 + sizeRatio;
         }
 
-        if (useHugeFactor && this.randNumberItem(`${asset.name}huge`, x, y) < 1) {
-            sizeRatio = sizeRatio * hugeFactor;
+        if (useHugeFactor && this.randNumberItem(`${asset.name}huge`, x, y) < Params.hugeSizeChance / 10) {
+            sizeRatio = sizeRatio * Params.hugeSizeRatio;
         }
 
         return sizeRatio;

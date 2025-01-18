@@ -1,13 +1,14 @@
 import { Engine, Scene } from '@babylonjs/core';
 import { Inspector } from '@babylonjs/inspector';
+import { PlayerInputs } from '../game/player-inputs';
+import { PlayerMovements } from '../game/player-movements';
+import { AssetManager } from '../world/assets';
+import { LightingManager } from '../world/lighting';
+import { PlayerManager } from '../world/player';
+import { WorldManager } from '../world/world';
 import { Debug } from './debug';
-import { PlayerInputs } from './game/player-inputs';
-import { PlayerMovements } from './game/player-movements';
 import { Params } from './params';
-import { AssetManager } from './world/assets';
-import { LightingManager } from './world/lighting';
-import { PlayerManager } from './world/player';
-import { WorldManager } from './world/world';
+
 
 export class App {
 

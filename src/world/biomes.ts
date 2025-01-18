@@ -1,4 +1,4 @@
-import { Biome, BiomeType } from '../interfaces';
+import { Biome, BiomeType } from '../models/interfaces';
 
 export class Biomes {
 

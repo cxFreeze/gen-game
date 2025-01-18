@@ -1,6 +1,6 @@
 import { AbstractMesh, Animation, InstancedMesh, Ray, UniversalCamera, Vector3 } from '@babylonjs/core';
 import { timer } from 'rxjs';
-import { App } from '../app.js';
+import { App } from '../core/app.js';
 import { Anim } from '../utils/anim.js';
 import { LightingManager } from './lighting.js';
 import { PlayerManager } from './player.js';
@@ -78,7 +78,9 @@ export class WorldManager {
     private setCameraObstacleSemiTransparent() {
         const ray = new Ray(this.camera.position, this.playerManager.playerMesh.position.subtract(this.camera.position).normalize());
 
-        const hitResults = App.scene.multiPickWithRay(ray, (mesh) => mesh.name !== 'player');
+        const hitResults = App.scene.multiPickWithRay(ray, (mesh) => {
+            return mesh.name !== 'player' && mesh.isPickable;
+        });
 
         const currentMeshes = new Set();
         if (hitResults) {
@@ -118,11 +120,12 @@ export class WorldManager {
         ghostMesh.scaling = mesh.scaling;
         ghostMesh.visibility = 0.2;
         ghostMesh.receiveShadows = true;
+        ghostMesh.isVisible = true;
 
         App.scene.addMesh(ghostMesh);
-        mesh.isVisible = false;
-
         (mesh as any)._ghostMesh = ghostMesh;
+
+        mesh.isVisible = false;
 
         return ghostMesh;
     }

@@ -1,6 +1,5 @@
 import { DirectionalLight, HemisphericLight, ShadowGenerator, Vector3 } from '@babylonjs/core';
-import { App } from '../app';
-
+import { App } from '../core/app';
 
 export class LightingManager {
     private sun: DirectionalLight;

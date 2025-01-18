@@ -1,4 +1,4 @@
-import { Params } from '../params';
+import { Params } from '../core/params';
 
 export class WorldUtils {
     static isInWorldBounds(chunkX: number, chunkY: number): boolean {

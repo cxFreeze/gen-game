@@ -1,8 +1,8 @@
 import { Mesh, MeshBuilder, Vector3 } from '@babylonjs/core';
 import { BehaviorSubject, Subscription, take } from 'rxjs';
-import { App } from '../app.js';
-import { Debug } from '../debug.js';
-import { Params } from '../params.js';
+import { App } from '../core/app.js';
+import { Debug } from '../core/debug.js';
+import { Params } from '../core/params.js';
 import { AssetUtils } from '../utils/assets-utils.js';
 import { WorldUtils } from '../utils/world-utils.js';
 import { AssetManager } from './assets.js';
@@ -43,8 +43,9 @@ export class PlayerManager {
     private constructor() { }
 
     createPlayer() {
-        const scale = AssetManager.player.scale!;
-        this._playerMesh = AssetManager.player.mesh!.clone('player');
+        const scale = AssetManager.worldAssets.player.scale;
+        this._playerMesh = AssetManager.worldAssets.player.mesh!.clone('player');
+        this._playerMesh.isVisible = true;
 
         const playerHeight = scale * this._playerMesh.getBoundingInfo().boundingBox.maximumWorld.y;
 
@@ -143,10 +144,16 @@ export class PlayerManager {
             return;
         }
 
-        AssetManager.animations[this.currentAnimation].stop();
+        let animSpeed = 1;
+
+        if (animName === 'Running') {
+            animSpeed = Params.playerMoveSpeed / 90;
+        }
+
+        AssetManager.animations[this.currentAnimation].stop().reset();
 
         this.currentAnimation = animName;
-        AssetManager.animations[animName].start(true);
+        AssetManager.animations[animName].start(true, animSpeed);
     }
 
     resetPlayerPositionIfInvalid(oldPosition: Vector3): void {

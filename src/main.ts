@@ -2,7 +2,7 @@ import { DracoCompression } from '@babylonjs/core';
 import '@babylonjs/core/Debug/debugLayer';
 import '@babylonjs/inspector';
 import '@babylonjs/loaders/glTF';
-import { App } from './app.js';
+import { App } from './core/app.js';
 import { Random } from './utils/random.js';
 
 DracoCompression.Configuration = {
@@ -13,15 +13,14 @@ DracoCompression.Configuration = {
     },
 };
 
-(async () => {
+window.onload = () => {
     Random.setSeed();
     App.initApp();
 
     setTimeout(() => {
         hideLoadingScreen();
     }, 2000);
-})();
-
+};
 
 function hideLoadingScreen() {
     const el = document.getElementById('loading');

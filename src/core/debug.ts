@@ -1,7 +1,7 @@
+import { LightingManager } from '../world/lighting';
+import { PlayerManager } from '../world/player';
+import { WorldManager } from '../world/world';
 import { App } from './app';
-import { LightingManager } from './world/lighting';
-import { PlayerManager } from './world/player';
-import { WorldManager } from './world/world';
 
 export class Debug {
     static showInspector = false;

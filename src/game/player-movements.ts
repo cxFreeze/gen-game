@@ -1,4 +1,4 @@
-import { Params } from '../params.js';
+import { Params } from '../core/params.js';
 import { PlayerDirection, PlayerManager } from '../world/player.js';
 import { WorldManager } from '../world/world.js';
 import { PlayerInputs } from './player-inputs.js';
