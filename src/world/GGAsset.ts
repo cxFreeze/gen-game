@@ -18,7 +18,7 @@ export abstract class GGAsset {
         this.height = 0;
         this.width = 0;
         this.name = name;
-        this.scale = 0;
+        this.scale = 1;
         this.safeZone = 0;
         this.displacementRatio = 0;
         this.sizeRatio = 0;

@@ -71,8 +71,8 @@ export class WorldGenerator {
             }
 
             const time = performance.now() * 0.002; // Temps simulé (ralenti)
-            const waveSpeed = 0.5; // Vitesse de propagation de l'onde
-            const waveAmplitude = 0.07; // Amplitude du mouvement
+            const waveSpeed = 0.4; // Vitesse de propagation de l'onde
+            const waveAmplitude = 0.05; // Amplitude du mouvement
             const waveFrequency = 10; // Fréquence spatiale
 
             // sprite animation

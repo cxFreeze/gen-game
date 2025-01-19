@@ -18,7 +18,7 @@ export class Biomes {
                 },
                 {
                     asset: 'grass',
-                    drawCount: 80
+                    drawCount: 280
                 }
             ]
         }
