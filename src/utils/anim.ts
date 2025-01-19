@@ -1,4 +1,4 @@
-import { CubicEase, EasingFunction } from '@babylonjs/core';
+import { CubicEase, EasingFunction } from '@babylonjs/core/Animations/easing';
 import { animationFrames, endWith, map, takeWhile } from 'rxjs';
 
 const ease = new CubicEase();

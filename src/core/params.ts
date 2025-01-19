@@ -1,10 +1,13 @@
 import { Random } from '../utils/random';
 
 export class Params {
+    // LOADING
+    static readonly framesWithoutDraw = 100;
+
     // WORLD
     static readonly chunckSize = 400;
     static readonly bchunckSize = 800;
-    static readonly worldSize = 4 * 2 * this.chunckSize; // EVEN NUMBER
+    static readonly worldSize = 12 * 2 * this.chunckSize; // EVEN NUMBER
     static readonly safeDrawWorldSize = Params.worldSize - Params.chunckSize - 30;
     static readonly spawnNoDrawZone = 50;
     static readonly itemLoadBatchSize = 50;

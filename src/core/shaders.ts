@@ -1,5 +1,5 @@
-import { Effect } from '@babylonjs/core';
 
+/*
 
 export class ShadersManager {
     // Shaders
@@ -38,4 +38,5 @@ export class ShadersManager {
         `;
     }
 }
+    */
 

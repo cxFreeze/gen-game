@@ -1,4 +1,7 @@
-import { DirectionalLight, HemisphericLight, ShadowGenerator, Vector3 } from '@babylonjs/core';
+import { ShadowGenerator } from '@babylonjs/core/Lights/Shadows/shadowGenerator';
+import { DirectionalLight } from '@babylonjs/core/Lights/directionalLight';
+import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight';
+import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { App } from '../core/app';
 
 export class LightingManager {

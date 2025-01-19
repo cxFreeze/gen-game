@@ -1,4 +1,12 @@
-import { AnimationGroup, Color3, loadAssetContainerAsync, Material, Mesh, MeshBuilder, SpriteManager, StandardMaterial, Texture } from '@babylonjs/core';
+import { AnimationGroup } from '@babylonjs/core/Animations/animationGroup.js';
+import { loadAssetContainerAsync } from '@babylonjs/core/Loading/sceneLoader.js';
+import { Material } from '@babylonjs/core/Materials/material.js';
+import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
+import { Texture } from '@babylonjs/core/Materials/Textures/texture.js';
+import { Color3 } from '@babylonjs/core/Maths/math.color.js';
+import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
+import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
+import { SpriteManager } from '@babylonjs/core/Sprites/spriteManager.js';
 import { App } from '../core/app.js';
 import { Params } from '../core/params.js';
 import { BiomeAssetType, BiomeType, WorldAsset } from '../models/interfaces.js';

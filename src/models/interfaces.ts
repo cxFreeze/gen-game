@@ -1,4 +1,6 @@
-import { GroundMesh, InstancedMesh, Sprite } from '@babylonjs/core';
+import { GroundMesh } from '@babylonjs/core/Meshes/groundMesh';
+import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh';
+import { Sprite } from '@babylonjs/core/Sprites/sprite';
 import { GG3DAsset, GGSpriteAsset } from '../world/GGAsset';
 
 export enum BiomeType { forest = 1 };

@@ -1,4 +1,6 @@
-import { Material, Mesh, SpriteManager } from '@babylonjs/core';
+import { Material } from '@babylonjs/core/Materials/material';
+import { Mesh } from '@babylonjs/core/Meshes/mesh';
+import { SpriteManager } from '@babylonjs/core/Sprites/spriteManager';
 
 export abstract class GGAsset {
     height: number;

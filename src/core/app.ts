@@ -1,16 +1,24 @@
-import { Engine, Scene } from '@babylonjs/core';
-import { Inspector } from '@babylonjs/inspector';
+import { Engine } from '@babylonjs/core/Engines/engine';
+import { Scene } from '@babylonjs/core/scene';
+import { delay, Subject, take } from 'rxjs';
 import { PlayerInputs } from '../game/player-inputs';
 import { PlayerMovements } from '../game/player-movements';
 import { AssetManager } from '../world/assets';
 import { LightingManager } from '../world/lighting';
 import { PlayerManager } from '../world/player';
 import { WorldManager } from '../world/world';
-import { Debug } from './debug';
 import { Params } from './params';
 
 
 export class App {
+    private static _hideLoadingScreenSubject = new Subject<void>();
+    public static get hideLoadingScreenSubject() {
+        return this._hideLoadingScreenSubject;
+    }
+
+    public static get hideLoadingScreen$() {
+        return this._hideLoadingScreenSubject.pipe(delay(500), take(1));
+    }
 
     private static _scene: Scene;
     public static get scene() {
@@ -44,14 +52,6 @@ export class App {
         playerManager.createPlayer();
         const worldManager = WorldManager.getInstance();
         const playerMovements = PlayerMovements.getInstance();
-
-        if (Debug.showInspector) {
-            Inspector.Show(this._scene, {
-                handleResize: true,
-                overlay: true,
-                globalRoot: document.getElementById('#root') || undefined,
-            });
-        }
 
         worldManager.generateWorld();
         PlayerInputs.init();

@@ -1,4 +1,5 @@
-import { AbstractMesh, Vector3 } from '@babylonjs/core';
+import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
+import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import { Anim } from './anim.js';
 
 

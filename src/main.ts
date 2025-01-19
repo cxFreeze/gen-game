@@ -1,6 +1,8 @@
-import { DracoCompression } from '@babylonjs/core';
+import '@babylonjs/core/Animations/animatable';
+import '@babylonjs/core/Collisions/collisionCoordinator';
 import '@babylonjs/core/Debug/debugLayer';
-import '@babylonjs/inspector';
+import '@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent';
+import { DracoCompression } from '@babylonjs/core/Meshes/Compression/index.js';
 import '@babylonjs/loaders/glTF';
 import { App } from './core/app.js';
 import { Random } from './utils/random.js';
@@ -17,9 +19,9 @@ window.onload = () => {
     Random.setSeed();
     App.initApp();
 
-    setTimeout(() => {
+    App.hideLoadingScreen$.subscribe(() => {
         hideLoadingScreen();
-    }, 2000);
+    });
 };
 
 function hideLoadingScreen() {

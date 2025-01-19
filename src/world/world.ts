@@ -1,5 +1,9 @@
-import { AbstractMesh, Animation, InstancedMesh, Ray, UniversalCamera, Vector3 } from '@babylonjs/core';
-import { timer } from 'rxjs';
+import { Animation } from '@babylonjs/core/Animations/animation.js';
+import { UniversalCamera } from '@babylonjs/core/Cameras/universalCamera.js';
+import { Ray } from '@babylonjs/core/Culling/ray.js';
+import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
+import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
+import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh.js';
 import { App } from '../core/app.js';
 import { Anim } from '../utils/anim.js';
 import { LightingManager } from './lighting.js';
@@ -52,7 +56,7 @@ export class WorldManager {
         const initRot = this.camera.rotation!.clone();
         this.camera.rotation = initRot.clone().addInPlace(new Vector3(0, Math.PI, 0));
 
-        timer(2000).subscribe(() => {
+        App.hideLoadingScreen$.subscribe(() => {
             const posAnim = Animation.CreateAndStartAnimation('initCamera1', this.camera, 'position', 30, 120, this.camera.position, finalCameraPos, 0, Anim.cubicEaseInOut);
             const rotAnim = Animation.CreateAndStartAnimation('initCamera2', this.camera, 'rotation', 30, 120, this.camera.rotation, initRot, 0, Anim.cubicEaseInOut);
             this.playerManager.playerMoved$.subscribe((moved) => {

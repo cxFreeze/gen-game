@@ -1,4 +1,4 @@
-import { VirtualJoystick } from '@babylonjs/core';
+import { VirtualJoystick } from '@babylonjs/core/Misc/virtualJoystick';
 import { DebugManager } from '../core/debug';
 
 export class PlayerInputs {

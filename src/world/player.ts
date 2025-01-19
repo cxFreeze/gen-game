@@ -1,4 +1,6 @@
-import { Mesh, MeshBuilder, Vector3 } from '@babylonjs/core';
+import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
+import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
+import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
 import { BehaviorSubject, Subscription, take } from 'rxjs';
 import { App } from '../core/app.js';
 import { Debug } from '../core/debug.js';

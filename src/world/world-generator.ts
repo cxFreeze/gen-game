@@ -1,4 +1,7 @@
-import { AbstractMesh, InstancedMesh, Sprite, Vector3 } from '@babylonjs/core';
+import { Vector3 } from '@babylonjs/core/Maths/math.vector';
+import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh';
+import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh';
+import { Sprite } from '@babylonjs/core/Sprites/sprite';
 import { App } from '../core/app';
 import { Params } from '../core/params';
 import { BiomeAssetType, BiomeItem, BiomeType, LoadedMesh, LoadedSprite } from '../models/interfaces';
@@ -43,11 +46,26 @@ export class WorldGenerator {
         this.loadFences();
     }
 
+    private initialRenderStarted = false;
+    private initialRenderEnded = false;
+    private initialRenderSuccessiveFrameWith0ItemToRender = 0;
     private initRenderLoopExtras() {
         App.scene.onBeforeRenderObservable.add(() => {
             for (let i = 0; i < this.itemLoadBatchSize; i++) {
                 if (this.renderQueue.length === 0) {
+                    if (!this.initialRenderEnded && this.initialRenderStarted) {
+                        this.initialRenderSuccessiveFrameWith0ItemToRender++;
+                        if (this.initialRenderSuccessiveFrameWith0ItemToRender > Params.framesWithoutDraw) {
+                            App.hideLoadingScreenSubject.next();
+                            App.hideLoadingScreenSubject.complete();
+                            this.initialRenderEnded = true;
+                        }
+                    }
                     break;
+                }
+                if (!this.initialRenderEnded) {
+                    this.initialRenderStarted = true;
+                    this.initialRenderSuccessiveFrameWith0ItemToRender = 0;
                 }
                 this.renderQueue.shift()!();
             }
