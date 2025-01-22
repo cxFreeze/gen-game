@@ -1,4 +1,5 @@
 import { Material } from '@babylonjs/core/Materials/material';
+import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { SpriteManager } from '@babylonjs/core/Sprites/spriteManager';
 
@@ -71,6 +72,8 @@ export class GG3DAsset extends GGAsset {
         this._sizeX = boundingBox.maximumWorld.x - boundingBox.minimumWorld.x;
         this._sizeY = boundingBox.maximumWorld.y - boundingBox.minimumWorld.y;
         this._sizeZ = boundingBox.maximumWorld.z - boundingBox.minimumWorld.z;
+
+        mesh.setPivotPoint(new Vector3(0, boundingBox.minimum.y, 0));
     }
 }
 

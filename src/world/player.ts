@@ -49,9 +49,9 @@ export class PlayerManager {
         this._playerMesh = AssetManager.worldAssets.player.mesh!.clone('player');
         this._playerMesh.isVisible = true;
 
-        const playerHeight = scale * this._playerMesh.getBoundingInfo().boundingBox.maximumWorld.y;
+        const playerHeight = AssetManager.worldAssets.player.sizeY * scale;
 
-        this._playerMesh.position = new Vector3(this.playerX, (playerHeight / 2) / scale, this.playerY);
+        this._playerMesh.position = new Vector3(this.playerX, -playerHeight / 2, this.playerY);
         this._playerMesh.scaling = new Vector3(scale, scale, scale);
 
         this._playerMesh.receiveShadows = true;
@@ -66,7 +66,7 @@ export class PlayerManager {
             ellipsoid.parent = this._playerMesh;
         }
 
-        App.scene.addMesh(this._playerMesh);
+        App.scene.addMesh(this._playerMesh, false);
         this.lightingManager.shadowGenerator.addShadowCaster(this._playerMesh);
     }
 

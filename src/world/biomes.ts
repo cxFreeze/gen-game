@@ -1,4 +1,4 @@
-import { Biome, BiomeType } from '../models/interfaces';
+import { Biome, BiomeType, Zone, ZoneType } from '../models/interfaces';
 
 export class Biomes {
 
@@ -19,6 +19,18 @@ export class Biomes {
                 {
                     asset: 'grass',
                     drawCount: 280
+                }
+            ]
+        }
+    };
+
+    static zones: { [key in ZoneType]: Zone } = {
+        [ZoneType.town]: {
+            ground: 'ground',
+            items: [
+                {
+                    asset: 'house',
+                    drawCount: 60,
                 }
             ]
         }

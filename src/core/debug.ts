@@ -1,3 +1,4 @@
+import { Random } from '../utils/random';
 import { LightingManager } from '../world/lighting';
 import { PlayerManager } from '../world/player';
 import { WorldManager } from '../world/world';
@@ -45,6 +46,10 @@ export class DebugManager {
         document.getElementById('debug-panel')!.style.display = this.debugPanel ? 'block' : 'none';
 
         const worldInfos = document.getElementById('debug-world-infos') as HTMLElement;
+        const seed = document.getElementById('debug-seed') as HTMLElement;
+
+        seed.innerHTML = `seed : ${Random.seed}`;
+
         App.engine.runRenderLoop(() => {
             if (!this.debugPanel) {
                 return;

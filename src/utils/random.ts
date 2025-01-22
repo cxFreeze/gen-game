@@ -1,12 +1,15 @@
 export abstract class Random {
 
-    private static seed: string;
+    private static _seed: string;
+    static get seed(): string {
+        return this._seed;
+    }
 
     static setSeed(seed: string = '') {
         if (seed === '') {
             seed = this.randString();
         }
-        Random.seed = seed;
+        Random._seed = seed;
     }
 
     private static cyrb128(str: string): number[] {
@@ -40,7 +43,7 @@ export abstract class Random {
     }
 
     private static seededRand(input: string) {
-        const seed = Random.cyrb128(input + this.seed);
+        const seed = Random.cyrb128(input + this._seed);
         return this.sfc32(seed[0], seed[1], seed[2], seed[3]);
     }
 

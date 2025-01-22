@@ -4,7 +4,7 @@ import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh';
 import { Sprite } from '@babylonjs/core/Sprites/sprite';
 import { App } from '../core/app';
 import { Params } from '../core/params';
-import { BiomeAssetType, BiomeItem, BiomeType, LoadedMesh, LoadedSprite } from '../models/interfaces';
+import { BiomeAssetType, BiomeItem, BiomeType, LoadedMesh, LoadedSprite, PreLoadedItem, ZoneAssetType, ZoneItem, ZoneType } from '../models/interfaces';
 import { Random } from '../utils/random';
 import { WorldUtils } from '../utils/world-utils';
 import { AssetManager } from './assets';
@@ -25,8 +25,14 @@ export class WorldGenerator {
 
     private readonly currentBiome = BiomeType.forest;
 
+    private readonly zonesChuncks: { [key in ZoneType]: string[] } = {
+        [ZoneType.town]: [],
+    };
+
     private currentChunk: string;
     private readonly loadedChuncksItems: { [key: string]: { meshes: LoadedMesh[], sprites: LoadedSprite[] } } = {};
+
+    private readonly preLoadedChuncksItems: { [key: string]: { meshes: PreLoadedItem[], sprites: PreLoadedItem[] } } = {};
 
     private readonly renderQueue: Array<() => void> = [];
 
@@ -42,7 +48,7 @@ export class WorldGenerator {
 
     private constructor() {
         this.initRenderLoopExtras();
-
+        this.initZonesChuncks();
         this.loadFences();
     }
 
@@ -91,6 +97,25 @@ export class WorldGenerator {
 
 
     // CHUNCK MANAGEMENT
+
+    private initZonesChuncks() {
+        Object.keys(this.zonesChuncks).forEach((zone: unknown) => {
+            for (let i = 0; i < Params.zoneCount[zone as ZoneType]; i++) {
+                const chunk = this.getZoneRandomChunk(zone as ZoneType, i);
+                this.zonesChuncks[zone as ZoneType].push(chunk);
+            }
+        });
+    }
+
+    private getZoneForChunk(chunk: string): ZoneType | null {
+        let zone = null;
+        Object.keys(this.zonesChuncks).forEach((zoneType: unknown) => {
+            if (this.zonesChuncks[zoneType as ZoneType].includes(chunk)) {
+                zone = zoneType as ZoneType;
+            }
+        });
+        return zone;
+    }
 
     private getChunk(x: number, y: number) {
         const chuckX = Math.round(x / this.chunckSize) * this.chunckSize;
@@ -183,7 +208,10 @@ export class WorldGenerator {
             return;
         }
         this.loadGround(x, y);
-        this.loadItems(x, y);
+        this.loadPreLoadedItems(x, y);
+
+        const zone = this.getZoneForChunk(chunk);
+        this.loadItems(x, y, zone);
     }
 
     private loadGround(chunkX: number, chunkY: number, asset: GG3DAsset | null = null): void {
@@ -239,28 +267,28 @@ export class WorldGenerator {
         let x = -origDrawPointConst;
 
         while (y < worldSize / 2) {
-            this.drawItem(fence, x, y, 0, 1, Math.PI / 2);
+            this.addToPreLoadedItems(fence, x, y, 0, 1, Math.PI / 2);
             y += fenceWidth!;
         }
 
         y = origDrawPointVariable;
         x = origDrawPointConst;
         while (y < worldSize / 2) {
-            this.drawItem(fence, x, y, 0, 1, Math.PI / 2);
+            this.addToPreLoadedItems(fence, x, y, 0, 1, Math.PI / 2);
             y += fenceWidth!;
         }
 
         y = -origDrawPointConst;
         x = origDrawPointVariable;
         while (x < worldSize / 2) {
-            this.drawItem(fence, x, y, 0);
+            this.addToPreLoadedItems(fence, x, y, 0);
             x += fenceWidth!;
         }
 
         y = origDrawPointConst;
         x = origDrawPointVariable;
         while (x < worldSize / 2) {
-            this.drawItem(fence, x, y, 0);
+            this.addToPreLoadedItems(fence, x, y, 0);
             x += fenceWidth!;
         }
 
@@ -268,22 +296,44 @@ export class WorldGenerator {
 
     // ITEMS MANAGEMENT
 
-    private loadItems(chunkX: number, chunkY: number) {
+    private loadPreLoadedItems(chunkX: number, chunkY: number) {
+        const chunk = `${chunkX}/${chunkY}`;
+        if (!this.preLoadedChuncksItems[chunk]) {
+            return;
+        }
+
+        this.preLoadedChuncksItems[chunk].meshes.forEach((item) => {
+            this.renderQueue.push(() => {
+                const mesh = this.drawItem(item.asset as GG3DAsset, item.x, item.y, item.z, item.sizeRatio, item.rotate);
+                if (mesh) {
+                    this.loadedChuncksItems[chunk].meshes.push({ mesh, asset: item.asset as GG3DAsset });
+                }
+            });
+        });
+    }
+
+    private loadItems(chunkX: number, chunkY: number, zone: ZoneType | null = null) {
+        if (zone) {
+            Biomes.zones[zone].items.forEach((item) => {
+                this.loadItemType(item, chunkX, chunkY, zone);
+            });
+        }
+
         Biomes.biomes[this.currentBiome].items.forEach((item) => {
             this.loadItemType(item, chunkX, chunkY);
         });
     }
 
-    private loadItemType(item: BiomeItem, chunkX: number, chunkY: number): void {
+    private loadItemType(item: BiomeItem | ZoneItem, chunkX: number, chunkY: number, zone: ZoneType | null = null): void {
         let drawCount = item.drawCount;
 
-        if (item.boostDrawCount && item.boostDrawCountRate) {
+        if ('boostDrawCount' in item && item.boostDrawCount && item.boostDrawCountRate) {
             if (this.randBoolItem(item.boostDrawCountRate, item.asset + this.getBchunk(chunkX, chunkY), 0, 0)) {
                 drawCount = item.boostDrawCount;
             }
         }
 
-        const drawRate = this.getDrawRate(item.asset, drawCount);
+        const drawRate = this.getDrawRate(item.asset, drawCount, zone);
 
         const bound = this.chunckSize / 2;
         let xIndex = -bound;
@@ -297,7 +347,14 @@ export class WorldGenerator {
                 const absX = chunkX + xIndex;
                 const absY = chunkY + yIndex;
 
-                const rAsset = AssetManager.getAsset(this.currentBiome, item.asset, item.asset + absX + absY);
+                let rAsset: GGAsset;
+
+                if (zone) {
+                    rAsset = AssetManager.getZoneAsset(zone, item.asset as ZoneAssetType, item.asset + absX + absY + zone);
+                }
+                else {
+                    rAsset = AssetManager.getAsset(this.currentBiome, item.asset as BiomeAssetType, item.asset + absX + absY);
+                }
 
                 yIndex += rAsset.safeZone;
 
@@ -339,6 +396,15 @@ export class WorldGenerator {
 
     /// DRAWING
 
+    private addToPreLoadedItems(asset: GG3DAsset, x: number, y: number, z: number, sizeRatio: number = 1, rotate: number = 0): void {
+        const chunk = this.getChunk(x, y);
+        if (!this.preLoadedChuncksItems[chunk]) {
+            this.preLoadedChuncksItems[chunk] = { meshes: [], sprites: [] };
+        }
+
+        this.preLoadedChuncksItems[chunk].meshes.push({ asset, x, y, z, sizeRatio, rotate });
+    }
+
     private drawItem(asset: GG3DAsset, x: number, y: number, z: number, sizeRatio: number = 1, rotate: number = 0): InstancedMesh | undefined {
         const item = asset.mesh?.createInstance(asset.name + this.itemCnt);
 
@@ -375,7 +441,7 @@ export class WorldGenerator {
         let sizeRatio = 1;
         let rotation = 0;
 
-        let itemHeight = asset.mesh!.getBoundingInfo().boundingBox.maximumWorld.y * asset.scale;
+        let itemHeight = asset.sizeY * asset.scale;
 
         if (this.enableDeviation) {
             if (asset.displacementRatio > 0) {
@@ -398,7 +464,7 @@ export class WorldGenerator {
 
         itemHeight = itemHeight * sizeRatio;
 
-        const z = itemHeight - deviationZ;
+        const z = 0 - deviationZ;
 
         if (x < chunkX - this.chunckSize / 2) {
             x = chunkX - this.chunckSize / 2;
@@ -526,8 +592,14 @@ export class WorldGenerator {
         return res;
     }
 
-    private getDrawRate(type: BiomeAssetType, drawCount: number): number {
-        const mesh = AssetManager.getFirstAsset(this.currentBiome, type);
+    private getDrawRate(type: BiomeAssetType | ZoneAssetType, drawCount: number, zone: ZoneType | null): number {
+        let mesh;
+        if (zone) {
+            mesh = AssetManager.getFirstZoneAsset(zone, type as ZoneAssetType);
+        }
+        else {
+            mesh = AssetManager.getFirstAsset(this.currentBiome, type as BiomeAssetType);
+        }
         const maxDraw = (1000 * 1000) / (mesh.safeZone * mesh.safeZone);
         return drawCount / maxDraw;
     }
@@ -581,5 +653,15 @@ export class WorldGenerator {
 
     private randNumberItem(itemType: string, x: number, y: number): number {
         return Random.randomNumber(itemType + x + y);
+    }
+
+    private getZoneRandomChunk(type: ZoneType, count: number): string {
+        const x = Random.randomNumber(`xzone${type}x${count}x${count}x${count}`);
+        const y = Random.randomNumber(`yzone${type}y${count}y${count}y${count}`);
+
+        const worldX = x / 100 * Params.safeDrawWorldSize - Params.safeDrawWorldSize / 2;
+        const worldY = y / 100 * Params.safeDrawWorldSize - Params.safeDrawWorldSize / 2;
+
+        return this.getChunk(worldX, worldY);
     }
 }

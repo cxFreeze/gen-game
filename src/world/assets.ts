@@ -9,7 +9,7 @@ import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
 import { SpriteManager } from '@babylonjs/core/Sprites/spriteManager.js';
 import { App } from '../core/app.js';
 import { Params } from '../core/params.js';
-import { BiomeAssetType, BiomeType, WorldAsset } from '../models/interfaces.js';
+import { BiomeAssetType, BiomeType, WorldAsset, ZoneAssetType, ZoneType } from '../models/interfaces.js';
 import { Random } from '../utils/random.js';
 import { GG3DAsset, GGAsset, GGSpriteAsset } from './GGAsset.js';
 
@@ -27,6 +27,12 @@ export class AssetManager {
             tree: new Array<GG3DAsset>(),
             rock: new Array<GG3DAsset>(),
             grass: new Array<GGSpriteAsset>()
+        }
+    };
+
+    private static readonly zoneAssets: { [key in ZoneType]: { [key in ZoneAssetType]: Array<GGAsset> } } = {
+        [ZoneType.town]: {
+            house: new Array<GG3DAsset>(),
         }
     };
 
@@ -56,6 +62,7 @@ export class AssetManager {
         this.worldAssets.fence = fence;
 
         await this.loadForestAssets();
+        await this.loadTownAssets();
     }
 
     private static async loadForestAssets() {
@@ -81,8 +88,7 @@ export class AssetManager {
         tree2.scale = 75;
         tree2.maxVerticalDisplacement = 0.2;
 
-        this.biomeAssets[BiomeType.forest].tree.push(tree1);
-        this.biomeAssets[BiomeType.forest].tree.push(tree2);
+        this.biomeAssets[BiomeType.forest].tree.push(tree1, tree2);
 
         const rock = new GG3DAsset('rock', await this.load3DAsset(`${this.Assets3dPath}/forest/rock.glb`));
         rock.safeZone = 20;
@@ -104,6 +110,28 @@ export class AssetManager {
         this.biomeAssets[BiomeType.forest].grass.push(grassSprite);
     }
 
+    private static async loadTownAssets() {
+        const house1 = new GG3DAsset('house1', await this.load3DAsset(`${this.Assets3dPath}/town/house1.glb`));
+        house1.safeZone = 100;
+        house1.displacementRatio = 0.1;
+        house1.sizeRatio = 0.2;
+        house1.scale = 65;
+
+        const house2 = new GG3DAsset('house2', await this.load3DAsset(`${this.Assets3dPath}/town/house2.glb`));
+        house2.safeZone = 100;
+        house2.displacementRatio = 0.1;
+        house2.sizeRatio = 0.2;
+        house2.scale = 65;
+
+        const house3 = new GG3DAsset('house3', await this.load3DAsset(`${this.Assets3dPath}/town/house3.glb`));
+        house3.safeZone = 100;
+        house3.displacementRatio = 0.1;
+        house3.sizeRatio = 0.2;
+        house3.scale = 50;
+
+        this.zoneAssets[ZoneType.town].house.push(house1, house2, house3);
+    }
+
     static getAsset(biome: BiomeType, name: BiomeAssetType, randSeed: string): GGAsset {
         const items = this.biomeAssets[biome][name];
 
@@ -115,6 +143,21 @@ export class AssetManager {
         return items[0];
     }
 
+    static getZoneAsset(zone: ZoneType, name: ZoneAssetType, randSeed: string): GGAsset {
+        const items = this.zoneAssets[zone][name];
+        if (items.length > 1) {
+            const rand = Random.randomNumber(`${randSeed}rndast`) / 100;
+            const index = Math.abs(Math.floor(rand * items.length - 0.01));
+            return items[index];
+        }
+        return items[0];
+    }
+
+    static getFirstZoneAsset(zone: ZoneType, name: ZoneAssetType): GGAsset {
+        const items = this.zoneAssets[zone][name];
+        return items[0];
+    }
+
     static getFirstAsset(biome: BiomeType, name: BiomeAssetType): GGAsset {
         const items = this.biomeAssets[biome][name];
         return items[0];
@@ -122,7 +165,10 @@ export class AssetManager {
 
     private static async load3DAsset(path: string): Promise<Mesh> {
         const container = await loadAssetContainerAsync(path, App.scene);
-        const mesh = container.meshes[1] as Mesh;
+        const meshes = container.meshes.splice(1);
+
+        const mesh = meshes.length > 1 ? Mesh.MergeMeshes(meshes as Mesh[], true, true, undefined, false, true) as Mesh : meshes[0] as Mesh;
+
         container.animationGroups.forEach((anim) => {
             anim.enableBlending = true;
             anim.blendingSpeed = 0.06;

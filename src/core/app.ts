@@ -50,6 +50,7 @@ export class App {
 
         const playerManager = PlayerManager.getInstance();
         playerManager.createPlayer();
+
         const worldManager = WorldManager.getInstance();
         const playerMovements = PlayerMovements.getInstance();
 
