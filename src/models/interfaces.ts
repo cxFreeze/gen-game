@@ -7,7 +7,7 @@ export enum BiomeType { forest = 1 };
 export enum ZoneType { town = 1 };
 
 export type BiomeAssetType = 'ground' | 'tree' | 'rock' | 'grass';
-export type ZoneAssetType = 'house';
+export type ZoneAssetType = 'ground' | 'house' | 'center';
 export type WorldAsset = 'player' | 'fence' | 'ocean';
 
 export interface Biome {
@@ -21,7 +21,9 @@ export interface Zone {
 }
 
 export interface BiomeItem { asset: BiomeAssetType, drawCount: number, boostDrawCount?: number, boostDrawCountRate?: number };
-export interface ZoneItem { asset: ZoneAssetType, drawCount: number };
+export interface ZoneItem {
+    asset: ZoneAssetType, drawCount: number, chunkPlacement?: { x: number, y: number, z: number };
+};
 
 export interface PreLoadedItem {
     asset: GGAsset;

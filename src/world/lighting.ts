@@ -8,7 +8,7 @@ export class LightingManager {
     private sun: DirectionalLight;
     private ambiantLight: HemisphericLight;
     private sunX: number = 0;
-    private sunY: number = 500;
+    private sunY: number = 2000;
     private sunZ: number = -500;
 
     private _shadowGenerator: ShadowGenerator;
@@ -33,9 +33,9 @@ export class LightingManager {
 
         this.sun = new DirectionalLight('sun', new Vector3(0.5, -1, 0.5), App.scene);
         this.sun.position = new Vector3(this.sunX, this.sunY, this.sunZ);
-        this.sun.intensity = 3;
+        this.sun.intensity = 2;
 
-        this._shadowGenerator = new ShadowGenerator(2048, this.sun);
+        this._shadowGenerator = new ShadowGenerator(3072, this.sun);
         this._shadowGenerator.usePercentageCloserFiltering = true;
         this._shadowGenerator.bias = 0.001;
         this._shadowGenerator.transparencyShadow = true;

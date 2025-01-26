@@ -79,7 +79,6 @@ export class PlayerManager {
         let oldPos = this._playerMesh.position.clone();
         this._playerMesh.moveWithCollisions(new Vector3(x, 0, y));
 
-
         this.resetPlayerPositionIfInvalid(oldPos);
 
         const tempX = this._playerMesh.position.x;

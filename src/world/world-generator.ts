@@ -320,12 +320,21 @@ export class WorldGenerator {
         }
 
         Biomes.biomes[this.currentBiome].items.forEach((item) => {
-            this.loadItemType(item, chunkX, chunkY);
+            this.loadItemType(item, chunkX, chunkY, null, !!zone);
         });
     }
 
-    private loadItemType(item: BiomeItem | ZoneItem, chunkX: number, chunkY: number, zone: ZoneType | null = null): void {
+    private loadItemType(item: BiomeItem | ZoneItem, chunkX: number, chunkY: number, zone: ZoneType | null = null, noSprite: boolean = false): void {
         let drawCount = item.drawCount;
+
+        if (zone && 'chunkPlacement' in item && item.chunkPlacement) {
+            const rAsset = AssetManager.getZoneAsset(zone, item.asset as ZoneAssetType, item.asset + chunkX + chunkY + zone + chunkX + chunkY);
+            const nItem = this.drawItem(rAsset as GG3DAsset, chunkX + item.chunkPlacement.x, chunkY + item.chunkPlacement.y, item.chunkPlacement.z);
+            if (nItem) {
+                this.loadedChuncksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: nItem, asset: rAsset as GG3DAsset });
+            }
+            return;
+        }
 
         if ('boostDrawCount' in item && item.boostDrawCount && item.boostDrawCountRate) {
             if (this.randBoolItem(item.boostDrawCountRate, item.asset + this.getBchunk(chunkX, chunkY), 0, 0)) {
@@ -375,13 +384,13 @@ export class WorldGenerator {
                         if (!this.loadedChuncksItems[`${chunkX}/${chunkY}`]) {
                             return;
                         }
-                        if (rAsset instanceof GG3DAsset && rAsset.type === 'item') {
+                        if (rAsset instanceof GG3DAsset && (rAsset.type === 'item' || rAsset.type === 'ground')) {
                             const item = this.drawItemWithDeviation(rAsset, absX, absY, chunkX, chunkY);
                             if (item) {
                                 this.loadedChuncksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: item, asset: rAsset });
                             }
                         }
-                        else if (rAsset instanceof GGSpriteAsset && rAsset.type === 'sprite') {
+                        else if (rAsset instanceof GGSpriteAsset && rAsset.type === 'sprite' && !noSprite) {
                             const item = this.drawSpriteWithDeviation(rAsset, absX, absY, chunkX, chunkY);
                             if (item) {
                                 this.loadedChuncksItems[`${chunkX}/${chunkY}`].sprites.push({ sprite: item, asset: rAsset });
@@ -429,7 +438,11 @@ export class WorldGenerator {
             this.lightingManager.shadowGenerator.addShadowCaster(item);
         }
 
-        App.scene.addMesh(item);
+        if (item) {
+            item.computeWorldMatrix(true);
+            App.scene.addMesh(item);
+        }
+
         return item;
     }
 
@@ -485,8 +498,6 @@ export class WorldGenerator {
         if (!res) {
             return undefined;
         }
-
-        res.computeWorldMatrix();
 
         if (!this.isSpaceAvailable(res, asset, x, y)) {
             this.deleteMeshFromScene(res);
@@ -575,12 +586,17 @@ export class WorldGenerator {
             return false;
         }
 
+        const chunck = chunk.split('/').map((val) => parseInt(val));
+        if (!WorldUtils.isInChunkBounds(mesh, chunck[0], chunck[1])) {
+            return false;
+        }
+
         if (!items) {
             return true;
         }
 
         items.some((item) => {
-            if (item.asset.type === 'ground' || item.asset.name === asset.name) {
+            if (item.asset.type === 'ground') {
                 return false;
             }
             if (mesh.intersectsMesh(item.mesh as InstancedMesh, true)) {

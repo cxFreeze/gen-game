@@ -19,7 +19,8 @@ export class Params {
     static readonly hugeSizeChance = 10; // out of 1000
 
     static readonly zoneCount: { [key in ZoneType]: number } = {
-        [ZoneType.town]: Params.halfWorldSizeChunks * 2
+        [ZoneType.town]: 4 * (Params.halfWorldSizeChunks * Params.halfWorldSizeChunks) / 16
+        //[ZoneType.town]: 4
     };
 
 

@@ -29,8 +29,18 @@ export class Biomes {
             ground: 'ground',
             items: [
                 {
+                    asset: 'ground',
+                    drawCount: 1,
+                    chunkPlacement: { x: 0, y: -80, z: 81 }
+                },
+                {
+                    asset: 'center',
+                    drawCount: 1,
+                    chunkPlacement: { x: 0, y: 0, z: 0 }
+                },
+                {
                     asset: 'house',
-                    drawCount: 60,
+                    drawCount: 250,
                 }
             ]
         }
