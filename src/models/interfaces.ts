@@ -7,7 +7,7 @@ export enum BiomeType { forest = 1 };
 export enum ZoneType { town = 1 };
 
 export type BiomeAssetType = 'ground' | 'tree' | 'rock' | 'grass';
-export type ZoneAssetType = 'ground' | 'house' | 'center';
+export type ZoneAssetType = 'ground' | 'plazaGround' | 'house' | 'center';
 export type WorldAsset = 'player' | 'fence' | 'ocean';
 
 export interface Biome {

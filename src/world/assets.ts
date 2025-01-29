@@ -32,9 +32,10 @@ export class AssetManager {
 
     private static readonly zoneAssets: { [key in ZoneType]: { [key in ZoneAssetType]: Array<GGAsset> } } = {
         [ZoneType.town]: {
+            ground: new Array<GG3DAsset>(),
             house: new Array<GG3DAsset>(),
             center: new Array<GG3DAsset>(),
-            ground: new Array<GG3DAsset>()
+            plazaGround: new Array<GG3DAsset>()
         }
     };
 
@@ -113,55 +114,68 @@ export class AssetManager {
     }
 
     private static async loadTownAssets() {
-        const townGround = new GG3DAsset('townGround', MeshBuilder.CreateDisc('disc', { radius: 80, tessellation: 32 }, App.scene), this.loadTextureAsset('townGround', `${this.texturesPath}/town/ground_texture.jpg`));
+        const townGround = new GG3DAsset('townGround', MeshBuilder.CreateDisc('disc', { radius: 250, tessellation: 120 }, App.scene), this.loadTextureAsset('townGround', `${this.texturesPath}/town/ground_texture.jpg`));
         townGround.mesh.rotation.x = Math.PI / 2;
         townGround.ignoreCollisions = true;
         townGround.isPickable = false;
         townGround.disableShadow = true;
+        townGround.type = 'ground';
 
-        const townTexture = (townGround.mesh.material as StandardMaterial).ambientTexture as Texture;
+        const townTexture = (townGround.mesh.material as StandardMaterial).diffuseTexture as Texture;
         townTexture!.wrapU = Texture.WRAP_ADDRESSMODE;
         townTexture!.wrapV = Texture.WRAP_ADDRESSMODE;
-        townTexture!.uScale = 4;
-        townTexture!.vScale = 4;
+        townTexture!.uScale = 10;
+        townTexture!.vScale = 10;
 
         this.zoneAssets[ZoneType.town].ground.push(townGround);
 
+        const plazaGround = new GG3DAsset('plazaGround', MeshBuilder.CreateDisc('disc', { radius: 60, tessellation: 20 }, App.scene), this.loadTextureAsset('plazaGround', `${this.texturesPath}/town/plaza_ground_texture.jpg`));
+        plazaGround.mesh.rotation.x = Math.PI / 2;
+        plazaGround.ignoreCollisions = true;
+        plazaGround.isPickable = false;
+        plazaGround.disableShadow = true;
+
+        const plazaTexture = (plazaGround.mesh.material as StandardMaterial).diffuseTexture as Texture;
+        plazaTexture!.wrapU = Texture.WRAP_ADDRESSMODE;
+        plazaTexture!.wrapV = Texture.WRAP_ADDRESSMODE;
+        plazaTexture!.uScale = 3;
+        plazaTexture!.vScale = 3;
+
+        this.zoneAssets[ZoneType.town].plazaGround.push(plazaGround);
+
         const house1 = new GG3DAsset('house1', await this.load3DAsset(`${this.Assets3dPath}/town/house1.glb`));
-        house1.safeZone = 120;
-        house1.displacementRatio = 0.5;
+        house1.safeZone = 80;
+        house1.displacementRatio = 0.3;
         house1.sizeRatio = 0.2;
         house1.scale = 80;
 
         const house2 = new GG3DAsset('house2', await this.load3DAsset(`${this.Assets3dPath}/town/house2.glb`));
-        house2.safeZone = 120;
-        house2.displacementRatio = 0.5;
+        house2.safeZone = 80;
+        house2.displacementRatio = 0.3;
         house2.sizeRatio = 0.2;
         house2.scale = 80;
 
         const house3 = new GG3DAsset('house3', await this.load3DAsset(`${this.Assets3dPath}/town/house3.glb`));
         house3.safeZone = 80;
-        house3.displacementRatio = 0.5;
+        house3.displacementRatio = 0.3;
         house3.sizeRatio = 0.2;
         house3.scale = 60;
 
         this.zoneAssets[ZoneType.town].house.push(house1, house2, house3);
 
         const townCenter1 = new GG3DAsset('center1', await this.load3DAsset(`${this.Assets3dPath}/town/statue1.glb`));
-        townCenter1.safeZone = 250;
-        townCenter1.sizeRatio = 0.2;
+        townCenter1.safeZone = 100;
         townCenter1.scale = 12;
         townCenter1.isPickable = false;
+        townCenter1.rotation = Math.PI;
 
         const townCenter2 = new GG3DAsset('center2', await this.load3DAsset(`${this.Assets3dPath}/town/statue2.glb`));
-        townCenter2.safeZone = 250;
-        townCenter2.sizeRatio = 0.2;
+        townCenter2.safeZone = 100;
         townCenter2.scale = 2000;
         townCenter2.isPickable = false;
+        townCenter2.rotation = Math.PI;
 
         this.zoneAssets[ZoneType.town].center.push(townCenter1, townCenter2);
-
-
     }
 
     static getAsset(biome: BiomeType, name: BiomeAssetType, randSeed: string): GGAsset {
@@ -213,7 +227,7 @@ export class AssetManager {
 
     private static loadTextureAsset(name: string, path: string): Material {
         const groundMat = new StandardMaterial(name, App.scene);
-        groundMat.ambientTexture = new Texture(path, App.scene);
+        groundMat.diffuseTexture = new Texture(path, App.scene);
         groundMat.specularColor = new Color3(0, 0, 0);
         return groundMat;
     }

@@ -31,7 +31,12 @@ export class Biomes {
                 {
                     asset: 'ground',
                     drawCount: 1,
-                    chunkPlacement: { x: 0, y: -80, z: 81 }
+                    chunkPlacement: { x: 0, y: -250, z: 250.5 }
+                },
+                {
+                    asset: 'plazaGround',
+                    drawCount: 1,
+                    chunkPlacement: { x: 0, y: -60, z: 61 }
                 },
                 {
                     asset: 'center',

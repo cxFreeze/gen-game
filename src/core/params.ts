@@ -3,7 +3,7 @@ import { Random } from '../utils/random';
 
 export class Params {
 
-    private static readonly halfWorldSizeChunks = 8;
+    private static readonly halfWorldSizeChunks = 12;
 
     // LOADING
     static readonly framesWithoutDraw = 100;
@@ -16,10 +16,10 @@ export class Params {
     static readonly spawnNoDrawZone = 50;
     static readonly itemLoadBatchSize = 50;
     static readonly hugeSizeRatio = 3;
-    static readonly hugeSizeChance = 10; // out of 1000
+    static readonly hugeSizeChance = 5; // out of 1000
 
     static readonly zoneCount: { [key in ZoneType]: number } = {
-        [ZoneType.town]: 4 * (Params.halfWorldSizeChunks * Params.halfWorldSizeChunks) / 16
+        [ZoneType.town]: 3 * (Params.halfWorldSizeChunks * Params.halfWorldSizeChunks) / 16
         //[ZoneType.town]: 4
     };
 

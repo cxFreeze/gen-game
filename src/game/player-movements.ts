@@ -31,6 +31,16 @@ export class PlayerMovements {
             return;
         }
 
+        if (PlayerInputs.upArrowPressed && PlayerInputs.downArrowPressed && !PlayerInputs.leftArrowPressed && !PlayerInputs.rightArrowPressed) {
+            this.playerManager.setPlayerAnimation('Idle');
+            return;
+        }
+
+        if (!PlayerInputs.upArrowPressed && !PlayerInputs.downArrowPressed && PlayerInputs.leftArrowPressed && PlayerInputs.rightArrowPressed) {
+            this.playerManager.setPlayerAnimation('Idle');
+            return;
+        }
+
         this.playerManager.setPlayerAnimation('Running');
 
         const distance = this.moveSpeed * (time / 1000);

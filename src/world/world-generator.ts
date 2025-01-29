@@ -29,11 +29,11 @@ export class WorldGenerator {
         [ZoneType.town]: [],
     };
 
+    private initPlayerChunk: string;
     private currentChunk: string;
+
     private readonly loadedChuncksItems: { [key: string]: { meshes: LoadedMesh[], sprites: LoadedSprite[] } } = {};
-
     private readonly preLoadedChuncksItems: { [key: string]: { meshes: PreLoadedItem[], sprites: PreLoadedItem[] } } = {};
-
     private readonly renderQueue: Array<() => void> = [];
 
     private readonly lightingManager = LightingManager.getInstance();
@@ -47,6 +47,7 @@ export class WorldGenerator {
     }
 
     private constructor() {
+        this.initPlayerChunk = this.getChunk(Params.playerInitX, Params.playerInitY);
         this.initRenderLoopExtras();
         this.initZonesChuncks();
         this.loadFences();
@@ -428,7 +429,10 @@ export class WorldGenerator {
 
         item.position = new Vector3(x, z, y);
         if (rotate > 0) {
-            item.rotation = new Vector3(0, rotate, 0);
+            item.rotation = item.rotation.add(new Vector3(0, rotate, 0));
+        }
+        else {
+            item.rotation = item.rotation.add(new Vector3(0, asset.rotation, 0));
         }
 
         item.checkCollisions = !asset.ignoreCollisions;
@@ -499,7 +503,7 @@ export class WorldGenerator {
             return undefined;
         }
 
-        if (!this.isSpaceAvailable(res, asset, x, y)) {
+        if (!this.isSpaceAvailable(res, x, y)) {
             this.deleteMeshFromScene(res);
             return undefined;
         }
@@ -577,7 +581,7 @@ export class WorldGenerator {
 
     // UTILS
 
-    private isSpaceAvailable(mesh: AbstractMesh, asset: GG3DAsset, x: number, y: number): boolean {
+    private isSpaceAvailable(mesh: AbstractMesh, x: number, y: number): boolean {
         let res = true;
         const chunk = this.getChunk(x, y);
         const items = this.loadedChuncksItems[chunk]?.meshes;
@@ -678,6 +682,12 @@ export class WorldGenerator {
         const worldX = x / 100 * Params.safeDrawWorldSize - Params.safeDrawWorldSize / 2;
         const worldY = y / 100 * Params.safeDrawWorldSize - Params.safeDrawWorldSize / 2;
 
-        return this.getChunk(worldX, worldY);
+        const chunk = this.getChunk(worldX, worldY);
+
+        if (chunk === this.initPlayerChunk) {
+            return this.getZoneRandomChunk(type, count + 1500);
+        }
+
+        return chunk;
     }
 }

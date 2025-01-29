@@ -55,6 +55,8 @@ export class GG3DAsset extends GGAsset {
         this._isPickable = value; this._mesh.isPickable = value;
     };
 
+    rotation: number;
+
     disableShadow: boolean;
 
     constructor(name: string, mesh: Mesh, material?: Material) {
@@ -63,6 +65,7 @@ export class GG3DAsset extends GGAsset {
         this._mesh.isVisible = false;
         this._mesh.receiveShadows = true;
         this.disableShadow = false;
+        this.rotation = 0;
         this.isPickable = true;
         if (material) {
             this._mesh.material = material;
