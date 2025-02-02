@@ -471,7 +471,7 @@ export class WorldGenerator {
             }
 
             if (asset.maxVerticalDisplacement && asset.maxVerticalDisplacement > 0) {
-                deviationZ = this.getDeviationZ(asset, x, y, itemHeight, sizeRatio);
+                deviationZ = this.getDeviationZ(asset, x, y, itemHeight);
             }
             rotation = this.randNumberItem(`${asset.name}rotate`, x, y) / 100 * Math.PI * 2;
         }
@@ -549,7 +549,7 @@ export class WorldGenerator {
             }
 
             if (asset.maxVerticalDisplacement && asset.maxVerticalDisplacement > 0) {
-                deviationZ = this.getDeviationZ(asset, x, y, asset.height, sizeRatio);
+                deviationZ = this.getDeviationZ(asset, x, y, asset.height * sizeRatio);
             }
             rotation = (this.randNumberItem(`${asset.name}rotate`, x, y) - 50) / 50 * (Math.PI / 16);
             invert = this.randBoolItem(asset.sizeRatio, `${asset.name}invert`, x, y);
@@ -645,8 +645,8 @@ export class WorldGenerator {
         return 2 * asset.safeZone * (this.randNumberItem(`${asset.name}deviationY`, x, y) - 50) / 100 * asset.displacementRatio;
     }
 
-    private getDeviationZ(asset: GGAsset, x: number, y: number, height: number, sizeRatio: number): number {
-        return height * sizeRatio * asset.maxVerticalDisplacement * (this.randNumberItem(`${asset.name}deviationZ`, x, y)) / 100;
+    private getDeviationZ(asset: GGAsset, x: number, y: number, height: number): number {
+        return height * asset.maxVerticalDisplacement * (this.randNumberItem(`${asset.name}deviationZ`, x, y)) / 100;
     }
 
     private getSizeRatio(asset: GGAsset, x: number, y: number, useHugeFactor: boolean = true): number {

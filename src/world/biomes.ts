@@ -14,7 +14,7 @@ export class Biomes {
                 },
                 {
                     asset: 'rock',
-                    drawCount: 8,
+                    drawCount: 10,
                 },
                 {
                     asset: 'grass',
@@ -31,12 +31,12 @@ export class Biomes {
                 {
                     asset: 'ground',
                     drawCount: 1,
-                    chunkPlacement: { x: 0, y: -250, z: 250.5 }
+                    chunkPlacement: { x: 0, y: -250, z: 250 }
                 },
                 {
                     asset: 'plazaGround',
                     drawCount: 1,
-                    chunkPlacement: { x: 0, y: -60, z: 61 }
+                    chunkPlacement: { x: 0, y: -60, z: 60.01 }
                 },
                 {
                     asset: 'center',

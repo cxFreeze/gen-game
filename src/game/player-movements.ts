@@ -26,17 +26,10 @@ export class PlayerMovements {
     }
 
     updatePlayerPosition(time: number) {
-        if (!PlayerInputs.upArrowPressed && !PlayerInputs.downArrowPressed && !PlayerInputs.leftArrowPressed && !PlayerInputs.rightArrowPressed) {
-            this.playerManager.setPlayerAnimation('Idle');
-            return;
-        }
-
-        if (PlayerInputs.upArrowPressed && PlayerInputs.downArrowPressed && !PlayerInputs.leftArrowPressed && !PlayerInputs.rightArrowPressed) {
-            this.playerManager.setPlayerAnimation('Idle');
-            return;
-        }
-
-        if (!PlayerInputs.upArrowPressed && !PlayerInputs.downArrowPressed && PlayerInputs.leftArrowPressed && PlayerInputs.rightArrowPressed) {
+        if ((!PlayerInputs.upArrowPressed && !PlayerInputs.downArrowPressed && !PlayerInputs.leftArrowPressed && !PlayerInputs.rightArrowPressed)
+            || (PlayerInputs.upArrowPressed && PlayerInputs.downArrowPressed && !PlayerInputs.leftArrowPressed && !PlayerInputs.rightArrowPressed)
+            || (!PlayerInputs.upArrowPressed && !PlayerInputs.downArrowPressed && PlayerInputs.leftArrowPressed && PlayerInputs.rightArrowPressed)
+        ) {
             this.playerManager.setPlayerAnimation('Idle');
             return;
         }

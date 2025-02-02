@@ -47,6 +47,7 @@ export class DebugManager {
 
         const worldInfos = document.getElementById('debug-world-infos') as HTMLElement;
         const seed = document.getElementById('debug-seed') as HTMLElement;
+        const treedInfos = document.getElementById('debug-3d') as HTMLElement;
 
         seed.innerHTML = `seed : ${Random.seed}`;
 
@@ -56,6 +57,7 @@ export class DebugManager {
             }
             if (App.engine.frameId % 10 === 0) {
                 worldInfos.innerHTML = `position : ${this.worldManager.worldX.toFixed(0)} / ${this.worldManager.worldY.toFixed(0)}`;
+                treedInfos.innerHTML = `3D items : assets : ${App.scene.meshes.length} - polys : ${(App.scene.getTotalVertices() / 3).toFixed(0)}`;
             }
         });
     }

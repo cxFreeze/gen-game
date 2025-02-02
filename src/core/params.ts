@@ -3,7 +3,7 @@ import { Random } from '../utils/random';
 
 export class Params {
 
-    private static readonly halfWorldSizeChunks = 12;
+    private static readonly halfWorldSizeChunks = 16;
 
     // LOADING
     static readonly framesWithoutDraw = 100;

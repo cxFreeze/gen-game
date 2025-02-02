@@ -75,6 +75,7 @@ export class AssetManager {
         forestGround.safeZone = this.groundTileSize;
         forestGround.isPickable = false;
         forestGround.type = 'ground';
+        forestGround.mesh.material!.zOffset = 20;
         this.biomeAssets[BiomeType.forest].ground.push(forestGround);
 
         const tree1 = new GG3DAsset('tree1', await this.load3DAsset(`${this.Assets3dPath}/forest/tree1.glb`));
@@ -93,14 +94,21 @@ export class AssetManager {
 
         this.biomeAssets[BiomeType.forest].tree.push(tree1, tree2);
 
-        const rock = new GG3DAsset('rock', await this.load3DAsset(`${this.Assets3dPath}/forest/rock.glb`));
-        rock.safeZone = 20;
-        rock.displacementRatio = 0.2;
-        rock.sizeRatio = 0.4;
-        rock.scale = 15;
-        rock.maxVerticalDisplacement = 0.5;
+        const rock1 = new GG3DAsset('rock1', await this.load3DAsset(`${this.Assets3dPath}/forest/rock1.glb`));
+        rock1.safeZone = 20;
+        rock1.displacementRatio = 0.2;
+        rock1.sizeRatio = 0.4;
+        rock1.scale = 5;
+        rock1.maxVerticalDisplacement = 0.5;
 
-        this.biomeAssets[BiomeType.forest].rock.push(rock);
+        const rock2 = new GG3DAsset('rock2', await this.load3DAsset(`${this.Assets3dPath}/forest/rock2.glb`));
+        rock2.safeZone = 20;
+        rock2.displacementRatio = 0.2;
+        rock2.sizeRatio = 0.4;
+        rock2.scale = 10;
+        rock2.maxVerticalDisplacement = 0.5;
+
+        this.biomeAssets[BiomeType.forest].rock.push(rock1, rock2);
 
         const grassSpriteManager = new SpriteManager('grassManager', `${this.texturesPath}/grass.png`, 10000, { width: 156, height: 156 }, App.scene);
         const grassSprite = new GGSpriteAsset('grass', grassSpriteManager);
@@ -114,7 +122,7 @@ export class AssetManager {
     }
 
     private static async loadTownAssets() {
-        const townGround = new GG3DAsset('townGround', MeshBuilder.CreateDisc('disc', { radius: 250, tessellation: 120 }, App.scene), this.loadTextureAsset('townGround', `${this.texturesPath}/town/ground_texture.jpg`));
+        const townGround = new GG3DAsset('townGround', MeshBuilder.CreateDisc('disc', { radius: 250, tessellation: 128 }, App.scene), this.loadTextureAsset('townGround', `${this.texturesPath}/town/ground_texture.jpg`));
         townGround.mesh.rotation.x = Math.PI / 2;
         townGround.ignoreCollisions = true;
         townGround.isPickable = false;
@@ -127,9 +135,11 @@ export class AssetManager {
         townTexture!.uScale = 10;
         townTexture!.vScale = 10;
 
+        townGround.mesh.material!.zOffset = 10;
+
         this.zoneAssets[ZoneType.town].ground.push(townGround);
 
-        const plazaGround = new GG3DAsset('plazaGround', MeshBuilder.CreateDisc('disc', { radius: 60, tessellation: 20 }, App.scene), this.loadTextureAsset('plazaGround', `${this.texturesPath}/town/plaza_ground_texture.jpg`));
+        const plazaGround = new GG3DAsset('plazaGround', MeshBuilder.CreateDisc('disc', { radius: 60, tessellation: 48 }, App.scene), this.loadTextureAsset('plazaGround', `${this.texturesPath}/town/plaza_ground_texture.jpg`));
         plazaGround.mesh.rotation.x = Math.PI / 2;
         plazaGround.ignoreCollisions = true;
         plazaGround.isPickable = false;
@@ -171,7 +181,7 @@ export class AssetManager {
 
         const townCenter2 = new GG3DAsset('center2', await this.load3DAsset(`${this.Assets3dPath}/town/statue2.glb`));
         townCenter2.safeZone = 100;
-        townCenter2.scale = 2000;
+        townCenter2.scale = 20;
         townCenter2.isPickable = false;
         townCenter2.rotation = Math.PI;
 
