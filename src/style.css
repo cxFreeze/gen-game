@@ -3,6 +3,11 @@
     src: url(/fonts/StayPixel.ttf);
 }
 
+:root {
+    --logo-color1: #5d9ecc;
+    --logo-color2: #baf507;
+}
+
 * {
     box-sizing: border-box;
     cursor: url('/images/cursor.png'), auto;
@@ -29,7 +34,7 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    background: #5B7D1B;
+    background: linear-gradient(0.5turn, #7177b8, #419264);
     color: white;
     gap: 1.5rem;
 
@@ -42,6 +47,11 @@ body {
         font-size: 8rem;
         margin: 0;
         margin-bottom: 3rem;
+        text-shadow: 3px 1px 1px var(--logo-color1), 2px 2px 1px var(--logo-color2), 4px 2px 1px var(--logo-color1),
+            3px 3px 1px var(--logo-color2), 5px 3px 1px var(--logo-color1), 4px 4px 1px var(--logo-color2),
+            6px 4px 1px var(--logo-color1), 5px 5px 1px var(--logo-color2), 7px 5px 1px var(--logo-color1),
+            6px 6px 1px var(--logo-color2), 8px 6px 1px var(--logo-color1), 7px 7px 1px var(--logo-color2),
+            9px 7px 1px var(--logo-color1);
     }
 
     h2 {

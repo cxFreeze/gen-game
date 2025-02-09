@@ -76,10 +76,13 @@ export class PlayerManager {
             this._playerMoved$.next(true);
         }
 
+        this.playerMesh.computeWorldMatrix(true);
+
         let oldPos = this._playerMesh.position.clone();
         this._playerMesh.moveWithCollisions(new Vector3(x, 0, y));
 
         this.resetPlayerPositionIfInvalid(oldPos);
+
 
         const tempX = this._playerMesh.position.x;
         const tempY = this._playerMesh.position.z;
@@ -160,6 +163,7 @@ export class PlayerManager {
     resetPlayerPositionIfInvalid(oldPosition: Vector3): void {
         if (this._playerMesh.position.y !== oldPosition.y || !WorldUtils.isInWorldBounds(this._playerMesh.position.x, this._playerMesh.position.z)) {
             this._playerMesh.position = oldPosition;
+            this.playerMesh.computeWorldMatrix(true);
         }
     }
 }

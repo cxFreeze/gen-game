@@ -44,8 +44,12 @@ export class Biomes {
                     chunkPlacement: { x: 0, y: 0, z: 0 }
                 },
                 {
+                    asset: 'tower',
+                    drawCount: 2,
+                },
+                {
                     asset: 'house',
-                    drawCount: 250,
+                    drawCount: 125,
                 }
             ]
         }

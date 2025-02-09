@@ -1,7 +1,9 @@
 import { Material } from '@babylonjs/core/Materials/material';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Mesh } from '@babylonjs/core/Meshes/mesh';
+import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder';
 import { SpriteManager } from '@babylonjs/core/Sprites/spriteManager';
+import { App } from '../core/app';
 
 export abstract class GGAsset {
     height: number;
@@ -12,7 +14,6 @@ export abstract class GGAsset {
     displacementRatio: number;
     sizeRatio: number;
     type: 'ground' | 'item' | 'sprite' | 'player';
-    ignoreCollisions: boolean;
     maxVerticalDisplacement: number;
 
     constructor(name: string) {
@@ -24,7 +25,6 @@ export abstract class GGAsset {
         this.displacementRatio = 0;
         this.sizeRatio = 0;
         this.type = 'item';
-        this.ignoreCollisions = false;
         this.maxVerticalDisplacement = 0;
     }
 }
@@ -55,15 +55,25 @@ export class GG3DAsset extends GGAsset {
         this._isPickable = value; this._mesh.isPickable = value;
     };
 
-    rotation: number;
+    private _ignoreCollisions: boolean;
+    get ignoreCollisions() {
+        return this._ignoreCollisions;
+    }
+    set ignoreCollisions(value: boolean) {
+        this._ignoreCollisions = value; this._mesh.checkCollisions = !value;
+    };
 
+    rotation: number;
     disableShadow: boolean;
+    collider: Mesh;
 
     constructor(name: string, mesh: Mesh, material?: Material) {
         super(name);
         this._mesh = mesh;
         this._mesh.isVisible = false;
         this._mesh.receiveShadows = true;
+        this._mesh.checkCollisions = true;
+        this._mesh.alwaysSelectAsActiveMesh = false;
         this.disableShadow = false;
         this.rotation = 0;
         this.isPickable = true;
@@ -77,6 +87,20 @@ export class GG3DAsset extends GGAsset {
         this._sizeZ = boundingBox.maximumWorld.z - boundingBox.minimumWorld.z;
 
         mesh.setPivotPoint(new Vector3(0, boundingBox.minimum.y, 0));
+
+        this.mesh.position.y = -250;
+    }
+
+    createCollider(sizeAjust: number = 1) {
+        const boundingBox = this._mesh.getBoundingInfo().boundingBox;
+        const collider = MeshBuilder.CreateBox('collider', { width: 1, height: 1, depth: 1 }, App.scene);
+        collider.scaling = new Vector3(this._sizeX, this._sizeY, this._sizeZ).multiplyByFloats(sizeAjust, 1, sizeAjust);
+        collider.position = boundingBox.centerWorld.clone();
+        collider.isVisible = false;
+
+        this.collider = collider;
+
+        this._mesh.checkCollisions = false;
     }
 }
 

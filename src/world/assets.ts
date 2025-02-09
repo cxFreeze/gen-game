@@ -35,6 +35,7 @@ export class AssetManager {
             ground: new Array<GG3DAsset>(),
             house: new Array<GG3DAsset>(),
             center: new Array<GG3DAsset>(),
+            tower: new Array<GG3DAsset>(),
             plazaGround: new Array<GG3DAsset>()
         }
     };
@@ -83,14 +84,14 @@ export class AssetManager {
         tree1.displacementRatio = 0.2;
         tree1.sizeRatio = 0.4;
         tree1.scale = 75;
-        tree1.maxVerticalDisplacement = 0.2;
+        tree1.maxVerticalDisplacement = 0.1;
 
         const tree2 = new GG3DAsset('tree2', await this.load3DAsset(`${this.Assets3dPath}/forest/tree2.glb`));
         tree2.safeZone = 50;
         tree2.displacementRatio = 0.2;
         tree2.sizeRatio = 0.4;
         tree2.scale = 75;
-        tree2.maxVerticalDisplacement = 0.2;
+        tree2.maxVerticalDisplacement = 0.1;
 
         this.biomeAssets[BiomeType.forest].tree.push(tree1, tree2);
 
@@ -99,14 +100,14 @@ export class AssetManager {
         rock1.displacementRatio = 0.2;
         rock1.sizeRatio = 0.4;
         rock1.scale = 5;
-        rock1.maxVerticalDisplacement = 0.5;
+        rock1.maxVerticalDisplacement = 0.3;
 
         const rock2 = new GG3DAsset('rock2', await this.load3DAsset(`${this.Assets3dPath}/forest/rock2.glb`));
         rock2.safeZone = 20;
         rock2.displacementRatio = 0.2;
         rock2.sizeRatio = 0.4;
         rock2.scale = 10;
-        rock2.maxVerticalDisplacement = 0.5;
+        rock2.maxVerticalDisplacement = 0.3;
 
         this.biomeAssets[BiomeType.forest].rock.push(rock1, rock2);
 
@@ -158,32 +159,46 @@ export class AssetManager {
         house1.displacementRatio = 0.3;
         house1.sizeRatio = 0.2;
         house1.scale = 80;
+        house1.createCollider(0.85);
 
         const house2 = new GG3DAsset('house2', await this.load3DAsset(`${this.Assets3dPath}/town/house2.glb`));
         house2.safeZone = 80;
         house2.displacementRatio = 0.3;
         house2.sizeRatio = 0.2;
         house2.scale = 80;
+        house2.createCollider(0.9);
 
         const house3 = new GG3DAsset('house3', await this.load3DAsset(`${this.Assets3dPath}/town/house3.glb`));
         house3.safeZone = 80;
         house3.displacementRatio = 0.3;
         house3.sizeRatio = 0.2;
         house3.scale = 60;
+        house3.createCollider(0.9);
 
         this.zoneAssets[ZoneType.town].house.push(house1, house2, house3);
+
+        const tower = new GG3DAsset('tower', await this.load3DAsset(`${this.Assets3dPath}/town/tower.glb`));
+        tower.safeZone = 500;
+        tower.displacementRatio = 0.8;
+        tower.sizeRatio = 0.1;
+        tower.scale = 100;
+        tower.createCollider(0.8);
+
+        this.zoneAssets[ZoneType.town].tower.push(tower);
 
         const townCenter1 = new GG3DAsset('center1', await this.load3DAsset(`${this.Assets3dPath}/town/statue1.glb`));
         townCenter1.safeZone = 100;
         townCenter1.scale = 12;
         townCenter1.isPickable = false;
         townCenter1.rotation = Math.PI;
+        townCenter1.createCollider(0.9);
 
         const townCenter2 = new GG3DAsset('center2', await this.load3DAsset(`${this.Assets3dPath}/town/statue2.glb`));
         townCenter2.safeZone = 100;
         townCenter2.scale = 20;
         townCenter2.isPickable = false;
         townCenter2.rotation = Math.PI;
+        townCenter2.createCollider(0.9);
 
         this.zoneAssets[ZoneType.town].center.push(townCenter1, townCenter2);
     }

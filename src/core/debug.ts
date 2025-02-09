@@ -87,6 +87,7 @@ export class DebugManager {
     }
 
     toggleSkyview() {
+        App.engine.clear(App.scene.clearColor, true, true);
         this.skyView = !this.skyView;
         this.worldManager.setCameraHeight(this.skyView ? 2000 : 220);
     }

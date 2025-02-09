@@ -4,6 +4,7 @@ import { Ray } from '@babylonjs/core/Culling/ray.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh.js';
+import { FxaaPostProcess } from '@babylonjs/core/PostProcesses/fxaaPostProcess.js';
 import { App } from '../core/app.js';
 import { Anim } from '../utils/anim.js';
 import { LightingManager } from './lighting.js';
@@ -47,6 +48,7 @@ export class WorldManager {
 
     generateWorld() {
         this.camera = new UniversalCamera('camera', new Vector3(0, 0, 0), App.scene);
+        new FxaaPostProcess('fxaa', 1.0, this.camera);
 
         this.setCameraPosition(this.playerManager.playerX, this.playerManager.playerY);
 

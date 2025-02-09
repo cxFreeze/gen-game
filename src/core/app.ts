@@ -1,5 +1,5 @@
 import { Engine } from '@babylonjs/core/Engines/engine';
-import { Scene } from '@babylonjs/core/scene';
+import { Scene, ScenePerformancePriority } from '@babylonjs/core/scene';
 import { delay, Subject, take } from 'rxjs';
 import { PlayerInputs } from '../game/player-inputs';
 import { PlayerMovements } from '../game/player-movements';
@@ -8,6 +8,7 @@ import { LightingManager } from '../world/lighting';
 import { PlayerManager } from '../world/player';
 import { WorldManager } from '../world/world';
 import { Params } from './params';
+import { Performance } from './performance';
 
 
 export class App {
@@ -38,15 +39,19 @@ export class App {
         }
 
         this._engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
-        this._scene = new Scene(this._engine);
+        this._scene = new Scene(this._engine, { useGeometryUniqueIdsMap: true });
 
         this._scene.useRightHandedSystem = true;
         this._scene.collisionsEnabled = true;
+        this._scene.performancePriority = ScenePerformancePriority.Intermediate;
+        this._scene.blockMaterialDirtyMechanism = true;
 
+        Performance.setPerformance(this.engine.getFps());
 
         const lightingManager = LightingManager.getInstance();
         lightingManager.createLightning();
         await AssetManager.loadAssets();
+
 
         const playerManager = PlayerManager.getInstance();
         playerManager.createPlayer();

@@ -435,8 +435,18 @@ export class WorldGenerator {
             item.rotation = item.rotation.add(new Vector3(0, asset.rotation, 0));
         }
 
-        item.checkCollisions = !asset.ignoreCollisions;
+        item.checkCollisions = asset.mesh.checkCollisions;
         item.isPickable = asset.isPickable;
+        item.alwaysSelectAsActiveMesh = false;
+
+        if (asset.collider) {
+            const collider = asset.collider.createInstance(`${asset.name}collider${this.itemCnt}`);
+            collider.parent = item;
+            collider.isVisible = false;
+            collider.isPickable = false;
+            collider.checkCollisions = true;
+            collider.alwaysSelectAsActiveMesh = false;
+        }
 
         if (!asset.disableShadow) {
             this.lightingManager.shadowGenerator.addShadowCaster(item);
@@ -444,6 +454,7 @@ export class WorldGenerator {
 
         if (item) {
             item.computeWorldMatrix(true);
+            item.doNotSyncBoundingInfo = true;
             App.scene.addMesh(item);
         }
 
@@ -484,17 +495,17 @@ export class WorldGenerator {
         const z = 0 - deviationZ;
 
         if (x < chunkX - this.chunckSize / 2) {
-            x = chunkX - this.chunckSize / 2;
+            x = x - 2 * deviationX;
         }
         else if (x > chunkX + this.chunckSize / 2) {
-            x = chunkX + this.chunckSize / 2;
+            x = x - 2 * deviationX;
         }
 
         if (y < chunkY - this.chunckSize / 2) {
-            y = chunkY - this.chunckSize / 2;
+            y = y - 2 * deviationY;
         }
         else if (y > chunkY + this.chunckSize / 2) {
-            y = chunkY + this.chunckSize / 2;
+            y = y - 2 * deviationY;
         }
 
         const res = this.drawItem(asset, x, y, z, sizeRatio, rotation);
