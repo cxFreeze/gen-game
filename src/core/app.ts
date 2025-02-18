@@ -3,6 +3,7 @@ import { Scene, ScenePerformancePriority } from '@babylonjs/core/scene';
 import { delay, Subject, take } from 'rxjs';
 import { PlayerInputs } from '../game/player-inputs';
 import { PlayerMovements } from '../game/player-movements';
+import { ProjectilesManager } from '../game/projectiles';
 import { AssetManager } from '../world/assets';
 import { LightingManager } from '../world/lighting';
 import { PlayerManager } from '../world/player';
@@ -56,6 +57,8 @@ export class App {
         const playerManager = PlayerManager.getInstance();
         playerManager.createPlayer();
 
+        const projectilesManager = ProjectilesManager.getInstance();
+
         const worldManager = WorldManager.getInstance();
         const playerMovements = PlayerMovements.getInstance();
 
@@ -65,8 +68,10 @@ export class App {
         this._engine.runRenderLoop(() => {
             this._scene.render();
             const time = this._engine.getDeltaTime();
-            PlayerInputs.checkJoystick();
+            PlayerInputs.checkInputs();
             playerMovements.updatePlayerPosition(time);
+
+            projectilesManager.updatePositions();
         });
 
         window.addEventListener('resize', () => {

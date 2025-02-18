@@ -1,10 +1,12 @@
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
-import { BehaviorSubject, Subscription, take } from 'rxjs';
+import { BehaviorSubject, Subscription, take, throttleTime } from 'rxjs';
 import { App } from '../core/app.js';
 import { Debug } from '../core/debug.js';
 import { Params } from '../core/params.js';
+import { PlayerInputs } from '../game/player-inputs.js';
+import { ProjectilesManager } from '../game/projectiles.js';
 import { AssetUtils } from '../utils/assets-utils.js';
 import { WorldUtils } from '../utils/world-utils.js';
 import { AssetManager } from './assets.js';
@@ -13,6 +15,10 @@ import { LightingManager } from './lighting.js';
 export type PlayerDirection = 'front' | 'back' | 'left' | 'right' | 'front-left' | 'front-right' | 'back-left' | 'back-right';
 
 export class PlayerManager {
+    private fireRate: number = 2;
+    private damage: number = 10;
+    private projectileSpeed: number = 10;
+
     private _playerMesh: Mesh;
     get playerMesh() {
         return this._playerMesh;
@@ -33,6 +39,7 @@ export class PlayerManager {
     private currentRotateAnim$: Subscription | undefined;
 
     private readonly lightingManager = LightingManager.getInstance();
+    private readonly projectileManager = ProjectilesManager.getInstance();
 
     private static instance: PlayerManager;
     static getInstance(): PlayerManager {
@@ -68,6 +75,10 @@ export class PlayerManager {
 
         App.scene.addMesh(this._playerMesh, false);
         this.lightingManager.shadowGenerator.addShadowCaster(this._playerMesh);
+
+        PlayerInputs.spacePressed.pipe(throttleTime(1000 / this.fireRate)).subscribe(() => {
+            this.fireProjectile();
+        });
     }
 
     movePlayer(x: number, y: number, direction: PlayerDirection) {
@@ -142,6 +153,10 @@ export class PlayerManager {
         }
     }
 
+    fireProjectile() {
+        this.projectileManager.createProjectile(this.projectileSpeed, this.playerMesh.rotation.y, this.damage, this.playerMesh);
+    }
+
     setPlayerAnimation(animName: 'Running' | 'Idle') {
         const anim = AssetManager.animations[animName];
         if (!anim || anim.isStarted) {
@@ -160,7 +175,7 @@ export class PlayerManager {
         AssetManager.animations[animName].start(true, animSpeed);
     }
 
-    resetPlayerPositionIfInvalid(oldPosition: Vector3): void {
+    private resetPlayerPositionIfInvalid(oldPosition: Vector3): void {
         if (this._playerMesh.position.y !== oldPosition.y || !WorldUtils.isInWorldBounds(this._playerMesh.position.x, this._playerMesh.position.z)) {
             this._playerMesh.position = oldPosition;
             this.playerMesh.computeWorldMatrix(true);

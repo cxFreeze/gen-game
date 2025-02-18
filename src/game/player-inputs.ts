@@ -1,4 +1,5 @@
 import { VirtualJoystick } from '@babylonjs/core/Misc/virtualJoystick';
+import { Subject } from 'rxjs';
 import { DebugManager } from '../core/debug';
 
 export class PlayerInputs {
@@ -9,11 +10,14 @@ export class PlayerInputs {
     private static kDownArrowPressed: boolean = false;
     private static kLeftArrowPressed: boolean = false;
     private static kRightArrowPressed: boolean = false;
+    private static kSpacePressed: boolean = false;
 
     private static jUpArrowPressed: boolean = false;
     private static jDownArrowPressed: boolean = false;
     private static jLeftArrowPressed: boolean = false;
     private static jRightArrowPressed: boolean = false;
+
+    static spacePressed = new Subject<void>();
 
     static get upArrowPressed() {
         return this.kUpArrowPressed || this.jUpArrowPressed;
@@ -42,6 +46,9 @@ export class PlayerInputs {
         }
 
         window.addEventListener('keydown', (event) => {
+            if (event.key === ' ') {
+                this.kSpacePressed = true;
+            }
             if (event.key === 'ArrowUp') {
                 this.kUpArrowPressed = true;
             }
@@ -56,6 +63,9 @@ export class PlayerInputs {
             }
         });
         window.addEventListener('keyup', (event) => {
+            if (event.key === ' ') {
+                this.kSpacePressed = false;
+            }
             if (event.key === 'ArrowUp') {
                 this.kUpArrowPressed = false;
             }
@@ -77,7 +87,10 @@ export class PlayerInputs {
         });
     }
 
-    static checkJoystick() {
+    static checkInputs() {
+        if (this.kSpacePressed) {
+            this.spacePressed.next();
+        }
         if (this.disableJoystick) {
             return;
         }

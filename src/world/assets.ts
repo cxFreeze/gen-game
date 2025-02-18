@@ -43,7 +43,34 @@ export class AssetManager {
     static readonly worldAssets = {} as { [key in WorldAsset]: GG3DAsset };
     static readonly animations: { [key: string]: AnimationGroup } = {};
 
+    static projectile: Mesh;
+    static flareSprite: Texture;
+
     static async loadAssets() {
+        this.projectile = MeshBuilder.CreateSphere('projectile', { diameter: 1 }, App.scene);
+        this.projectile.isVisible = false;
+        this.projectile.isPickable = false;
+
+        // Créer un matériau magique
+        const magicMaterial = new StandardMaterial('magicMaterial', App.scene);
+        magicMaterial.diffuseColor = new Color3(0.9, 0.3, 1);
+        magicMaterial.emissiveColor = new Color3(0.8, 0.3, 0.3);
+        magicMaterial.alpha = 0.9;
+
+        // Ajouter une texture de bruit animée (perlin noise ou fractale)
+        const noiseTexture = new Texture(`${this.texturesPath}/noise.png`, App.scene);
+        noiseTexture.uScale = 1.5;
+        noiseTexture.vScale = 1.5;
+        noiseTexture.level = 0.6;
+        magicMaterial.diffuseTexture = noiseTexture;
+        magicMaterial.backFaceCulling = false;
+
+        this.projectile.material = magicMaterial;
+
+
+
+        this.flareSprite = new Texture(`${this.texturesPath}/flare.png`, App.scene);
+
         const player = new GG3DAsset('player', await this.load3DAsset(`${this.Assets3dPath}/player.glb`));
         player.scale = 13;
         player.type = 'player';
