@@ -1,3 +1,4 @@
+import { AnimationGroup } from '@babylonjs/core/Animations/animationGroup';
 import { Material } from '@babylonjs/core/Materials/material';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { Mesh } from '@babylonjs/core/Meshes/mesh';
@@ -67,7 +68,10 @@ export class GG3DAsset extends GGAsset {
     disableShadow: boolean;
     collider: Mesh;
 
-    constructor(name: string, mesh: Mesh, material?: Material) {
+
+    animations: { [key: string]: AnimationGroup };
+
+    constructor(name: string, mesh: Mesh, material?: Material, animations?: AnimationGroup[]) {
         super(name);
         this._mesh = mesh;
         this._mesh.isVisible = false;
@@ -79,6 +83,13 @@ export class GG3DAsset extends GGAsset {
         this.isPickable = true;
         if (material) {
             this._mesh.material = material;
+        }
+
+        if (animations) {
+            this.animations = {};
+            animations.forEach(animation => {
+                this.animations[animation.name] = animation;
+            });
         }
 
         const boundingBox = this._mesh.getBoundingInfo().boundingBox;

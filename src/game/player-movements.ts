@@ -1,7 +1,8 @@
 import { Params } from '../core/params.js';
-import { PlayerDirection, PlayerManager } from '../world/player.js';
 import { WorldManager } from '../world/world.js';
+import { CharDirection } from './character.js';
 import { PlayerInputs } from './player-inputs.js';
+import { Player } from './player.js';
 
 export class PlayerMovements {
 
@@ -11,7 +12,7 @@ export class PlayerMovements {
     private totalDistance: number = 0;
 
     private readonly worldManager = WorldManager.getInstance();
-    private readonly playerManager = PlayerManager.getInstance();
+    private readonly player = Player.getInstance();
 
     private static instance: PlayerMovements;
     static getInstance(): PlayerMovements {
@@ -26,37 +27,37 @@ export class PlayerMovements {
     }
 
     updatePlayerPosition(time: number) {
-        if ((!PlayerInputs.upArrowPressed && !PlayerInputs.downArrowPressed && !PlayerInputs.leftArrowPressed && !PlayerInputs.rightArrowPressed)
-            || (PlayerInputs.upArrowPressed && PlayerInputs.downArrowPressed && !PlayerInputs.leftArrowPressed && !PlayerInputs.rightArrowPressed)
-            || (!PlayerInputs.upArrowPressed && !PlayerInputs.downArrowPressed && PlayerInputs.leftArrowPressed && PlayerInputs.rightArrowPressed)
+        if ((!PlayerInputs.forwardPressed && !PlayerInputs.backwardsPressed && !PlayerInputs.leftPressed && !PlayerInputs.rightPressed)
+            || (PlayerInputs.forwardPressed && PlayerInputs.backwardsPressed && !PlayerInputs.leftPressed && !PlayerInputs.rightPressed)
+            || (!PlayerInputs.forwardPressed && !PlayerInputs.backwardsPressed && PlayerInputs.leftPressed && PlayerInputs.rightPressed)
         ) {
-            this.playerManager.setPlayerAnimation('Idle');
+            this.player.setPlayerAnimation('Idle');
             return;
         }
 
-        this.playerManager.setPlayerAnimation('Running');
+        this.player.setPlayerAnimation('Running');
 
         const distance = this.moveSpeed * (time / 1000);
 
-        const currentX = this.playerManager.playerX;
-        const currentY = this.playerManager.playerY;
+        const currentX = this.player.position.x;
+        const currentY = this.player.position.z;
 
         let newX = currentX;
         let newY = currentY;
 
-        if (PlayerInputs.upArrowPressed) {
+        if (PlayerInputs.forwardPressed) {
             newY = newY + distance;
         }
 
-        if (PlayerInputs.downArrowPressed) {
+        if (PlayerInputs.backwardsPressed) {
             newY = newY - distance;
         }
 
-        if (PlayerInputs.leftArrowPressed) {
+        if (PlayerInputs.leftPressed) {
             newX = newX + distance;
         }
 
-        if (PlayerInputs.rightArrowPressed) {
+        if (PlayerInputs.rightPressed) {
             newX = newX - distance;
         }
 
@@ -66,7 +67,7 @@ export class PlayerMovements {
             newY = currentY - (currentY - newY) / this.diagonalRatio;
         }
 
-        let direction: PlayerDirection;
+        let direction: CharDirection;
 
         if (newX > currentX && newY > currentY) {
             direction = 'front-left';
@@ -97,7 +98,7 @@ export class PlayerMovements {
         }
 
         this.totalDistance += distance;
-        this.playerManager.movePlayer(newX - currentX, newY - currentY, direction);
-        this.worldManager.setCameraPosition(this.playerManager.playerMesh.position.x, this.playerManager.playerMesh.position.z);
+        this.player.move(newX - currentX, newY - currentY, direction);
+        this.worldManager.setCameraPosition(this.player.position.x, this.player.position.z);
     }
 }

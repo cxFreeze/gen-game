@@ -1,5 +1,5 @@
 import { AbstractMesh } from '@babylonjs/core';
-import { Projectile } from './projectile';
+import { Projectile, ProjectileInfos } from './projectile';
 
 
 export class ProjectilesManager {
@@ -17,8 +17,8 @@ export class ProjectilesManager {
     private constructor() {
     }
 
-    createProjectile(speed: number, direction: number, damage: number, origMesh: AbstractMesh) {
-        const projectile = new Projectile(speed, direction, damage, origMesh);
+    createProjectile(projectileInfos: ProjectileInfos, origMesh: AbstractMesh) {
+        const projectile = new Projectile(projectileInfos, origMesh);
         this.projectiles.push(projectile);
     }
 

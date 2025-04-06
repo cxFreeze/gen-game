@@ -4,7 +4,10 @@ import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh';
 import { Sprite } from '@babylonjs/core/Sprites/sprite';
 import { App } from '../core/app';
 import { Params } from '../core/params';
-import { BiomeAssetType, BiomeItem, BiomeType, LoadedMesh, LoadedSprite, PreLoadedItem, ZoneAssetType, ZoneItem, ZoneType } from '../models/interfaces';
+import { EmeniesManager } from '../game/enemies';
+import { Enemy } from '../game/enemy';
+import { EnemyTypes } from '../game/enemy-types';
+import { BiomeAssetType, BiomeItem, BiomeType, EnemySpawn, LoadedMesh, LoadedSprite, PreLoadedItem, ZoneAssetType, ZoneItem, ZoneType } from '../models/interfaces';
 import { Random } from '../utils/random';
 import { WorldUtils } from '../utils/world-utils';
 import { AssetManager } from './assets';
@@ -37,6 +40,7 @@ export class WorldGenerator {
     private readonly renderQueue: Array<() => void> = [];
 
     private readonly lightingManager = LightingManager.getInstance();
+    private readonly enemiesManager = EmeniesManager.getInstance();
 
     private static instance: WorldGenerator;
     static getInstance(): WorldGenerator {
@@ -184,6 +188,9 @@ export class WorldGenerator {
             if (!this.loadedChuncksItems[chunk]) {
                 return;
             }
+
+            this.enemiesManager.deleteEnemyChunk(chunk);
+
             this.loadedChuncksItems[chunk].meshes.forEach((item) => {
                 this.deleteMeshFromScene(item.mesh);
                 item = null as never;
@@ -213,6 +220,7 @@ export class WorldGenerator {
 
         const zone = this.getZoneForChunk(chunk);
         this.loadItems(x, y, zone);
+        this.loadEnemies(x, y, zone);
     }
 
     private loadGround(chunkX: number, chunkY: number, asset: GG3DAsset | null = null): void {
@@ -401,6 +409,54 @@ export class WorldGenerator {
                 }
             }
             xIndex += biggestAsset;
+        }
+    }
+
+    loadEnemies(chunkX: number, chunkY: number, zone: ZoneType | null = null) {
+        if (zone) {
+            if (!Biomes.zones[zone].enemySpawns) {
+                return;
+            }
+            Biomes.zones[zone].enemySpawns!.forEach((item) => {
+                this.loadEnemySpawn(item, chunkX, chunkY);
+            });
+            return;
+        }
+
+        if (!Biomes.biomes[this.currentBiome].enemySpawns) {
+            return;
+        }
+
+        Biomes.biomes[this.currentBiome].enemySpawns!.forEach((item) => {
+            this.loadEnemySpawn(item, chunkX, chunkY);
+        });
+    }
+
+    loadEnemySpawn(item: EnemySpawn, chunkX: number, chunkY: number) {
+        const count = this.getSpawnNumber(item.spawnRate, item.enemy, chunkX, chunkY);
+
+        if (count < 1) {
+            return;
+        }
+
+        let enemySpawned = 0;
+        let cnt = 0;
+
+        while (enemySpawned < count) {
+            const coords = this.getRandomPositionInChunk(chunkX, chunkY, item.enemy, cnt);
+            const asset = AssetManager.enemiesAssets[item.enemy];
+            const enemy = new Enemy(asset, new Vector3(coords.x, 0, coords.y), EnemyTypes[item.enemy].stats);
+
+            if (this.isSpaceAvailable(enemy.mesh, coords.x, coords.y)) {
+                enemySpawned++;
+                this.loadedChuncksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: enemy.mesh as InstancedMesh, asset });
+                this.enemiesManager.addEnemy(enemy, `${chunkX}/${chunkY}`);
+            }
+            else {
+                enemy.delete();
+            }
+
+            cnt++;
         }
     }
 
@@ -700,5 +756,24 @@ export class WorldGenerator {
         }
 
         return chunk;
+    }
+
+    private getSpawnNumber(spawnRate: number, name: string, x: number, y: number): number {
+
+        const L = Math.exp(-spawnRate);
+        let k = 0;
+        let p = 1;
+
+        do {
+            k++;
+            p *= Random.randomNumber(`spawn${k}${k}${k}${x}${y}${name}${k}${x}${k}${k}`) / 100;
+        } while (p > L);
+        return k - 1;
+    }
+
+    private getRandomPositionInChunk(chunkX: number, chunkY: number, name: string, count: number): { x: number, y: number } {
+        const xIndex = Random.randomNumber(`x${count}x${chunkX}x${chunkY}${name}x${count}`) / 100 * this.chunckSize - this.chunckSize / 2;
+        const yIndex = Random.randomNumber(`y${count}y${chunkX}y${chunkY}${name}x${count}`) / 100 * this.chunckSize - this.chunckSize / 2;
+        return { x: chunkX + xIndex, y: chunkY + yIndex };
     }
 }

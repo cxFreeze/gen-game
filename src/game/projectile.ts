@@ -7,12 +7,21 @@ import { ParticleSystem } from '@babylonjs/core/Particles/particleSystem';
 import { App } from '../core/app';
 import { WorldUtils } from '../utils/world-utils';
 import { AssetManager } from '../world/assets';
+import { EmeniesManager } from './enemies';
+
+export interface ProjectileInfos {
+    speed: number;
+    direction: number;
+    damage: number;
+    range: number;
+    color?: string;
+}
 
 export class Projectile {
+    private mesh: InstancedMesh;
     private speed: number;
     private direction: number;
     private damage: number;
-    private mesh: InstancedMesh;
     private origMesh: AbstractMesh;
 
     isDestroyed: boolean = false;
@@ -23,13 +32,19 @@ export class Projectile {
     private timeCreated: number = Date.now();
     private timeUpdated: number = Date.now();
 
-    private distanceToTravel: number = 500;
+    private maxDistanceToTravel: number = 500;
+    private distanceToTravel: number = 0;
 
-    constructor(speed: number, direction: number, damage: number, origMesh: AbstractMesh) {
-        this.speed = speed * 30;
-        this.direction = direction;
-        this.damage = damage;
+    private enemiesManager = EmeniesManager.getInstance();
+
+    constructor(projectileInfos: ProjectileInfos, origMesh: AbstractMesh) {
+        this.speed = projectileInfos.speed * 30;
+        this.direction = projectileInfos.direction;
+        this.damage = projectileInfos.damage;
+        this.maxDistanceToTravel = projectileInfos.range;
         this.origMesh = origMesh;
+
+        this.distanceToTravel = this.maxDistanceToTravel;
 
         const scale = 2.5 * Math.cbrt(this.damage);
 
@@ -49,16 +64,20 @@ export class Projectile {
 
         const ray = new Ray(this.mesh.position, directionVector.normalize(), 500);
         const hit = App.scene.pickWithRay(ray, (mesh) => {
-            return mesh.name !== this.mesh.name && mesh !== this.origMesh && !mesh.name.includes('collider');
+            return mesh.name !== this.mesh.name && mesh !== this.origMesh && !mesh.name.includes('collider') && !mesh.name.includes('projectile') && mesh.name !== 'player' && !mesh.name.startsWith('char-');
         });
 
         if (hit && hit.pickedMesh) {
             this.distanceToTravel = hit.distance - scale / 2;
         }
+
+        if (this.distanceToTravel > this.maxDistanceToTravel) {
+            this.distanceToTravel = this.maxDistanceToTravel;
+        }
     }
 
     updatePosition() {
-        if (this.mesh == null) {
+        if (this.mesh == null || this.isDestroyed) {
             return;
         }
 
@@ -70,6 +89,11 @@ export class Projectile {
         this.mesh.position.y = this.meshY;
 
         if (distance > this.distanceToTravel || !this.isPositionValid(this.mesh.position)) {
+            this.destroy();
+            return;
+        }
+
+        if (this.enemiesManager.checkCollisions(this.mesh, this.origMesh.name, this.damage)) {
             this.destroy();
         }
     }

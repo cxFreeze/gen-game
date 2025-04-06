@@ -6,9 +6,9 @@ import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh.js';
 import { FxaaPostProcess } from '@babylonjs/core/PostProcesses/fxaaPostProcess.js';
 import { App } from '../core/app.js';
+import { Player } from '../game/player.js';
 import { Anim } from '../utils/anim.js';
 import { LightingManager } from './lighting.js';
-import { PlayerManager } from './player.js';
 import { WorldGenerator } from './world-generator.js';
 
 export class WorldManager {
@@ -28,7 +28,7 @@ export class WorldManager {
 
     private readonly lightingManager = LightingManager.getInstance();
     private readonly worldGenerator = WorldGenerator.getInstance();
-    private readonly playerManager = PlayerManager.getInstance();
+    private readonly player = Player.getInstance();
 
     private static instance: WorldManager;
     static getInstance(): WorldManager {
@@ -50,18 +50,18 @@ export class WorldManager {
         this.camera = new UniversalCamera('camera', new Vector3(0, 0, 0), App.scene);
         new FxaaPostProcess('fxaa', 1.0, this.camera);
 
-        this.setCameraPosition(this.playerManager.playerX, this.playerManager.playerY);
+        this.setCameraPosition(this.player.position.x, this.player.position.z);
 
-        const finalCameraPos = new Vector3(this.playerManager.playerX + this.cameraX, this.cameraY, this.playerManager.playerY + this.cameraZ);
+        const finalCameraPos = new Vector3(this.player.position.x + this.cameraX, this.cameraY, this.player.position.z + this.cameraZ);
 
-        this.camera.position = new Vector3(this.playerManager.playerX, this.initCameraY, this.playerManager.playerY + this.initCameraZ);
+        this.camera.position = new Vector3(this.player.position.x, this.initCameraY, this.player.position.z + this.initCameraZ);
         const initRot = this.camera.rotation!.clone();
         this.camera.rotation = initRot.clone().addInPlace(new Vector3(0, Math.PI, 0));
 
         App.hideLoadingScreen$.subscribe(() => {
             const posAnim = Animation.CreateAndStartAnimation('initCamera1', this.camera, 'position', 30, 120, this.camera.position, finalCameraPos, 0, Anim.cubicEaseInOut);
             const rotAnim = Animation.CreateAndStartAnimation('initCamera2', this.camera, 'rotation', 30, 120, this.camera.rotation, initRot, 0, Anim.cubicEaseInOut);
-            this.playerManager.playerMoved$.subscribe((moved) => {
+            this.player.playerMoved$.subscribe((moved) => {
                 if (moved) {
                     posAnim!.stop();
                     rotAnim!.stop();
@@ -75,14 +75,14 @@ export class WorldManager {
         this.worldY = y;
 
         this.camera.position = new Vector3(x + this.cameraX, this.cameraY, y + this.cameraZ);
-        this.camera.setTarget(this.playerManager.playerMesh.position);
+        this.camera.setTarget(this.player.mesh.position);
 
         this.lightingManager.setSunPosition(x, y);
         this.worldGenerator.generateWorld(x, y);
     }
 
     private setCameraObstacleSemiTransparent() {
-        const ray = new Ray(this.camera.position, this.playerManager.playerMesh.position.subtract(this.camera.position).normalize());
+        const ray = new Ray(this.camera.position, this.player.mesh.position.subtract(this.camera.position).normalize());
 
         const hitResults = App.scene.multiPickWithRay(ray, (mesh) => {
             return mesh.name !== 'player' && mesh.isPickable;
@@ -153,6 +153,6 @@ export class WorldManager {
     public setCameraHeight(y: number) {
         this.cameraY = y;
         this.camera.position.y = y;
-        this.camera.setTarget(this.playerManager.playerMesh.position);
+        this.camera.setTarget(this.player.mesh.position);
     }
 }

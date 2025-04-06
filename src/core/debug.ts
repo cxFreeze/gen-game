@@ -1,6 +1,6 @@
+import { Player } from '../game/player';
 import { Random } from '../utils/random';
 import { LightingManager } from '../world/lighting';
-import { PlayerManager } from '../world/player';
 import { WorldManager } from '../world/world';
 import { App } from './app';
 
@@ -17,7 +17,7 @@ export class DebugManager {
     skyView = false;
 
     private readonly lightingManager = LightingManager.getInstance();
-    private readonly playerManager = PlayerManager.getInstance();
+    private readonly playerManager = Player.getInstance();
     private readonly worldManager = WorldManager.getInstance();
 
     private static instance: DebugManager;
@@ -74,7 +74,7 @@ export class DebugManager {
     }
 
     toggleCharMesh() {
-        this.playerManager.playerMesh.isVisible = !this.playerManager.playerMesh.isVisible;
+        this.playerManager.mesh.isVisible = !this.playerManager.mesh.isVisible;
     }
 
     toggle3ditems() {

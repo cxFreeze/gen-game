@@ -9,21 +9,28 @@ export enum ZoneType { town = 1 };
 export type BiomeAssetType = 'ground' | 'tree' | 'rock' | 'grass';
 export type ZoneAssetType = 'ground' | 'plazaGround' | 'house' | 'center' | 'tower';
 export type WorldAsset = 'player' | 'fence' | 'ocean';
+export type EnemyAsset = 'blob' | 'goblin' | 'skeleton' | 'troll';
 
 export interface Biome {
     ground: BiomeAssetType;
     items: BiomeItem[];
+    enemySpawns?: EnemySpawn[];
 }
 
 export interface Zone {
     ground: BiomeAssetType;
     items: ZoneItem[];
+    enemySpawns?: EnemySpawn[];
 }
 
 export interface BiomeItem { asset: BiomeAssetType, drawCount: number, boostDrawCount?: number, boostDrawCountRate?: number };
 export interface ZoneItem {
     asset: ZoneAssetType, drawCount: number, chunkPlacement?: { x: number, y: number, z: number };
 };
+export interface EnemySpawn {
+    enemy: EnemyAsset;
+    spawnRate: number;
+}
 
 export interface PreLoadedItem {
     asset: GGAsset;
@@ -42,5 +49,19 @@ export interface LoadedMesh {
 export interface LoadedSprite {
     sprite: Sprite;
     asset: GGSpriteAsset;
+}
+
+export interface CharacterStats {
+    health: number;
+    damage: number;
+    speed: number;
+    fireRate: number;
+    projectileSpeed: number;
+    range: number;
+}
+
+export interface EnemyType {
+    name: EnemyAsset;
+    stats: CharacterStats;
 }
 

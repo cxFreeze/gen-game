@@ -9,7 +9,7 @@ import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
 import { SpriteManager } from '@babylonjs/core/Sprites/spriteManager.js';
 import { App } from '../core/app.js';
 import { Params } from '../core/params.js';
-import { BiomeAssetType, BiomeType, WorldAsset, ZoneAssetType, ZoneType } from '../models/interfaces.js';
+import { BiomeAssetType, BiomeType, EnemyAsset, WorldAsset, ZoneAssetType, ZoneType } from '../models/interfaces.js';
 import { Random } from '../utils/random.js';
 import { GG3DAsset, GGAsset, GGSpriteAsset } from './GGAsset.js';
 
@@ -41,7 +41,8 @@ export class AssetManager {
     };
 
     static readonly worldAssets = {} as { [key in WorldAsset]: GG3DAsset };
-    static readonly animations: { [key: string]: AnimationGroup } = {};
+    static readonly enemiesAssets = {} as { [key in EnemyAsset]: GG3DAsset };
+    static readonly animations: { [key: string]: AnimationGroup[] } = {};
 
     static projectile: Mesh;
     static flareSprite: Texture;
@@ -71,7 +72,7 @@ export class AssetManager {
 
         this.flareSprite = new Texture(`${this.texturesPath}/flare.png`, App.scene);
 
-        const player = new GG3DAsset('player', await this.load3DAsset(`${this.Assets3dPath}/player.glb`));
+        const player = new GG3DAsset('player', await this.load3DAsset(`${this.Assets3dPath}/player.glb`), undefined, this.animations[`${this.Assets3dPath}/player.glb`]);
         player.scale = 13;
         player.type = 'player';
         this.worldAssets.player = player;
@@ -94,6 +95,7 @@ export class AssetManager {
 
         await this.loadForestAssets();
         await this.loadTownAssets();
+        await this.loadEnemyAssets();
     }
 
     private static async loadForestAssets() {
@@ -138,7 +140,7 @@ export class AssetManager {
 
         this.biomeAssets[BiomeType.forest].rock.push(rock1, rock2);
 
-        const grassSpriteManager = new SpriteManager('grassManager', `${this.texturesPath}/grass.png`, 10000, { width: 156, height: 156 }, App.scene);
+        const grassSpriteManager = new SpriteManager('grassManager', `${this.texturesPath}/grass.png`, 10000, { width: 156, height: 153 }, App.scene);
         const grassSprite = new GGSpriteAsset('grass', grassSpriteManager);
         grassSprite.height = 15;
         grassSprite.width = 15;
@@ -230,6 +232,13 @@ export class AssetManager {
         this.zoneAssets[ZoneType.town].center.push(townCenter1, townCenter2);
     }
 
+    static async loadEnemyAssets() {
+        const blob = new GG3DAsset('blob', await this.load3DAsset(`${AssetManager.Assets3dPath}/enemies/blob.glb`));
+        blob.scale = 10;
+
+        this.enemiesAssets.blob = blob;
+    }
+
     static getAsset(biome: BiomeType, name: BiomeAssetType, randSeed: string): GGAsset {
         const items = this.biomeAssets[biome][name];
 
@@ -267,10 +276,11 @@ export class AssetManager {
 
         const mesh = meshes.length > 1 ? Mesh.MergeMeshes(meshes as Mesh[], true, true, undefined, false, true) as Mesh : meshes[0] as Mesh;
 
+        this.animations[path] = [];
         container.animationGroups.forEach((anim) => {
             anim.enableBlending = true;
             anim.blendingSpeed = 0.06;
-            this.animations[anim.name] = anim;
+            this.animations[path].push(anim);
         });
 
         mesh.receiveShadows = true;

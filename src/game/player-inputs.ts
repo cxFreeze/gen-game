@@ -12,26 +12,30 @@ export class PlayerInputs {
     private static kRightArrowPressed: boolean = false;
     private static kSpacePressed: boolean = false;
 
+    private static mLeftPressed: boolean = false;
+
     private static jUpArrowPressed: boolean = false;
     private static jDownArrowPressed: boolean = false;
     private static jLeftArrowPressed: boolean = false;
     private static jRightArrowPressed: boolean = false;
 
-    static spacePressed = new Subject<void>();
+    private static cursorDirection: number = 0;
 
-    static get upArrowPressed() {
+    static arrowPressed = new Subject<number>();
+
+    static get forwardPressed() {
         return this.kUpArrowPressed || this.jUpArrowPressed;
     }
 
-    static get downArrowPressed() {
+    static get backwardsPressed() {
         return this.kDownArrowPressed || this.jDownArrowPressed;
     }
 
-    static get leftArrowPressed() {
+    static get leftPressed() {
         return this.kLeftArrowPressed || this.jLeftArrowPressed;
     }
 
-    static get rightArrowPressed() {
+    static get rightPressed() {
         return this.kRightArrowPressed || this.jRightArrowPressed;
     }
 
@@ -45,38 +49,77 @@ export class PlayerInputs {
             this.joystick.setJoystickSensibility(10);
         }
 
+        this.initCursorTracking();
+
+        addEventListener('pointerdown', () => {
+            this.mLeftPressed = true;
+        });
+
+        addEventListener('pointerup', () => {
+            this.mLeftPressed = false;
+        });
+
         window.addEventListener('keydown', (event) => {
-            if (event.key === ' ') {
-                this.kSpacePressed = true;
-            }
-            if (event.key === 'ArrowUp') {
-                this.kUpArrowPressed = true;
-            }
-            if (event.key === 'ArrowDown') {
-                this.kDownArrowPressed = true;
-            }
-            if (event.key === 'ArrowLeft') {
-                this.kLeftArrowPressed = true;
-            }
-            if (event.key === 'ArrowRight') {
-                this.kRightArrowPressed = true;
+            switch (event.code) {
+                case 'Space':
+                    this.kSpacePressed = true;
+                    break;
+                case 'ArrowUp':
+                    this.kUpArrowPressed = true;
+                    break;
+                case 'KeyW':
+                    this.kUpArrowPressed = true;
+                    break;
+                case 'ArrowDown':
+                    this.kDownArrowPressed = true;
+                    break;
+                case 'KeyS':
+                    this.kDownArrowPressed = true;
+                    break;
+                case 'ArrowLeft':
+                    this.kLeftArrowPressed = true;
+                    break;
+                case 'KeyA':
+                    this.kLeftArrowPressed = true;
+                    break;
+                case 'ArrowRight':
+                    this.kRightArrowPressed = true;
+                    break;
+                case 'KeyD':
+                    this.kRightArrowPressed = true;
+                    break;
             }
         });
+
         window.addEventListener('keyup', (event) => {
-            if (event.key === ' ') {
-                this.kSpacePressed = false;
-            }
-            if (event.key === 'ArrowUp') {
-                this.kUpArrowPressed = false;
-            }
-            if (event.key === 'ArrowDown') {
-                this.kDownArrowPressed = false;
-            }
-            if (event.key === 'ArrowLeft') {
-                this.kLeftArrowPressed = false;
-            }
-            if (event.key === 'ArrowRight') {
-                this.kRightArrowPressed = false;
+            switch (event.code) {
+                case 'Space':
+                    this.kSpacePressed = false;
+                    break;
+                case 'ArrowUp':
+                    this.kUpArrowPressed = false;
+                    break;
+                case 'KeyW':
+                    this.kUpArrowPressed = false;
+                    break;
+                case 'ArrowDown':
+                    this.kDownArrowPressed = false;
+                    break;
+                case 'KeyS':
+                    this.kDownArrowPressed = false;
+                    break;
+                case 'ArrowLeft':
+                    this.kLeftArrowPressed = false;
+                    break;
+                case 'KeyA':
+                    this.kLeftArrowPressed = false;
+                    break;
+                case 'ArrowRight':
+                    this.kRightArrowPressed = false;
+                    break;
+                case 'KeyD':
+                    this.kRightArrowPressed = false;
+                    break;
             }
         });
 
@@ -88,9 +131,10 @@ export class PlayerInputs {
     }
 
     static checkInputs() {
-        if (this.kSpacePressed) {
-            this.spacePressed.next();
+        if (this.kSpacePressed || this.mLeftPressed) {
+            this.arrowPressed.next(this.cursorDirection);
         }
+
         if (this.disableJoystick) {
             return;
         }
@@ -107,6 +151,31 @@ export class PlayerInputs {
             this.jLeftArrowPressed = false;
             this.jRightArrowPressed = false;
         }
+    }
+
+    static updateCursorDirection(event: MouseEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+        const centerX = window.innerWidth / 2;
+        const centerY = (window.innerHeight / 2) * 0.95;
+
+        const dx = event.clientX - centerX;
+        const dy = centerY - event.clientY;
+
+        const angle = Math.atan2(dy, dx) - Math.PI / 2;
+
+        /*
+        if (angle < 0) {
+            angle += 2 * Math.PI;
+        }
+        */
+
+        this.cursorDirection = angle;
+    }
+
+    static initCursorTracking() {
+        //window.addEventListener('mousemove', this.updateCursorDirection.bind(this));
+        window.addEventListener('pointermove', this.updateCursorDirection.bind(this));
     }
 
 }

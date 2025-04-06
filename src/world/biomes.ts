@@ -20,7 +20,11 @@ export class Biomes {
                     asset: 'grass',
                     drawCount: 280
                 }
-            ]
+            ],
+            enemySpawns: [{
+                enemy: 'blob',
+                spawnRate: 1
+            }]
         }
     };
 
@@ -51,7 +55,11 @@ export class Biomes {
                     asset: 'house',
                     drawCount: 125,
                 }
-            ]
+            ],
+            enemySpawns: [{
+                enemy: 'blob',
+                spawnRate: 4
+            }]
         }
     };
 

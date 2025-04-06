@@ -1,12 +1,13 @@
 import { Engine } from '@babylonjs/core/Engines/engine';
 import { Scene, ScenePerformancePriority } from '@babylonjs/core/scene';
 import { delay, Subject, take } from 'rxjs';
+import { EmeniesManager } from '../game/enemies';
+import { Player } from '../game/player';
 import { PlayerInputs } from '../game/player-inputs';
 import { PlayerMovements } from '../game/player-movements';
 import { ProjectilesManager } from '../game/projectiles';
 import { AssetManager } from '../world/assets';
 import { LightingManager } from '../world/lighting';
-import { PlayerManager } from '../world/player';
 import { WorldManager } from '../world/world';
 import { Params } from './params';
 import { Performance } from './performance';
@@ -54,10 +55,11 @@ export class App {
         await AssetManager.loadAssets();
 
 
-        const playerManager = PlayerManager.getInstance();
+        const playerManager = Player.getInstance();
         playerManager.createPlayer();
 
         const projectilesManager = ProjectilesManager.getInstance();
+        const emeniesManager = EmeniesManager.getInstance();
 
         const worldManager = WorldManager.getInstance();
         const playerMovements = PlayerMovements.getInstance();
@@ -72,6 +74,9 @@ export class App {
             playerMovements.updatePlayerPosition(time);
 
             projectilesManager.updatePositions();
+            if (App.engine.frameId % 10 === 0) {
+                emeniesManager.updateEnemies();
+            }
         });
 
         window.addEventListener('resize', () => {
