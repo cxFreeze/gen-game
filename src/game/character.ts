@@ -25,7 +25,7 @@ export class Character {
     private health: number;
     private damage: number;
     //private speed: number;
-    private range: number;
+    protected range: number;
     protected fireRate: number;
     private projectileSpeed: number;
     private currentDirection: CharDirection;
@@ -78,7 +78,7 @@ export class Character {
 
     tryFireProjectile() {
         const now = Date.now();
-        if (now - this.lastFireTime > 1000 / this.fireRate) {
+        if ((now - this.lastFireTime > 1000 / this.fireRate) && this.extraFireCondition()) {
             this.lastFireTime = now;
             this.fireProjectile();
         }
@@ -196,12 +196,16 @@ export class Character {
         }
     }
 
-    private die() {
+    die() {
         this._isDead = true;
         this.delete();
     }
 
     delete() {
         this._mesh.dispose();
+    }
+
+    extraFireCondition(): boolean {
+        return true;
     }
 }

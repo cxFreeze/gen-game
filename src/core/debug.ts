@@ -35,9 +35,12 @@ export class DebugManager {
         document.getElementById('debug-sky-view')!.addEventListener('click', () => this.toggleSkyview());
 
         if (Debug.showFps) {
-            const divFps = document.getElementById('render-fps') as HTMLElement;
+            const divFps = document.getElementById('render-fps');
             App.engine.runRenderLoop(() => {
                 if (App.engine.frameId % 10 === 0) {
+                    if (!divFps) {
+                        return;
+                    }
                     divFps.innerHTML = `${App.engine.getFps().toFixed()} fps`;
                 }
             });
@@ -45,19 +48,25 @@ export class DebugManager {
 
         document.getElementById('debug-panel')!.style.display = this.debugPanel ? 'block' : 'none';
 
-        const worldInfos = document.getElementById('debug-world-infos') as HTMLElement;
-        const seed = document.getElementById('debug-seed') as HTMLElement;
-        const treedInfos = document.getElementById('debug-3d') as HTMLElement;
+        const worldInfos = document.getElementById('debug-world-infos');
+        const seed = document.getElementById('debug-seed');
+        const treedInfos = document.getElementById('debug-3d');
 
-        seed.innerHTML = `seed : ${Random.seed}`;
+        if (seed) {
+            seed.innerHTML = `seed : ${Random.seed}`;
+        }
 
         App.engine.runRenderLoop(() => {
             if (!this.debugPanel) {
                 return;
             }
             if (App.engine.frameId % 10 === 0) {
-                worldInfos.innerHTML = `position : ${this.worldManager.worldX.toFixed(0)} / ${this.worldManager.worldY.toFixed(0)}`;
-                treedInfos.innerHTML = `3D items : assets : ${App.scene.meshes.length} - polys : ${(App.scene.getTotalVertices() / 3).toFixed(0)}`;
+                if (worldInfos) {
+                    worldInfos.innerHTML = `position : ${this.worldManager.worldX.toFixed(0)} / ${this.worldManager.worldY.toFixed(0)}`;
+                }
+                if (treedInfos) {
+                    treedInfos.innerHTML = `3D items : assets : ${App.scene.meshes.length} - polys : ${(App.scene.getTotalVertices() / 3).toFixed(0)}`;
+                }
             }
         });
     }

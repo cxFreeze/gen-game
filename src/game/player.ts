@@ -66,20 +66,7 @@ export class Player extends Character {
         this.lightingManager.shadowGenerator.addShadowCaster(this._mesh);
 
         PlayerInputs.arrowPressed.pipe(throttleTime(1000 / this.fireRate)).subscribe((direction) => {
-            //const playerDir = MathUtils.normalizeAngle(this._mesh.rotation.y);
             const projDir = MathUtils.normalizeAngle(direction);
-
-            /*
-            let diff = Math.abs(playerDir - projDir);
-            if (diff > Math.PI) {
-                diff = 2 * Math.PI - diff;
-            }
-            
-            if (diff > Math.PI / 2) {
-                return;
-            }
-            */
-
             this.fireProjectile(projDir);
         });
     }

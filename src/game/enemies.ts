@@ -16,22 +16,28 @@ export class EmeniesManager {
 
     private player = Player.getInstance();
 
-    constructor() {
-
-    }
-
-    addEnemy(enemy: Enemy, chunk: string) {
+    addEnemy(enemy: Enemy, chunk: string, enemyNumber: number) {
         if (!this.chunckEnemies[chunk]) {
             this.chunckEnemies[chunk] = [];
         }
-        this.chunckEnemies[chunk].push(enemy);
+        if (enemyNumber <= this.chunckEnemies[chunk].length) {
+            if (this.chunckEnemies[chunk][enemyNumber - 1].isDead) {
+                enemy.die();
+            }
+            this.chunckEnemies[chunk].splice(enemyNumber - 1, 1, enemy);
+        }
+        else {
+            this.chunckEnemies[chunk].push(enemy);
+        }
         this.loadedEnemies.push(enemy);
     }
 
     deleteEnemyChunk(chunk: string) {
         if (this.chunckEnemies[chunk]) {
             this.loadedEnemies = this.loadedEnemies.filter(e => !this.chunckEnemies[chunk].includes(e));
-            this.chunckEnemies[chunk] = [];
+            this.chunckEnemies[chunk].forEach(enemy => {
+                enemy.delete();
+            });
         }
     }
 

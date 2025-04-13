@@ -164,17 +164,10 @@ export class PlayerInputs {
 
         const angle = Math.atan2(dy, dx) - Math.PI / 2;
 
-        /*
-        if (angle < 0) {
-            angle += 2 * Math.PI;
-        }
-        */
-
         this.cursorDirection = angle;
     }
 
     static initCursorTracking() {
-        //window.addEventListener('mousemove', this.updateCursorDirection.bind(this));
         window.addEventListener('pointermove', this.updateCursorDirection.bind(this));
     }
 

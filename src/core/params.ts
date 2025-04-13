@@ -3,7 +3,7 @@ import { Random } from '../utils/random';
 
 export class Params {
 
-    private static readonly halfWorldSizeChunks = 2;
+    private static readonly halfWorldSizeChunks = 16;
 
     // LOADING
     static readonly framesWithoutDraw = 100;
@@ -20,7 +20,6 @@ export class Params {
 
     static readonly zoneCount: { [key in ZoneType]: number } = {
         [ZoneType.town]: 3 * (Params.halfWorldSizeChunks * Params.halfWorldSizeChunks) / 16
-        //[ZoneType.town]: 3
     };
 
     // ENEMY
@@ -33,13 +32,7 @@ export class Params {
     static playerMoveSpeed: number = 85; // px per second
 
     static initPlayerInitPos() {
-
         Params.playerInitX = Random.randomNumber('playerInitX') / 100 * Params.safeDrawWorldSize - Params.safeDrawWorldSize / 2;
         Params.playerInitY = Random.randomNumber('playerInitY') / 100 * Params.safeDrawWorldSize - Params.safeDrawWorldSize / 2;
-
-        /*
-         Params.playerInitX = 25;
-         Params.playerInitY = 25;
-         */
     }
 }

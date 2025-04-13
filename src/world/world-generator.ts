@@ -29,7 +29,7 @@ export class WorldGenerator {
     private readonly currentBiome = BiomeType.forest;
 
     private readonly zonesChuncks: { [key in ZoneType]: string[] } = {
-        [ZoneType.town]: [],
+        [ZoneType.town]: []
     };
 
     private initPlayerChunk: string;
@@ -449,8 +449,7 @@ export class WorldGenerator {
 
             if (this.isSpaceAvailable(enemy.mesh, coords.x, coords.y)) {
                 enemySpawned++;
-                this.loadedChuncksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: enemy.mesh as InstancedMesh, asset });
-                this.enemiesManager.addEnemy(enemy, `${chunkX}/${chunkY}`);
+                this.enemiesManager.addEnemy(enemy, `${chunkX}/${chunkY}`, enemySpawned);
             }
             else {
                 enemy.delete();
