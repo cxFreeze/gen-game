@@ -23,7 +23,7 @@ export class Biomes {
             ],
             enemySpawns: [{
                 enemy: 'blob',
-                spawnRate: 1
+                spawnRate: 0.2
             }]
         }
     };

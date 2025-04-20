@@ -443,7 +443,20 @@ export class WorldGenerator {
         let cnt = 0;
 
         while (enemySpawned < count) {
+            cnt++;
+
             const coords = this.getRandomPositionInChunk(chunkX, chunkY, item.enemy, cnt);
+
+            const distFromPlayerInit = Math.sqrt(
+                Math.pow(coords.x - Params.playerInitX, 2) +
+                Math.pow(coords.y - Params.playerInitY, 2)
+            );
+
+            if (distFromPlayerInit < Params.enemySpawnMinDistanceFromPlayerInit) {
+                enemySpawned++;
+                continue; // Skip if too close to player start
+            }
+
             const asset = AssetManager.enemiesAssets[item.enemy];
             const enemy = new Enemy(asset, new Vector3(coords.x, 0, coords.y), EnemyTypes[item.enemy].stats);
 
@@ -454,8 +467,6 @@ export class WorldGenerator {
             else {
                 enemy.delete();
             }
-
-            cnt++;
         }
     }
 

@@ -24,7 +24,7 @@ export class Params {
 
     // ENEMY
     static enemyNameCount = 0;
-
+    static readonly enemySpawnMinDistanceFromPlayerInit = 1500;
 
     // PLAYER
     static playerInitX: number = 0;
