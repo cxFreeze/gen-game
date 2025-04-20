@@ -2,6 +2,7 @@ import { Ray } from '@babylonjs/core/Culling/ray';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { App } from '../core/app';
 import { CharacterStats } from '../models/interfaces';
+import { Random } from '../utils/random';
 import { GG3DAsset } from '../world/GGAsset';
 import { Character } from './character';
 
@@ -11,6 +12,9 @@ export class Enemy extends Character {
 
     constructor(asset: GG3DAsset, position: Vector3, stats: CharacterStats) {
         super(asset, position, stats);
+
+        const rotationY = Random.randomNumber(`rotY--${this.position.y}--${this.name}--${this.position.x}`) / 100 * Math.PI * 2;
+        this.mesh.rotation.y = rotationY;
     }
 
     update(playerPos: Vector3, playerAlive: boolean) {
