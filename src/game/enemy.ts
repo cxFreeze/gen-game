@@ -37,14 +37,14 @@ export class Enemy extends Character {
         this.rotate(rot);
     }
 
-    override extraFireCondition(): boolean {
+    protected override extraFireCondition(): boolean {
         if (!this.lastPlayerPos) {
             return false;
         }
         return this.canSeePlayer(this.lastPlayerPos);
     }
 
-    canSeePlayer(playerPos: Vector3): boolean {
+    private canSeePlayer(playerPos: Vector3): boolean {
         const playerP = playerPos.clone();
         playerP.y = 3;
 

@@ -1,6 +1,6 @@
-import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh';
 import { Enemy } from './enemy';
 import { Player } from './player';
+import { Projectile } from './projectile';
 
 export class EmeniesManager {
     private loadedEnemies: Enemy[] = [];
@@ -55,19 +55,7 @@ export class EmeniesManager {
         }
     }
 
-    checkCollisions(mesh: AbstractMesh, origin: string, damage: number): boolean {
-        if (origin !== 'player') {
-            mesh.computeWorldMatrix(true);
-            this.player.mesh.computeWorldMatrix(true);
-
-            if (this.player.mesh.intersectsMesh(mesh, true)) {
-                this.player.takeDamage(damage);
-                return true;
-            }
-
-            return false;
-        }
-
+    checkDamageCollisions(projectile: Projectile): boolean {
         for (let i = 0; i < this.loadedEnemies.length; i++) {
             if (this.loadedEnemies[i].isDead) {
                 continue;
@@ -78,14 +66,7 @@ export class EmeniesManager {
             }
 
             const enemy = this.loadedEnemies[i];
-
-            mesh.computeWorldMatrix(true);
-            enemy.mesh.computeWorldMatrix(true);
-
-            if (enemy.mesh.intersectsMesh(mesh, true)) {
-                this.damageEnemy(enemy.name, damage);
-                return true;
-            }
+            return enemy.checkDamageCollisions(projectile);
         }
 
         return false;

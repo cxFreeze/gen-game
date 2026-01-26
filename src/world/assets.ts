@@ -68,8 +68,6 @@ export class AssetManager {
 
         this.projectile.material = magicMaterial;
 
-
-
         this.flareSprite = new Texture(`${this.texturesPath}/flare.png`, App.scene);
 
         const player = new GG3DAsset('player', await this.load3DAsset(`${this.Assets3dPath}/player.glb`), undefined, this.animations[`${this.Assets3dPath}/player.glb`]);

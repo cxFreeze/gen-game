@@ -447,12 +447,7 @@ export class WorldGenerator {
 
             const coords = this.getRandomPositionInChunk(chunkX, chunkY, item.enemy, cnt);
 
-            const distFromPlayerInit = Math.sqrt(
-                Math.pow(coords.x - Params.playerInitX, 2) +
-                Math.pow(coords.y - Params.playerInitY, 2)
-            );
-
-            if (distFromPlayerInit < Params.enemySpawnMinDistanceFromPlayerInit) {
+            if (this.isTooCloseToPlayerSpawn(coords.x, coords.y)) {
                 enemySpawned++;
                 continue; // Skip if too close to player start
             }
@@ -785,5 +780,18 @@ export class WorldGenerator {
         const xIndex = Random.randomNumber(`x${count}x${chunkX}x${chunkY}${name}x${count}`) / 100 * this.chunckSize - this.chunckSize / 2;
         const yIndex = Random.randomNumber(`y${count}y${chunkX}y${chunkY}${name}x${count}`) / 100 * this.chunckSize - this.chunckSize / 2;
         return { x: chunkX + xIndex, y: chunkY + yIndex };
+    }
+
+    private isTooCloseToPlayerSpawn(x: number, y: number): boolean {
+        const distFromPlayerInit = Math.sqrt(
+            Math.pow(x - Params.playerInitX, 2) +
+            Math.pow(y - Params.playerInitY, 2)
+        );
+
+        if (distFromPlayerInit < Params.spawnMinDistanceFromPlayerSpawn) {
+            return true;
+        }
+
+        return false;
     }
 }

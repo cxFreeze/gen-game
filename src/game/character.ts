@@ -7,11 +7,10 @@ import { AssetUtils } from '../utils/assets-utils';
 import { WorldUtils } from '../utils/world-utils';
 import { GG3DAsset } from '../world/GGAsset';
 import { LightingManager } from '../world/lighting';
+import { Projectile } from './projectile';
 import { ProjectilesManager } from './projectiles';
 
 export type CharDirection = 'front' | 'back' | 'left' | 'right' | 'front-left' | 'front-right' | 'back-left' | 'back-right';
-
-
 
 export class Character {
     protected _mesh: AbstractMesh;
@@ -19,7 +18,7 @@ export class Character {
         return this._mesh;
     }
 
-    asset: GG3DAsset;
+    protected asset: GG3DAsset;
 
     private maxHealth: number;
     private health: number;
@@ -76,7 +75,7 @@ export class Character {
         this._position = position;
     }
 
-    tryFireProjectile() {
+    protected tryFireProjectile() {
         const now = Date.now();
         if ((now - this.lastFireTime > 1000 / this.fireRate) && this.extraFireCondition()) {
             this.lastFireTime = now;
@@ -84,8 +83,7 @@ export class Character {
         }
     }
 
-
-    fireProjectile(direction: number = this._mesh.rotation.y) {
+    protected fireProjectile(direction: number = this._mesh.rotation.y) {
         if (this._isDead) {
             return;
         }
@@ -168,12 +166,28 @@ export class Character {
         }
     }
 
-    rotate(rotation: number) {
+    protected rotate(rotation: number) {
         if (this.currentRotateAnim$) {
             this.currentRotateAnim$.unsubscribe();
         }
 
         this.currentRotateAnim$ = AssetUtils.rotateMeshY(this._mesh, rotation, 8);
+    }
+
+    checkDamageCollisions(projectile: Projectile): boolean {
+        if (projectile.origMeshName === this.name) {
+            return false;
+        }
+
+        projectile.mesh.computeWorldMatrix(true);
+        this.mesh.computeWorldMatrix(true);
+
+        if (this.mesh.intersectsMesh(projectile.mesh, true)) {
+            this.takeDamage(projectile.damage);
+            return true;
+        }
+
+        return false;
     }
 
     takeDamage(damage: number) {
@@ -205,7 +219,7 @@ export class Character {
         this._mesh.dispose();
     }
 
-    extraFireCondition(): boolean {
+    protected extraFireCondition(): boolean {
         return true;
     }
 }

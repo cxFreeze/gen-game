@@ -14,7 +14,7 @@ import { Performance } from './performance';
 
 
 export class App {
-    private static _hideLoadingScreenSubject = new Subject<void>();
+    private static readonly _hideLoadingScreenSubject = new Subject<void>();
     public static get hideLoadingScreenSubject() {
         return this._hideLoadingScreenSubject;
     }
@@ -68,7 +68,7 @@ export class App {
         PlayerInputs.init();
 
         this._engine.runRenderLoop(() => {
-            this._scene.render();
+            this._scene.render(false);
             const time = this._engine.getDeltaTime();
             PlayerInputs.checkInputs();
             playerMovements.updatePlayerPosition(time);

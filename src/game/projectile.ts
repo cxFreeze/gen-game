@@ -8,6 +8,7 @@ import { App } from '../core/app';
 import { WorldUtils } from '../utils/world-utils';
 import { AssetManager } from '../world/assets';
 import { EmeniesManager } from './enemies';
+import { Player } from './player';
 
 export interface ProjectileInfos {
     speed: number;
@@ -18,13 +19,26 @@ export interface ProjectileInfos {
 }
 
 export class Projectile {
-    private mesh: InstancedMesh;
+    protected _mesh: InstancedMesh;
+    get mesh(): InstancedMesh {
+        return this._mesh;
+    }
     private speed: number;
     private direction: number;
-    private damage: number;
+    private _damage: number;
+    get damage(): number {
+        return this._damage;
+    }
     private origMesh: AbstractMesh;
 
-    isDestroyed: boolean = false;
+    get origMeshName(): string {
+        return this.origMesh.name;
+    }
+
+    private _isDestroyed: boolean = false;
+    get isDestroyed(): boolean {
+        return this._isDestroyed;
+    }
 
     private meshY;
     private initialPosition: Vector3;
@@ -36,11 +50,12 @@ export class Projectile {
     private distanceToTravel: number = 0;
 
     private enemiesManager = EmeniesManager.getInstance();
+    private player = Player.getInstance();
 
     constructor(projectileInfos: ProjectileInfos, origMesh: AbstractMesh) {
         this.speed = projectileInfos.speed * 30;
         this.direction = projectileInfos.direction;
-        this.damage = projectileInfos.damage;
+        this._damage = projectileInfos.damage;
         this.maxDistanceToTravel = projectileInfos.range;
         this.origMesh = origMesh;
 
@@ -48,8 +63,8 @@ export class Projectile {
 
         const scale = 2.5 * Math.cbrt(this.damage);
 
-        this.mesh = AssetManager.projectile.createInstance('projectile');
-        this.mesh.scaling = new Vector3(scale, scale, scale);
+        this._mesh = AssetManager.projectile.createInstance('projectile');
+        this._mesh.scaling = new Vector3(scale, scale, scale);
         const pos = origMesh.position.clone();
 
         this.meshY = scale / 2;
@@ -57,14 +72,14 @@ export class Projectile {
         pos.x += scale / 2 * Math.sin(this.direction);
         pos.z += scale / 2 * Math.cos(this.direction);
 
-        this.mesh.position = pos;
+        this._mesh.position = pos;
         this.initialPosition = pos;
 
         const directionVector = new Vector3(Math.sin(this.direction), 0, Math.cos(this.direction));
 
-        const ray = new Ray(this.mesh.position, directionVector.normalize(), 500);
+        const ray = new Ray(this._mesh.position, directionVector.normalize(), 500);
         const hit = App.scene.pickWithRay(ray, (mesh) => {
-            return mesh.name !== this.mesh.name && mesh !== this.origMesh && !mesh.name.includes('collider') && !mesh.name.includes('projectile') && mesh.name !== 'player' && !mesh.name.startsWith('char-');
+            return mesh.name !== this._mesh.name && mesh !== this.origMesh && !mesh.name.includes('collider') && !mesh.name.includes('projectile') && mesh.name !== 'player' && !mesh.name.startsWith('char-') && !mesh.name.startsWith('noproj-');
         });
 
         if (hit && hit.pickedMesh) {
@@ -77,7 +92,7 @@ export class Projectile {
     }
 
     updatePosition() {
-        if (this.mesh == null || this.isDestroyed) {
+        if (this._mesh == null || this._isDestroyed) {
             return;
         }
 
@@ -85,20 +100,20 @@ export class Projectile {
 
         const distance = this.speed * ((this.timeUpdated - this.timeCreated) / 1000);
 
-        this.mesh.position = this.initialPosition.add(new Vector3(Math.sin(this.direction) * distance, 0, Math.cos(this.direction) * distance));
-        this.mesh.position.y = this.meshY;
+        this._mesh.position = this.initialPosition.add(new Vector3(Math.sin(this.direction) * distance, 0, Math.cos(this.direction) * distance));
+        this._mesh.position.y = this.meshY;
 
-        if (distance > this.distanceToTravel || !this.isPositionValid(this.mesh.position)) {
+        if (distance > this.distanceToTravel || !this.isPositionValid(this._mesh.position)) {
             this.destroy();
             return;
         }
 
-        if (this.enemiesManager.checkCollisions(this.mesh, this.origMesh.name, this.damage)) {
+        if (this.player.checkDamageCollisions(this) || this.enemiesManager.checkDamageCollisions(this)) {
             this.destroy();
         }
     }
 
-    isPositionValid(position: Vector3) {
+    private isPositionValid(position: Vector3) {
         if (!WorldUtils.isInWorldBounds(position.x, position.z)) {
             return false;
         }
@@ -106,15 +121,15 @@ export class Projectile {
         return true;
     }
 
-    destroy() {
-        App.scene.removeMesh(this.mesh);
-        this.isDestroyed = true;
-        this.createExplosion(this.mesh.position);
-        this.mesh.dispose();
-        this.mesh = null as any;
+    private destroy() {
+        App.scene.removeMesh(this._mesh);
+        this._isDestroyed = true;
+        this.createExplosion(this._mesh.position);
+        this._mesh.dispose();
+        this._mesh = null as any;
     }
 
-    createExplosion(position: Vector3) {
+    private createExplosion(position: Vector3) {
         const particleSystem = new ParticleSystem('particles', 100, App.scene);
         particleSystem.particleTexture = AssetManager.flareSprite.clone();
 
@@ -152,6 +167,4 @@ export class Projectile {
             particleSystem.dispose();
         }, 500);
     }
-
-
 }

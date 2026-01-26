@@ -3,7 +3,10 @@ import { Random } from '../utils/random';
 
 export class Params {
 
-    private static readonly halfWorldSizeChunks = 16;
+    //DEV
+    private static devMode = true;
+
+    private static halfWorldSizeChunks = 16;
 
     // LOADING
     static readonly framesWithoutDraw = 100;
@@ -24,7 +27,7 @@ export class Params {
 
     // ENEMY
     static enemyNameCount = 0;
-    static readonly enemySpawnMinDistanceFromPlayerInit = 1500;
+    static spawnMinDistanceFromPlayerSpawn = 1500;
 
     // PLAYER
     static playerInitX: number = 0;
@@ -34,5 +37,14 @@ export class Params {
     static initPlayerInitPos() {
         Params.playerInitX = Random.randomNumber('playerInitX') / 100 * Params.safeDrawWorldSize - Params.safeDrawWorldSize / 2;
         Params.playerInitY = Random.randomNumber('playerInitY') / 100 * Params.safeDrawWorldSize - Params.safeDrawWorldSize / 2;
+        if (this.devMode) {
+            this.initDevMode();
+        }
+    }
+
+    static initDevMode() {
+        Params.halfWorldSizeChunks = 2;
+        Params.zoneCount[1] = 2;
+        Params.spawnMinDistanceFromPlayerSpawn = 200;
     }
 }

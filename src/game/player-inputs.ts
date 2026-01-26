@@ -21,7 +21,8 @@ export class PlayerInputs {
 
     private static cursorDirection: number = 0;
 
-    static arrowPressed = new Subject<number>();
+    static readonly firePressed = new Subject<number>();
+    static readonly aimChanged = new Subject<number>();
 
     static get forwardPressed() {
         return this.kUpArrowPressed || this.jUpArrowPressed;
@@ -132,7 +133,7 @@ export class PlayerInputs {
 
     static checkInputs() {
         if (this.kSpacePressed || this.mLeftPressed) {
-            this.arrowPressed.next(this.cursorDirection);
+            this.firePressed.next(this.cursorDirection);
         }
 
         if (this.disableJoystick) {
@@ -153,7 +154,7 @@ export class PlayerInputs {
         }
     }
 
-    static updateCursorDirection(event: MouseEvent) {
+    private static updateCursorDirection(event: MouseEvent) {
         event.preventDefault();
         event.stopPropagation();
         const centerX = window.innerWidth / 2;
@@ -165,9 +166,10 @@ export class PlayerInputs {
         const angle = Math.atan2(dy, dx) - Math.PI / 2;
 
         this.cursorDirection = angle;
+        this.aimChanged.next(angle);
     }
 
-    static initCursorTracking() {
+    private static initCursorTracking() {
         window.addEventListener('pointermove', this.updateCursorDirection.bind(this));
     }
 
