@@ -57,18 +57,11 @@ export class EmeniesManager {
 
     checkDamageCollisions(projectile: Projectile): boolean {
         for (let i = 0; i < this.loadedEnemies.length; i++) {
-            if (this.loadedEnemies[i].isDead) {
-                continue;
-            }
-
-            if (origin === this.loadedEnemies[i].name) {
-                continue;
-            }
-
             const enemy = this.loadedEnemies[i];
-            return enemy.checkDamageCollisions(projectile);
+            if (enemy.checkDamageCollisions(projectile)) {
+                return true;
+            }
         }
-
         return false;
     }
 }

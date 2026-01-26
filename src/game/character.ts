@@ -175,12 +175,12 @@ export class Character {
     }
 
     checkDamageCollisions(projectile: Projectile): boolean {
-        if (projectile.origMeshName === this.name) {
+        if (this._isDead || projectile.origMeshName === this.name) {
             return false;
         }
 
-        projectile.mesh.computeWorldMatrix(true);
-        this.mesh.computeWorldMatrix(true);
+        projectile.mesh.computeWorldMatrix();
+        this.mesh.computeWorldMatrix();
 
         if (this.mesh.intersectsMesh(projectile.mesh, true)) {
             this.takeDamage(projectile.damage);
