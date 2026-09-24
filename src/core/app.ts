@@ -74,9 +74,7 @@ export class App {
             playerMovements.updatePlayerPosition(time);
 
             projectilesManager.updatePositions();
-            if (App.engine.frameId % 10 === 0) {
-                emeniesManager.updateEnemies();
-            }
+            emeniesManager.updateEnemies(time);
         });
 
         window.addEventListener('resize', () => {

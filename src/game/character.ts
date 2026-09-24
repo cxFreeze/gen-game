@@ -97,29 +97,7 @@ export class Character {
             return;
         }
 
-        this._mesh.computeWorldMatrix(true);
-
-        let oldPos = this._mesh.position.clone();
-        this._mesh.moveWithCollisions(new Vector3(x, 0, y));
-
-        this.resetMeshPositionIfInvalid(oldPos);
-
-        const tempX = this._mesh.position.x;
-        const tempY = this._mesh.position.z;
-
-        if (tempX === oldPos.x && tempY === oldPos.z && (x !== 0 && y !== 0)) {
-            oldPos = this._mesh.position.clone();
-            this._mesh.moveWithCollisions(new Vector3(x, 0, 0));
-            this.resetMeshPositionIfInvalid(oldPos);
-
-            if (this._mesh.position.x === oldPos.x) {
-                oldPos = this._mesh.position.clone();
-                this._mesh.moveWithCollisions(new Vector3(0, 0, y));
-                this.resetMeshPositionIfInvalid(oldPos);
-            }
-        }
-
-        this._position = this._mesh.position.clone();
+        this.moveBy(x, y);
 
         if (direction !== this.currentDirection) {
             if (this.currentRotateAnim$) {
@@ -161,8 +139,40 @@ export class Character {
         }
     }
 
-    private resetMeshPositionIfInvalid(oldPosition: Vector3): void {
-        if (this._mesh.position.y !== oldPosition.y || !WorldUtils.isInWorldBounds(this._mesh.position.x, this._mesh.position.z)) {
+    moveBy(x: number, y: number, isPositionValid?: (position: Vector3) => boolean) {
+        if (this._isDead) {
+            return;
+        }
+
+        this._mesh.computeWorldMatrix(true);
+
+        let oldPos = this._mesh.position.clone();
+        this._mesh.moveWithCollisions(new Vector3(x, 0, y));
+
+        this.resetMeshPositionIfInvalid(oldPos, isPositionValid);
+
+        const tempX = this._mesh.position.x;
+        const tempY = this._mesh.position.z;
+
+        if (tempX === oldPos.x && tempY === oldPos.z && (x !== 0 && y !== 0)) {
+            oldPos = this._mesh.position.clone();
+            this._mesh.moveWithCollisions(new Vector3(x, 0, 0));
+            this.resetMeshPositionIfInvalid(oldPos, isPositionValid);
+
+            if (this._mesh.position.x === oldPos.x) {
+                oldPos = this._mesh.position.clone();
+                this._mesh.moveWithCollisions(new Vector3(0, 0, y));
+                this.resetMeshPositionIfInvalid(oldPos, isPositionValid);
+            }
+        }
+
+        this._position = this._mesh.position.clone();
+    }
+
+    private resetMeshPositionIfInvalid(oldPosition: Vector3, isPositionValid?: (position: Vector3) => boolean): void {
+        if (this._mesh.position.y !== oldPosition.y
+            || !WorldUtils.isInWorldBounds(this._mesh.position.x, this._mesh.position.z)
+            || (isPositionValid && !isPositionValid(this._mesh.position))) {
             this._mesh.position = oldPosition;
             this._mesh.computeWorldMatrix(true);
         }

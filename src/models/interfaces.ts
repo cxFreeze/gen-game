@@ -62,6 +62,7 @@ export interface CharacterStats {
 
 export interface EnemyType {
     name: EnemyAsset;
+    maxSpawnDistance: number;
     stats: CharacterStats;
 }
 

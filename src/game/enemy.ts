@@ -1,28 +1,44 @@
 import { Ray } from '@babylonjs/core/Culling/ray';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector';
 import { App } from '../core/app';
-import { CharacterStats } from '../models/interfaces';
+import { EnemyType } from '../models/interfaces';
 import { Random } from '../utils/random';
 import { GG3DAsset } from '../world/GGAsset';
 import { Character } from './character';
+import { EnemyMovement, EnemyMovementMode } from './enemy-movement';
 
 export class Enemy extends Character {
+    private static readonly combatUpdateInterval = 150;
 
     private lastPlayerPos: Vector3 | null = null;
+    private combatElapsedTime = Enemy.combatUpdateInterval;
+    private readonly movement: EnemyMovement;
 
-    constructor(asset: GG3DAsset, position: Vector3, stats: CharacterStats) {
-        super(asset, position, stats);
+    get movementMode(): EnemyMovementMode {
+        return this.movement.mode;
+    }
+
+    constructor(asset: GG3DAsset, position: Vector3, enemyType: EnemyType) {
+        super(asset, position, enemyType.stats);
 
         const rotationY = Random.randomNumber(`rotY--${this.position.y}--${this.name}--${this.position.x}`) / 100 * Math.PI * 2;
         this.mesh.rotation.y = rotationY;
+        this.movement = new EnemyMovement(this, position, enemyType);
     }
 
-    update(playerPos: Vector3, playerAlive: boolean) {
+    update(playerPos: Vector3, playerAlive: boolean, deltaTime: number) {
         if (this.isDead) {
             return;
         }
 
         this.lastPlayerPos = playerPos.clone();
+        this.movement.update(playerPos, playerAlive, deltaTime);
+        this.combatElapsedTime += deltaTime;
+
+        if (this.combatElapsedTime < Enemy.combatUpdateInterval) {
+            return;
+        }
+        this.combatElapsedTime = 0;
 
         if (Vector3.Distance(this.position, playerPos) > 200) {
             return;
@@ -31,10 +47,6 @@ export class Enemy extends Character {
         if (playerAlive) {
             this.tryFireProjectile();
         }
-
-        const direction = playerPos.subtract(this.position).normalize();
-        const rot = Math.atan2(direction.x, direction.z);
-        this.rotate(rot);
     }
 
     protected override extraFireCondition(): boolean {

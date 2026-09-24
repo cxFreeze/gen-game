@@ -462,7 +462,7 @@ export class WorldGenerator {
             }
 
             const asset = AssetManager.getEnemyAsset(item.enemy);
-            const enemy = new Enemy(asset, new Vector3(coords.x, 0, coords.y), EnemyTypes[item.enemy].stats);
+            const enemy = new Enemy(asset, new Vector3(coords.x, 0, coords.y), EnemyTypes[item.enemy]);
 
             if (this.isSpaceAvailable(enemy.mesh, coords.x, coords.y)) {
                 enemySpawned++;

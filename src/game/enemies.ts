@@ -41,10 +41,10 @@ export class EmeniesManager {
         }
     }
 
-    updateEnemies() {
+    updateEnemies(deltaTime: number) {
         this.loadedEnemies = this.loadedEnemies.filter(e => !e.isDead);
         this.loadedEnemies.forEach(enemy => {
-            enemy.update(this.player.position, !this.player.isDead);
+            enemy.update(this.player.position, !this.player.isDead, deltaTime);
         });
     }
 
