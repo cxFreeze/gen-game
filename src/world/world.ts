@@ -66,8 +66,8 @@ export class WorldManager {
         this.camera.rotation = initRot.clone().addInPlace(new Vector3(0, Math.PI, 0));
 
         App.hideLoadingScreen$.subscribe(() => {
-            const posAnim = Animation.CreateAndStartAnimation('initCamera1', this.camera, 'position', 30, 120, this.camera.position, finalCameraPos, 0, Anim.cubicEaseInOut);
-            const rotAnim = Animation.CreateAndStartAnimation('initCamera2', this.camera, 'rotation', 30, 120, this.camera.rotation, initRot, 0, Anim.cubicEaseInOut);
+            const posAnim = Animation.CreateAndStartAnimation('initCamera1', this.camera, 'position', 30, 120, this.camera.position, finalCameraPos, 2, Anim.cubicEaseInOut);
+            const rotAnim = Animation.CreateAndStartAnimation('initCamera2', this.camera, 'rotation', 30, 120, this.camera.rotation, initRot, 2, Anim.cubicEaseInOut);
             this.player.playerMoved$.subscribe((moved) => {
                 if (moved) {
                     posAnim?.stop();
