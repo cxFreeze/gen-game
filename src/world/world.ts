@@ -131,14 +131,22 @@ export class WorldManager {
         ghostMesh.position = mesh.position;
         ghostMesh.rotation = mesh.rotation;
         ghostMesh.scaling = mesh.scaling;
-        ghostMesh.visibility = 0.2;
+        ghostMesh.material = mesh.material.clone('ghostMaterial');
+        if (ghostMesh.material == null) {
+            return;
+        }
+        ghostMesh.material.transparencyMode = 2;
+        ghostMesh.material.alpha = 0.2;
         ghostMesh.receiveShadows = true;
         ghostMesh.isVisible = true;
 
         App.scene.addMesh(ghostMesh);
+        this.lightingManager.shadowGenerator.addShadowCaster(ghostMesh);
         this.ghostMeshes.set(mesh, ghostMesh);
 
-        mesh.isVisible = false;
+        setTimeout(() => {
+            mesh.isVisible = false;
+        }, 50);
 
         return ghostMesh;
     }
