@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES6",
     "useDefineForClassFields": true,
-    "strictPropertyInitialization": false,
+    "strictPropertyInitialization": true,
     "module": "ES6",
     "lib": [
       "ES2020",

@@ -1,24 +1,24 @@
-import { GroundMesh } from '@babylonjs/core/Meshes/groundMesh';
 import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh';
 import { Sprite } from '@babylonjs/core/Sprites/sprite';
-import { GG3DAsset, GGAsset, GGSpriteAsset } from '../world/GGAsset';
+import { GG3DAsset, GGSpriteAsset } from '../world/GGAsset';
 
 export enum BiomeType { forest = 1 };
 export enum ZoneType { town = 1 };
 
 export type BiomeAssetType = 'ground' | 'tree' | 'rock' | 'grass';
+export type Biome3DAssetType = Exclude<BiomeAssetType, 'grass'>;
 export type ZoneAssetType = 'ground' | 'plazaGround' | 'house' | 'center' | 'tower';
 export type WorldAsset = 'player' | 'fence' | 'ocean';
 export type EnemyAsset = 'blob' | 'goblin' | 'skeleton' | 'troll';
 
 export interface Biome {
-    ground: BiomeAssetType;
+    ground: Biome3DAssetType;
     items: BiomeItem[];
     enemySpawns?: EnemySpawn[];
 }
 
 export interface Zone {
-    ground: BiomeAssetType;
+    ground: ZoneAssetType;
     items: ZoneItem[];
     enemySpawns?: EnemySpawn[];
 }
@@ -33,7 +33,7 @@ export interface EnemySpawn {
 }
 
 export interface PreLoadedItem {
-    asset: GGAsset;
+    asset: GG3DAsset;
     x: number;
     y: number;
     z: number;
@@ -42,7 +42,7 @@ export interface PreLoadedItem {
 }
 
 export interface LoadedMesh {
-    mesh: InstancedMesh | GroundMesh;
+    mesh: InstancedMesh;
     asset: GG3DAsset;
 }
 

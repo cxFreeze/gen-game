@@ -10,6 +10,14 @@ export default [
   ...tseslint.configs.recommended,
   {
     rules: {
+      '@typescript-eslint/consistent-type-assertions': [
+        'error',
+        {
+          'assertionStyle': 'never'
+        }
+      ],
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'error',
       'quotes': [
         'warn',
         'single',

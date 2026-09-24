@@ -16,7 +16,13 @@ export class WorldManager {
     worldX: number = 0;
     worldY: number = 0;
 
-    private camera: UniversalCamera;
+    private _camera: UniversalCamera | null = null;
+    private get camera(): UniversalCamera {
+        if (!this._camera) {
+            throw new Error('World must be generated before accessing the camera');
+        }
+        return this._camera;
+    }
     private readonly cameraX: number = 0;
     private cameraY: number = 250;
     private readonly cameraZ: number = -170;
@@ -25,6 +31,7 @@ export class WorldManager {
     private readonly initCameraZ: number = 25;
 
     private readonly transparentMeshes = new Set<AbstractMesh>();
+    private readonly ghostMeshes = new WeakMap<InstancedMesh, AbstractMesh>();
 
     private readonly lightingManager = LightingManager.getInstance();
     private readonly worldGenerator = WorldGenerator.getInstance();
@@ -47,7 +54,7 @@ export class WorldManager {
     }
 
     generateWorld() {
-        this.camera = new UniversalCamera('camera', new Vector3(0, 0, 0), App.scene);
+        this._camera = new UniversalCamera('camera', new Vector3(0, 0, 0), App.scene);
         new FxaaPostProcess('fxaa', 1.0, this.camera);
 
         this.setCameraPosition(this.player.position.x, this.player.position.z);
@@ -55,7 +62,7 @@ export class WorldManager {
         const finalCameraPos = new Vector3(this.player.position.x + this.cameraX, this.cameraY, this.player.position.z + this.cameraZ);
 
         this.camera.position = new Vector3(this.player.position.x, this.initCameraY, this.player.position.z + this.initCameraZ);
-        const initRot = this.camera.rotation!.clone();
+        const initRot = this.camera.rotation?.clone() ?? Vector3.Zero();
         this.camera.rotation = initRot.clone().addInPlace(new Vector3(0, Math.PI, 0));
 
         App.hideLoadingScreen$.subscribe(() => {
@@ -63,8 +70,8 @@ export class WorldManager {
             const rotAnim = Animation.CreateAndStartAnimation('initCamera2', this.camera, 'rotation', 30, 120, this.camera.rotation, initRot, 0, Anim.cubicEaseInOut);
             this.player.playerMoved$.subscribe((moved) => {
                 if (moved) {
-                    posAnim!.stop();
-                    rotAnim!.stop();
+                    posAnim?.stop();
+                    rotAnim?.stop();
                 }
             });
         });
@@ -88,18 +95,18 @@ export class WorldManager {
             return mesh.name !== 'player' && mesh.isPickable;
         });
 
-        const currentMeshes = new Set();
+        const currentMeshes = new Set<AbstractMesh>();
         if (hitResults) {
             for (const hit of hitResults) {
-                if (!hit.pickedPoint || hit.pickedPoint.y < 20) {
+                if (!hit.pickedPoint || hit.pickedPoint.y < 20 || !hit.pickedMesh) {
                     continue;
                 }
                 const mesh = hit.pickedMesh;
                 currentMeshes.add(mesh);
 
-                if (!this.transparentMeshes.has(mesh!)) {
-                    const newMesh = this.setMeshTransparent(mesh!);
-                    this.transparentMeshes.add(mesh!);
+                if (!this.transparentMeshes.has(mesh)) {
+                    const newMesh = this.setMeshTransparent(mesh);
+                    this.transparentMeshes.add(mesh);
                     if (newMesh) {
                         this.lightingManager.shadowGenerator.addShadowCaster(newMesh);
                     }
@@ -116,7 +123,7 @@ export class WorldManager {
     }
 
     private setMeshTransparent(mesh: AbstractMesh): AbstractMesh | undefined {
-        if (!mesh || !mesh.material || !(mesh instanceof InstancedMesh) || (mesh as any)._ghostMesh) {
+        if (!mesh.material || !(mesh instanceof InstancedMesh) || this.ghostMeshes.has(mesh)) {
             return undefined;
         }
 
@@ -129,7 +136,7 @@ export class WorldManager {
         ghostMesh.isVisible = true;
 
         App.scene.addMesh(ghostMesh);
-        (mesh as any)._ghostMesh = ghostMesh;
+        this.ghostMeshes.set(mesh, ghostMesh);
 
         mesh.isVisible = false;
 
@@ -140,13 +147,18 @@ export class WorldManager {
     private resetMeshTransparency(mesh: AbstractMesh): void {
         mesh.isVisible = true;
 
-        if (!(mesh instanceof InstancedMesh) || !(mesh as any)._ghostMesh) {
+        if (!(mesh instanceof InstancedMesh)) {
             return;
         }
 
-        App.scene.removeMesh((mesh as any)._ghostMesh);
-        (mesh as any)._ghostMesh.dispose();
-        (mesh as any)._ghostMesh = null;
+        const ghostMesh = this.ghostMeshes.get(mesh);
+        if (!ghostMesh) {
+            return;
+        }
+
+        App.scene.removeMesh(ghostMesh);
+        ghostMesh.dispose();
+        this.ghostMeshes.delete(mesh);
     }
 
 

@@ -1,6 +1,5 @@
 import { AnimationGroup } from '@babylonjs/core/Animations/animationGroup.js';
 import { loadAssetContainerAsync } from '@babylonjs/core/Loading/sceneLoader.js';
-import { Material } from '@babylonjs/core/Materials/material.js';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture.js';
 import { Color3 } from '@babylonjs/core/Maths/math.color.js';
@@ -11,7 +10,27 @@ import { App } from '../core/app.js';
 import { Params } from '../core/params.js';
 import { BiomeAssetType, BiomeType, EnemyAsset, WorldAsset, ZoneAssetType, ZoneType } from '../models/interfaces.js';
 import { Random } from '../utils/random.js';
-import { GG3DAsset, GGAsset, GGSpriteAsset } from './GGAsset.js';
+import { GG3DAsset, GGSpriteAsset } from './GGAsset.js';
+
+interface BiomeAssetByType {
+    ground: GG3DAsset;
+    tree: GG3DAsset;
+    rock: GG3DAsset;
+    grass: GGSpriteAsset;
+}
+
+type BiomeAssetCollection = {
+    [AssetType in BiomeAssetType]: Array<BiomeAssetByType[AssetType]>;
+};
+
+type ZoneAssetCollection = {
+    [AssetType in ZoneAssetType]: GG3DAsset[];
+};
+
+interface TextureAsset {
+    material: StandardMaterial;
+    texture: Texture;
+}
 
 
 export class AssetManager {
@@ -21,7 +40,7 @@ export class AssetManager {
     private static readonly Assets3dPath = './3d';
     private static readonly texturesPath = './textures';
 
-    private static readonly biomeAssets: { [key in BiomeType]: { [key in BiomeAssetType]: Array<GGAsset> } } = {
+    private static readonly biomeAssets: { [key in BiomeType]: BiomeAssetCollection } = {
         [BiomeType.forest]: {
             ground: new Array<GG3DAsset>(),
             tree: new Array<GG3DAsset>(),
@@ -30,7 +49,7 @@ export class AssetManager {
         }
     };
 
-    private static readonly zoneAssets: { [key in ZoneType]: { [key in ZoneAssetType]: Array<GGAsset> } } = {
+    private static readonly zoneAssets: { [key in ZoneType]: ZoneAssetCollection } = {
         [ZoneType.town]: {
             ground: new Array<GG3DAsset>(),
             house: new Array<GG3DAsset>(),
@@ -40,8 +59,8 @@ export class AssetManager {
         }
     };
 
-    static readonly worldAssets = {} as { [key in WorldAsset]: GG3DAsset };
-    static readonly enemiesAssets = {} as { [key in EnemyAsset]: GG3DAsset };
+    private static readonly worldAssets = new Map<WorldAsset, GG3DAsset>();
+    private static readonly enemyAssets = new Map<EnemyAsset, GG3DAsset>();
     static readonly animations: { [key: string]: AnimationGroup[] } = {};
 
     static projectile: Mesh;
@@ -73,23 +92,24 @@ export class AssetManager {
         const player = new GG3DAsset('player', await this.load3DAsset(`${this.Assets3dPath}/player.glb`), undefined, this.animations[`${this.Assets3dPath}/player.glb`]);
         player.scale = 13;
         player.type = 'player';
-        this.worldAssets.player = player;
+        this.worldAssets.set('player', player);
 
-        const ocean = new GG3DAsset('ocean', MeshBuilder.CreateGround('ocean', { width: this.groundTileSize, height: this.groundTileSize }), this.loadTextureAsset('waterGround', `${this.texturesPath}/water_texture.jpg`));
+        const oceanTexture = this.loadTextureAsset('waterGround', `${this.texturesPath}/water_texture.jpg`);
+        const ocean = new GG3DAsset('ocean', MeshBuilder.CreateGround('ocean', { width: this.groundTileSize, height: this.groundTileSize }), oceanTexture.material);
         ocean.height = this.groundTileSize;
         ocean.width = this.groundTileSize;
         ocean.safeZone = this.groundTileSize;
         ocean.type = 'ground';
         ocean.ignoreCollisions = true;
         ocean.isPickable = false;
-        this.worldAssets.ocean = ocean;
+        this.worldAssets.set('ocean', ocean);
 
         const fence = new GG3DAsset('fence', await this.load3DAsset(`${this.Assets3dPath}/fence.glb`));
         fence.scale = 22;
         fence.ignoreCollisions = true;
         fence.isPickable = false;
         fence.disableShadow = true;
-        this.worldAssets.fence = fence;
+        this.worldAssets.set('fence', fence);
 
         await this.loadForestAssets();
         await this.loadTownAssets();
@@ -97,13 +117,14 @@ export class AssetManager {
     }
 
     private static async loadForestAssets() {
-        const forestGround = new GG3DAsset('forestGround', MeshBuilder.CreateGround('forestGround', { width: this.groundTileSize, height: this.groundTileSize }), this.loadTextureAsset('forestGround', `${this.texturesPath}/forest/ground_texture.jpg`));
+        const forestTexture = this.loadTextureAsset('forestGround', `${this.texturesPath}/forest/ground_texture.jpg`);
+        const forestGround = new GG3DAsset('forestGround', MeshBuilder.CreateGround('forestGround', { width: this.groundTileSize, height: this.groundTileSize }), forestTexture.material);
         forestGround.height = this.groundTileSize;
         forestGround.width = this.groundTileSize;
         forestGround.safeZone = this.groundTileSize;
         forestGround.isPickable = false;
         forestGround.type = 'ground';
-        forestGround.mesh.material!.zOffset = 20;
+        forestTexture.material.zOffset = 20;
         this.biomeAssets[BiomeType.forest].ground.push(forestGround);
 
         const tree1 = new GG3DAsset('tree1', await this.load3DAsset(`${this.Assets3dPath}/forest/tree1.glb`));
@@ -150,34 +171,34 @@ export class AssetManager {
     }
 
     private static async loadTownAssets() {
-        const townGround = new GG3DAsset('townGround', MeshBuilder.CreateDisc('disc', { radius: 250, tessellation: 128 }, App.scene), this.loadTextureAsset('townGround', `${this.texturesPath}/town/ground_texture.jpg`));
+        const townTextureAsset = this.loadTextureAsset('townGround', `${this.texturesPath}/town/ground_texture.jpg`);
+        const townGround = new GG3DAsset('townGround', MeshBuilder.CreateDisc('disc', { radius: 250, tessellation: 128 }, App.scene), townTextureAsset.material);
         townGround.mesh.rotation.x = Math.PI / 2;
         townGround.ignoreCollisions = true;
         townGround.isPickable = false;
         townGround.disableShadow = true;
         townGround.type = 'ground';
 
-        const townTexture = (townGround.mesh.material as StandardMaterial).diffuseTexture as Texture;
-        townTexture!.wrapU = Texture.WRAP_ADDRESSMODE;
-        townTexture!.wrapV = Texture.WRAP_ADDRESSMODE;
-        townTexture!.uScale = 10;
-        townTexture!.vScale = 10;
+        townTextureAsset.texture.wrapU = Texture.WRAP_ADDRESSMODE;
+        townTextureAsset.texture.wrapV = Texture.WRAP_ADDRESSMODE;
+        townTextureAsset.texture.uScale = 10;
+        townTextureAsset.texture.vScale = 10;
 
-        townGround.mesh.material!.zOffset = 10;
+        townTextureAsset.material.zOffset = 10;
 
         this.zoneAssets[ZoneType.town].ground.push(townGround);
 
-        const plazaGround = new GG3DAsset('plazaGround', MeshBuilder.CreateDisc('disc', { radius: 60, tessellation: 48 }, App.scene), this.loadTextureAsset('plazaGround', `${this.texturesPath}/town/plaza_ground_texture.jpg`));
+        const plazaTextureAsset = this.loadTextureAsset('plazaGround', `${this.texturesPath}/town/plaza_ground_texture.jpg`);
+        const plazaGround = new GG3DAsset('plazaGround', MeshBuilder.CreateDisc('disc', { radius: 60, tessellation: 48 }, App.scene), plazaTextureAsset.material);
         plazaGround.mesh.rotation.x = Math.PI / 2;
         plazaGround.ignoreCollisions = true;
         plazaGround.isPickable = false;
         plazaGround.disableShadow = true;
 
-        const plazaTexture = (plazaGround.mesh.material as StandardMaterial).diffuseTexture as Texture;
-        plazaTexture!.wrapU = Texture.WRAP_ADDRESSMODE;
-        plazaTexture!.wrapV = Texture.WRAP_ADDRESSMODE;
-        plazaTexture!.uScale = 3;
-        plazaTexture!.vScale = 3;
+        plazaTextureAsset.texture.wrapU = Texture.WRAP_ADDRESSMODE;
+        plazaTextureAsset.texture.wrapV = Texture.WRAP_ADDRESSMODE;
+        plazaTextureAsset.texture.uScale = 3;
+        plazaTextureAsset.texture.vScale = 3;
 
         this.zoneAssets[ZoneType.town].plazaGround.push(plazaGround);
 
@@ -234,10 +255,18 @@ export class AssetManager {
         const blob = new GG3DAsset('blob', await this.load3DAsset(`${AssetManager.Assets3dPath}/enemies/blob.glb`));
         blob.scale = 10;
 
-        this.enemiesAssets.blob = blob;
+        this.enemyAssets.set('blob', blob);
     }
 
-    static getAsset(biome: BiomeType, name: BiomeAssetType, randSeed: string): GGAsset {
+    static getWorldAsset(name: WorldAsset): GG3DAsset {
+        return this.getRequiredAsset(this.worldAssets, name);
+    }
+
+    static getEnemyAsset(name: EnemyAsset): GG3DAsset {
+        return this.getRequiredAsset(this.enemyAssets, name);
+    }
+
+    static getAsset<AssetType extends BiomeAssetType>(biome: BiomeType, name: AssetType, randSeed: string): BiomeAssetByType[AssetType] {
         const items = this.biomeAssets[biome][name];
 
         if (items.length > 1) {
@@ -248,7 +277,7 @@ export class AssetManager {
         return items[0];
     }
 
-    static getZoneAsset(zone: ZoneType, name: ZoneAssetType, randSeed: string): GGAsset {
+    static getZoneAsset(zone: ZoneType, name: ZoneAssetType, randSeed: string): GG3DAsset {
         const items = this.zoneAssets[zone][name];
         if (items.length > 1) {
             const rand = Random.randomNumber(`${randSeed}rndast`) / 100;
@@ -258,21 +287,37 @@ export class AssetManager {
         return items[0];
     }
 
-    static getFirstZoneAsset(zone: ZoneType, name: ZoneAssetType): GGAsset {
+    static getFirstZoneAsset(zone: ZoneType, name: ZoneAssetType): GG3DAsset {
         const items = this.zoneAssets[zone][name];
         return items[0];
     }
 
-    static getFirstAsset(biome: BiomeType, name: BiomeAssetType): GGAsset {
+    static getFirstAsset<AssetType extends BiomeAssetType>(biome: BiomeType, name: AssetType): BiomeAssetByType[AssetType] {
         const items = this.biomeAssets[biome][name];
         return items[0];
+    }
+
+    private static getRequiredAsset<AssetType extends string>(assets: ReadonlyMap<AssetType, GG3DAsset>, name: AssetType): GG3DAsset {
+        const asset = assets.get(name);
+        if (!asset) {
+            throw new Error(`Asset not loaded: ${name}`);
+        }
+        return asset;
     }
 
     private static async load3DAsset(path: string): Promise<Mesh> {
         const container = await loadAssetContainerAsync(path, App.scene);
-        const meshes = container.meshes.splice(1);
+        const meshes = container.meshes.splice(1).filter((mesh): mesh is Mesh => mesh instanceof Mesh);
 
-        const mesh = meshes.length > 1 ? Mesh.MergeMeshes(meshes as Mesh[], true, true, undefined, false, true) as Mesh : meshes[0] as Mesh;
+        if (meshes.length === 0) {
+            throw new Error(`No mesh found in 3D asset: ${path}`);
+        }
+
+        const mesh = meshes.length > 1 ? Mesh.MergeMeshes(meshes, true, true, undefined, false, true) : meshes[0];
+
+        if (!mesh) {
+            throw new Error(`Unable to merge meshes from 3D asset: ${path}`);
+        }
 
         this.animations[path] = [];
         container.animationGroups.forEach((anim) => {
@@ -285,11 +330,12 @@ export class AssetManager {
         return mesh;
     }
 
-    private static loadTextureAsset(name: string, path: string): Material {
+    private static loadTextureAsset(name: string, path: string): TextureAsset {
         const groundMat = new StandardMaterial(name, App.scene);
-        groundMat.diffuseTexture = new Texture(path, App.scene);
+        const texture = new Texture(path, App.scene);
+        groundMat.diffuseTexture = texture;
         groundMat.specularColor = new Color3(0, 0, 0);
-        return groundMat;
+        return { material: groundMat, texture };
     }
 }
 

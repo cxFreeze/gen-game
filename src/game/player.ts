@@ -9,7 +9,6 @@ import { Debug } from '../core/debug.js';
 import { Params } from '../core/params.js';
 import { MathUtils } from '../utils/math.js';
 import { AssetManager } from '../world/assets.js';
-import { GG3DAsset } from '../world/GGAsset.js';
 import { Character, CharDirection } from './character.js';
 import { PlayerInputs } from './player-inputs.js';
 
@@ -35,22 +34,20 @@ export class Player extends Character {
         return this.instance;
     }
 
-    asset: GG3DAsset = AssetManager.worldAssets.player;
-
     private constructor() {
-        super(null, new Vector3(Params.playerInitX, 0, Params.playerInitY), {
+        super(AssetManager.getWorldAsset('player'), new Vector3(Params.playerInitX, 0, Params.playerInitY), {
             health: 100,
             damage: 10,
             speed: 1,
             fireRate: 2,
             projectileSpeed: 10,
             range: 250,
-        });
+        }, false);
     }
 
     createPlayer() {
         const scale = this.asset.scale;
-        this._mesh = this.asset.mesh!.clone('player');
+        this._mesh = this.asset.mesh.clone('player');
         this._mesh.isVisible = true;
 
         const playerHeight = this.asset.sizeY * scale;

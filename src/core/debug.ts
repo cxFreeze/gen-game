@@ -29,10 +29,10 @@ export class DebugManager {
     }
 
     private constructor() {
-        document.getElementById('debug-hide-shadows')!.addEventListener('click', () => this.deleteShadows());
-        document.getElementById('debug-hide-duck')!.addEventListener('click', () => this.toggleCharMesh());
-        document.getElementById('debug-hide-3d')!.addEventListener('click', () => this.toggle3ditems());
-        document.getElementById('debug-sky-view')!.addEventListener('click', () => this.toggleSkyview());
+        this.getRequiredElement('debug-hide-shadows').addEventListener('click', () => this.deleteShadows());
+        this.getRequiredElement('debug-hide-duck').addEventListener('click', () => this.toggleCharMesh());
+        this.getRequiredElement('debug-hide-3d').addEventListener('click', () => this.toggle3ditems());
+        this.getRequiredElement('debug-sky-view').addEventListener('click', () => this.toggleSkyview());
 
         if (Debug.showFps) {
             const divFps = document.getElementById('render-fps');
@@ -46,7 +46,7 @@ export class DebugManager {
             });
         }
 
-        document.getElementById('debug-panel')!.style.display = this.debugPanel ? 'block' : 'none';
+        this.getRequiredElement('debug-panel').style.display = this.debugPanel ? 'block' : 'none';
 
         const worldInfos = document.getElementById('debug-world-infos');
         const seed = document.getElementById('debug-seed');
@@ -73,7 +73,7 @@ export class DebugManager {
 
     toggleDebugPanel() {
         this.debugPanel = !this.debugPanel;
-        document.getElementById('debug-panel')!.style.display = this.debugPanel ? 'block' : 'none';
+        this.getRequiredElement('debug-panel').style.display = this.debugPanel ? 'block' : 'none';
     }
 
     deleteShadows() {
@@ -99,6 +99,14 @@ export class DebugManager {
         App.engine.clear(App.scene.clearColor, true, true);
         this.skyView = !this.skyView;
         this.worldManager.setCameraHeight(this.skyView ? 2000 : 220);
+    }
+
+    private getRequiredElement(id: string): HTMLElement {
+        const element = document.getElementById(id);
+        if (!element) {
+            throw new Error(`Required debug element not found: ${id}`);
+        }
+        return element;
     }
 
 }

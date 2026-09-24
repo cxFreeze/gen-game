@@ -32,7 +32,7 @@ export abstract class GGAsset {
 
 export class GG3DAsset extends GGAsset {
     private _mesh: Mesh;
-    get mesh() {
+    get mesh(): Mesh {
         return this._mesh;
     }
     private _sizeX: number;
@@ -48,7 +48,7 @@ export class GG3DAsset extends GGAsset {
         return this._sizeZ;
     }
 
-    private _isPickable: boolean;
+    private _isPickable: boolean = true;
     get isPickable() {
         return this._isPickable;
     }
@@ -56,7 +56,7 @@ export class GG3DAsset extends GGAsset {
         this._isPickable = value; this._mesh.isPickable = value;
     };
 
-    private _ignoreCollisions: boolean;
+    private _ignoreCollisions: boolean = false;
     get ignoreCollisions() {
         return this._ignoreCollisions;
     }
@@ -66,10 +66,10 @@ export class GG3DAsset extends GGAsset {
 
     rotation: number;
     disableShadow: boolean;
-    collider: Mesh;
+    collider?: Mesh;
 
 
-    animations: { [key: string]: AnimationGroup };
+    animations: { [key: string]: AnimationGroup } = {};
 
     constructor(name: string, mesh: Mesh, material?: Material, animations?: AnimationGroup[]) {
         super(name);
@@ -86,7 +86,6 @@ export class GG3DAsset extends GGAsset {
         }
 
         if (animations) {
-            this.animations = {};
             animations.forEach(animation => {
                 this.animations[animation.name] = animation;
             });

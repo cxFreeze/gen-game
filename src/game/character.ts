@@ -18,7 +18,7 @@ export class Character {
         return this._mesh;
     }
 
-    protected asset: GG3DAsset;
+    asset: GG3DAsset;
 
     private maxHealth: number;
     private health: number;
@@ -27,7 +27,7 @@ export class Character {
     protected range: number;
     protected fireRate: number;
     private projectileSpeed: number;
-    private currentDirection: CharDirection;
+    private currentDirection: CharDirection = 'front';
 
     private lastFireTime = 0;
 
@@ -51,10 +51,12 @@ export class Character {
     protected readonly lightingManager = LightingManager.getInstance();
 
 
-    constructor(asset: GG3DAsset | null, position: Vector3, stats: CharacterStats) {
-        if (asset) {
-            this.asset = asset;
-            this._mesh = asset.mesh!.createInstance(`char-${asset.name}${Params.enemyNameCount}`);
+    constructor(asset: GG3DAsset, position: Vector3, stats: CharacterStats, createInstance: boolean = true) {
+        this.asset = asset;
+        this._mesh = asset.mesh;
+
+        if (createInstance) {
+            this._mesh = asset.mesh.createInstance(`char-${asset.name}${Params.enemyNameCount}`);
             this._mesh.position = position.clone();
             this._mesh.scaling = new Vector3(asset.scale, asset.scale, asset.scale);
             this._mesh.receiveShadows = true;

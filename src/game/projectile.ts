@@ -19,8 +19,12 @@ export interface ProjectileInfos {
 }
 
 export class Projectile {
-    protected _mesh: InstancedMesh;
+    protected _mesh: InstancedMesh | null;
     get mesh(): InstancedMesh {
+        if (!this._mesh) {
+            throw new Error('Cannot access the mesh of a destroyed projectile');
+        }
+
         return this._mesh;
     }
     private speed: number;
@@ -63,8 +67,9 @@ export class Projectile {
 
         const scale = 2.5 * Math.cbrt(this.damage);
 
-        this._mesh = AssetManager.projectile.createInstance('projectile');
-        this._mesh.scaling = new Vector3(scale, scale, scale);
+        const projectileMesh = AssetManager.projectile.createInstance('projectile');
+        this._mesh = projectileMesh;
+        projectileMesh.scaling = new Vector3(scale, scale, scale);
         const pos = origMesh.position.clone();
 
         this.meshY = scale / 2;
@@ -72,14 +77,14 @@ export class Projectile {
         pos.x += scale / 2 * Math.sin(this.direction);
         pos.z += scale / 2 * Math.cos(this.direction);
 
-        this._mesh.position = pos;
+        projectileMesh.position = pos;
         this.initialPosition = pos;
 
         const directionVector = new Vector3(Math.sin(this.direction), 0, Math.cos(this.direction));
 
-        const ray = new Ray(this._mesh.position, directionVector.normalize(), 500);
+        const ray = new Ray(projectileMesh.position, directionVector.normalize(), 500);
         const hit = App.scene.pickWithRay(ray, (mesh) => {
-            return mesh.name !== this._mesh.name && mesh !== this.origMesh && !mesh.name.includes('collider') && !mesh.name.includes('projectile') && mesh.name !== 'player' && !mesh.name.startsWith('char-') && !mesh.name.startsWith('noproj-');
+            return mesh.name !== projectileMesh.name && mesh !== this.origMesh && !mesh.name.includes('collider') && !mesh.name.includes('projectile') && mesh.name !== 'player' && !mesh.name.startsWith('char-') && !mesh.name.startsWith('noproj-');
         });
 
         if (hit && hit.pickedMesh) {
@@ -122,11 +127,15 @@ export class Projectile {
     }
 
     private destroy() {
+        if (!this._mesh) {
+            return;
+        }
+
         App.scene.removeMesh(this._mesh);
         this._isDestroyed = true;
         this.createExplosion(this._mesh.position);
         this._mesh.dispose();
-        this._mesh = null as any;
+        this._mesh = null;
     }
 
     private createExplosion(position: Vector3) {
