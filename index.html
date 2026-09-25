@@ -3,35 +3,13 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="stylesheet" href="/src/style.css">
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GEN-GAME</title>
 </head>
 
 <body>
-  <script type="module" src="/src/main.ts"></script>
-  <div id="loading">
-    <h1>GEN-GAME</h2>
-      <img src="/images/duck.gif" alt="logo" />
-      <h2>LOADING...</h2>
-  </div>
-
-  <div class="box" id="debug-panel">
-    <h3>DEBUG PANEL</h3>
-    <div id="debug-seed"></div>
-    <div id="debug-3d"></div>
-    <div id="debug-world-infos"></div>
-    <button class="btn-small" id="debug-hide-shadows">Hide shadows</button>
-    <button class="btn-small" id="debug-hide-duck">Hide duck</button>
-    <button class="btn-small" id="debug-hide-3d">Hide trees</button>
-    <button class="btn-small" id="debug-sky-view">Sky view</button>
-  </div>
-  <div class="box" id="render-info">
-    <div id="render-fps"></div>
-  </div>
-
-  <canvas id="render-canvas"></canvas>
+  <app-root></app-root>
 </body>
 
 </html>

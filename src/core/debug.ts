@@ -1,5 +1,4 @@
 import { Player } from '../game/player';
-import { Random } from '../utils/random';
 import { LightingManager } from '../world/lighting';
 import { WorldManager } from '../world/world';
 import { App } from './app';
@@ -12,13 +11,20 @@ export class Debug {
 }
 
 export class DebugManager {
-    debugPanel = Debug.showDebugPanel;
     show3DItem = true;
     skyView = false;
 
-    private readonly lightingManager = LightingManager.getInstance();
-    private readonly playerManager = Player.getInstance();
-    private readonly worldManager = WorldManager.getInstance();
+    private get lightingManager() {
+        return LightingManager.getInstance();
+    }
+
+    private get playerManager() {
+        return Player.getInstance();
+    }
+
+    private get worldManager() {
+        return WorldManager.getInstance();
+    }
 
     private static instance: DebugManager;
     static getInstance(): DebugManager {
@@ -28,53 +34,7 @@ export class DebugManager {
         return this.instance;
     }
 
-    private constructor() {
-        this.getRequiredElement('debug-hide-shadows').addEventListener('click', () => this.deleteShadows());
-        this.getRequiredElement('debug-hide-duck').addEventListener('click', () => this.toggleCharMesh());
-        this.getRequiredElement('debug-hide-3d').addEventListener('click', () => this.toggle3ditems());
-        this.getRequiredElement('debug-sky-view').addEventListener('click', () => this.toggleSkyview());
-
-        if (Debug.showFps) {
-            const divFps = document.getElementById('render-fps');
-            App.engine.runRenderLoop(() => {
-                if (App.engine.frameId % 10 === 0) {
-                    if (!divFps) {
-                        return;
-                    }
-                    divFps.innerHTML = `${App.engine.getFps().toFixed()} fps`;
-                }
-            });
-        }
-
-        this.getRequiredElement('debug-panel').style.display = this.debugPanel ? 'block' : 'none';
-
-        const worldInfos = document.getElementById('debug-world-infos');
-        const seed = document.getElementById('debug-seed');
-        const treedInfos = document.getElementById('debug-3d');
-
-        if (seed) {
-            seed.innerHTML = `seed : ${Random.seed}`;
-        }
-
-        App.engine.runRenderLoop(() => {
-            if (!this.debugPanel) {
-                return;
-            }
-            if (App.engine.frameId % 10 === 0) {
-                if (worldInfos) {
-                    worldInfos.innerHTML = `position : ${this.worldManager.worldX.toFixed(0)} / ${this.worldManager.worldY.toFixed(0)}`;
-                }
-                if (treedInfos) {
-                    treedInfos.innerHTML = `3D items : assets : ${App.scene.meshes.length} - polys : ${(App.scene.getTotalVertices() / 3).toFixed(0)}`;
-                }
-            }
-        });
-    }
-
-    toggleDebugPanel() {
-        this.debugPanel = !this.debugPanel;
-        this.getRequiredElement('debug-panel').style.display = this.debugPanel ? 'block' : 'none';
-    }
+    private constructor() { }
 
     deleteShadows() {
         App.scene.meshes.forEach(mesh => {
@@ -99,14 +59,6 @@ export class DebugManager {
         App.engine.clear(App.scene.clearColor, true, true);
         this.skyView = !this.skyView;
         this.worldManager.setCameraHeight(this.skyView ? 2000 : 220);
-    }
-
-    private getRequiredElement(id: string): HTMLElement {
-        const element = document.getElementById(id);
-        if (!element) {
-            throw new Error(`Required debug element not found: ${id}`);
-        }
-        return element;
     }
 
 }

@@ -12,8 +12,17 @@ import { WorldManager } from '../world/world';
 import { Params } from './params';
 import { Performance } from './performance';
 
+export interface GameStats {
+    fps: number;
+    worldX: number;
+    worldY: number;
+    meshCount: number;
+    polygonCount: number;
+}
 
 export class App {
+    private static readonly resizeHandler = () => this._engine.resize();
+
     private static readonly _hideLoadingScreenSubject = new Subject<void>();
     public static get hideLoadingScreenSubject() {
         return this._hideLoadingScreenSubject;
@@ -33,13 +42,8 @@ export class App {
         return this._engine;
     }
 
-    public static async initApp() {
+    public static async initApp(canvas: HTMLCanvasElement, updateStats: (stats: GameStats) => void) {
         Params.initPlayerInitPos();
-        const canvas = document.getElementById('render-canvas');
-        if (!(canvas instanceof HTMLCanvasElement)) {
-            throw new Error('Render canvas not found or is not a canvas element');
-        }
-
         this._engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
         this._scene = new Scene(this._engine, { useGeometryUniqueIdsMap: true });
 
@@ -75,10 +79,23 @@ export class App {
 
             projectilesManager.updatePositions();
             emeniesManager.updateEnemies(time);
+
+            if (this._engine.frameId % 10 === 0) {
+                updateStats({
+                    fps: Math.round(this._engine.getFps()),
+                    worldX: worldManager.worldX,
+                    worldY: worldManager.worldY,
+                    meshCount: this._scene.meshes.length,
+                    polygonCount: Math.round(this._scene.getTotalVertices() / 3),
+                });
+            }
         });
 
-        window.addEventListener('resize', () => {
-            this._engine.resize();
-        });
+        window.addEventListener('resize', this.resizeHandler);
+    }
+
+    public static disposeApp() {
+        window.removeEventListener('resize', this.resizeHandler);
+        this._engine?.dispose();
     }
 }

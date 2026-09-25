@@ -1,27 +1,35 @@
 {
+  "compileOnSave": false,
   "compilerOptions": {
-    "target": "ES6",
+    "outDir": "./dist/out-tsc",
+    "rootDir": "./src",
+    "target": "ES2022",
     "useDefineForClassFields": true,
     "strictPropertyInitialization": true,
-    "module": "ES6",
+    "module": "preserve",
     "lib": [
-      "ES2020",
+      "ES2022",
       "DOM",
       "DOM.Iterable"
     ],
+    "sourceMap": true,
+    "declaration": false,
+    "experimentalDecorators": true,
+    "importHelpers": true,
     "skipLibCheck": true,
-    /* Bundler mode */
     "moduleResolution": "bundler",
     "isolatedModules": true,
     "moduleDetection": "force",
-    "noEmit": true,
-    /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
+    "noFallthroughCasesInSwitch": true
   },
-  "include": [
-    "src"
-  ]
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true,
+    "typeCheckHostBindings": true
+  }
 }

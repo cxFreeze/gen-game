@@ -1,6 +1,5 @@
 import { VirtualJoystick } from '@babylonjs/core/Misc/virtualJoystick';
 import { Subject } from 'rxjs';
-import { DebugManager } from '../core/debug';
 
 export class PlayerInputs {
 
@@ -43,8 +42,6 @@ export class PlayerInputs {
     private static joystick: VirtualJoystick;
 
     static init() {
-        const debugManager = DebugManager.getInstance();
-
         if (!this.disableJoystick) {
             this.joystick = new VirtualJoystick(true);
             this.joystick.setJoystickSensibility(10);
@@ -124,11 +121,6 @@ export class PlayerInputs {
             }
         });
 
-        window.addEventListener('keypress', (event) => {
-            if (event.key === '$') {
-                debugManager.toggleDebugPanel();
-            }
-        });
     }
 
     static checkInputs() {

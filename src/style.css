@@ -1,6 +1,6 @@
 @font-face {
     font-family: stayPixel;
-    src: url(/fonts/StayPixel.ttf);
+    src: url('../public/fonts/StayPixel.ttf');
 }
 
 :root {
@@ -10,7 +10,7 @@
 
 * {
     box-sizing: border-box;
-    cursor: url('/images/cursor.png'), auto;
+    cursor: url('../public/images/cursor.png'), auto;
 }
 
 html,
@@ -27,7 +27,17 @@ body {
 
 }
 
+app-root,
+app-canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+}
+
 #loading {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
     height: 100vh;
     width: 100vw;
     display: flex;
@@ -70,6 +80,7 @@ body {
 
 .box {
     position: absolute;
+    z-index: 10;
     background-color: #00000099;
     border: 2px solid rgb(127, 127, 127);
     text-align: center;
@@ -85,7 +96,6 @@ body {
 }
 
 #debug-panel {
-    display: none;
     top: 10px;
     left: 10px;
     padding: 16px;
