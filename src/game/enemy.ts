@@ -9,6 +9,7 @@ import { EnemyMovement, EnemyMovementMode } from './enemy-movement';
 
 export class Enemy extends Character {
     private static readonly combatUpdateInterval = 150;
+    private static readonly minimumAimDotProduct = 0.95;
 
     private lastPlayerPos: Vector3 | null = null;
     private combatElapsedTime = Enemy.combatUpdateInterval;
@@ -40,7 +41,7 @@ export class Enemy extends Character {
         }
         this.combatElapsedTime = 0;
 
-        if (Vector3.Distance(this.position, playerPos) > 200) {
+        if (Vector3.Distance(this.position, playerPos) > this.range) {
             return;
         }
 
@@ -79,7 +80,7 @@ export class Enemy extends Character {
             );
 
             const dotProduct = Vector3.Dot(forward, direction.normalize());
-            return dotProduct > 0.98;
+            return dotProduct > Enemy.minimumAimDotProduct;
         }
 
         return false;

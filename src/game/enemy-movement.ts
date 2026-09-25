@@ -3,16 +3,17 @@ import { EnemyType } from '../models/interfaces';
 import { Random } from '../utils/random';
 import type { Enemy } from './enemy';
 
-export type EnemyMovementMode = 'passive' | 'attack';
+export type EnemyMovementMode = 'passive' | 'chase' | 'attack';
 
 export class EnemyMovement {
-    private static readonly attackDistance = 200;
     private static readonly speedRatio = 30;
     private static readonly turnSpeed = Math.PI * 1.5;
     private static readonly arrivalDistance = 3;
 
     private readonly spawnPosition: Vector3;
     private readonly maxSpawnDistance: number;
+    private readonly attackDistance: number;
+    private readonly detectionDistance: number;
     private readonly speed: number;
 
     private _mode: EnemyMovementMode = 'passive';
@@ -30,6 +31,8 @@ export class EnemyMovement {
     constructor(private readonly enemy: Enemy, spawnPosition: Vector3, enemyType: EnemyType) {
         this.spawnPosition = spawnPosition.clone();
         this.maxSpawnDistance = Math.max(0, enemyType.maxSpawnDistance);
+        this.attackDistance = Math.max(0, enemyType.stats.range);
+        this.detectionDistance = Math.max(this.attackDistance, enemyType.detectionRange);
         this.speed = Math.max(0, enemyType.stats.speed) * EnemyMovement.speedRatio;
         this.avoidanceSide = Random.randomBool(`${this.enemy.name}-avoidance`, 0.5) ? 1 : -1;
     }
@@ -37,14 +40,23 @@ export class EnemyMovement {
     update(playerPosition: Vector3, playerAlive: boolean, deltaTime: number): void {
         const elapsedSeconds = Math.min(deltaTime, 100) / 1000;
         const playerDistance = Vector3.Distance(this.enemy.position, playerPosition);
-        const nextMode: EnemyMovementMode = playerAlive && playerDistance <= EnemyMovement.attackDistance
-            ? 'attack'
-            : 'passive';
+        let nextMode: EnemyMovementMode = 'passive';
+        if (playerAlive && playerDistance <= this.attackDistance) {
+            nextMode = 'attack';
+        }
+        else if (playerAlive && playerDistance <= this.detectionDistance) {
+            nextMode = 'chase';
+        }
 
         this.changeMode(nextMode);
 
-        const target = this._mode === 'attack'
-            ? this.getAttackTarget(playerPosition)
+        if (this._mode === 'attack') {
+            this.turnTowards(playerPosition.subtract(this.enemy.position), elapsedSeconds);
+            return;
+        }
+
+        const target = this._mode === 'chase'
+            ? playerPosition
             : this.getPassiveTarget(deltaTime);
 
         if (!target) {
@@ -59,9 +71,6 @@ export class EnemyMovement {
             if (this._mode === 'passive') {
                 this.passiveTarget = null;
                 this.passivePauseRemaining = this.getRandomValue('pause', 500, 2000);
-            }
-            else {
-                this.turnTowards(playerPosition.subtract(this.enemy.position), elapsedSeconds);
             }
             return;
         }
@@ -88,7 +97,7 @@ export class EnemyMovement {
         this.enemy.moveBy(
             Math.sin(this.enemy.mesh.rotation.y) * distance,
             Math.cos(this.enemy.mesh.rotation.y) * distance,
-            position => Vector3.DistanceSquared(position, this.spawnPosition) <= this.maxSpawnDistance * this.maxSpawnDistance
+            position => this.isPositionWithinPatrolArea(position, oldPosition)
         );
 
         const movedDistance = Vector3.Distance(oldPosition, this.enemy.position);
@@ -107,18 +116,11 @@ export class EnemyMovement {
         this.avoidanceTime = 0;
     }
 
-    private getAttackTarget(playerPosition: Vector3): Vector3 {
-        const spawnToPlayer = playerPosition.subtract(this.spawnPosition);
-        spawnToPlayer.y = 0;
-
-        if (spawnToPlayer.lengthSquared() <= this.maxSpawnDistance * this.maxSpawnDistance) {
-            return playerPosition.clone();
+    private getPassiveTarget(deltaTime: number): Vector3 | null {
+        if (Vector3.DistanceSquared(this.enemy.position, this.spawnPosition) > this.maxSpawnDistance * this.maxSpawnDistance) {
+            return this.spawnPosition;
         }
 
-        return this.spawnPosition.add(spawnToPlayer.normalize().scale(this.maxSpawnDistance));
-    }
-
-    private getPassiveTarget(deltaTime: number): Vector3 | null {
         if (this.passivePauseRemaining > 0) {
             this.passivePauseRemaining = Math.max(0, this.passivePauseRemaining - deltaTime);
             return null;
@@ -139,6 +141,17 @@ export class EnemyMovement {
             Math.cos(angle) * radius
         ));
         return this.passiveTarget;
+    }
+
+    private isPositionWithinPatrolArea(position: Vector3, previousPosition: Vector3): boolean {
+        if (this._mode === 'chase') {
+            return true;
+        }
+
+        const maxSpawnDistanceSquared = this.maxSpawnDistance * this.maxSpawnDistance;
+        const nextDistanceSquared = Vector3.DistanceSquared(position, this.spawnPosition);
+        return nextDistanceSquared <= maxSpawnDistanceSquared
+            || nextDistanceSquared < Vector3.DistanceSquared(previousPosition, this.spawnPosition);
     }
 
     private turnTowards(direction: Vector3, elapsedSeconds: number): number {

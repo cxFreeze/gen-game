@@ -4,20 +4,22 @@ export class EnemyTypes {
 
     static readonly blob: EnemyType = {
         name: 'blob',
-        maxSpawnDistance: 70,
+        maxSpawnDistance: 500,
+        detectionRange: 300,
         stats: {
             health: 50,
             damage: 5,
             speed: 1,
             fireRate: 0.3,
             projectileSpeed: 6,
-            range: 300
+            range: 200
         }
     };
 
     static readonly goblin: EnemyType = {
         name: 'goblin',
         maxSpawnDistance: 100,
+        detectionRange: 500,
         stats: {
             health: 100,
             damage: 10,
@@ -31,6 +33,7 @@ export class EnemyTypes {
     static readonly skeleton: EnemyType = {
         name: 'skeleton',
         maxSpawnDistance: 120,
+        detectionRange: 500,
         stats: {
             health: 150,
             damage: 15,
@@ -44,6 +47,7 @@ export class EnemyTypes {
     static readonly troll: EnemyType = {
         name: 'troll',
         maxSpawnDistance: 80,
+        detectionRange: 500,
         stats: {
             health: 200,
             damage: 20,
