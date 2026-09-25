@@ -36,6 +36,9 @@ export class EmeniesManager {
         if (this.chunckEnemies[chunk]) {
             this.loadedEnemies = this.loadedEnemies.filter(e => !this.chunckEnemies[chunk].includes(e));
             this.chunckEnemies[chunk].forEach(enemy => {
+                if (enemy.movementMode !== 'passive') {
+                    return;
+                }
                 enemy.delete();
             });
         }
