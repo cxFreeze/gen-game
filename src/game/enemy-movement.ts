@@ -37,7 +37,7 @@ export class EnemyMovement {
         this.avoidanceSide = Random.randomBool(`${this.enemy.name}-avoidance`, 0.5) ? 1 : -1;
     }
 
-    update(playerPosition: Vector3, playerAlive: boolean, deltaTime: number): void {
+    update(playerPosition: Vector3, playerAlive: boolean, hasClearShot: boolean, deltaTime: number): void {
         const elapsedSeconds = Math.min(deltaTime, 100) / 1000;
         const playerDistance = Vector3.Distance(this.enemy.position, playerPosition);
         let nextMode: EnemyMovementMode = 'passive';
@@ -50,12 +50,13 @@ export class EnemyMovement {
 
         this.changeMode(nextMode);
 
-        if (this._mode === 'attack') {
+        if (this._mode === 'attack' && hasClearShot) {
+            this.avoidanceTime = 0;
             this.turnTowards(playerPosition.subtract(this.enemy.position), elapsedSeconds);
             return;
         }
 
-        const target = this._mode === 'chase'
+        const target = this._mode === 'chase' || this._mode === 'attack'
             ? playerPosition
             : this.getPassiveTarget(deltaTime);
 
@@ -76,12 +77,13 @@ export class EnemyMovement {
         }
 
         targetDirection.normalize();
+        if (this._mode === 'attack') {
+            this.rotateDirection(targetDirection, this.avoidanceSide * Math.PI / 3);
+        }
+
         this.avoidanceTime = Math.max(0, this.avoidanceTime - deltaTime);
         if (this.avoidanceTime > 0) {
-            const avoidanceAngle = this.avoidanceSide * Math.PI / 3;
-            const x = targetDirection.x * Math.cos(avoidanceAngle) - targetDirection.z * Math.sin(avoidanceAngle);
-            const z = targetDirection.x * Math.sin(avoidanceAngle) + targetDirection.z * Math.cos(avoidanceAngle);
-            targetDirection.set(x, 0, z);
+            this.rotateDirection(targetDirection, this.avoidanceSide * Math.PI / 3);
         }
 
         const targetRotation = Math.atan2(targetDirection.x, targetDirection.z);
@@ -144,7 +146,7 @@ export class EnemyMovement {
     }
 
     private isPositionWithinPatrolArea(position: Vector3, previousPosition: Vector3): boolean {
-        if (this._mode === 'chase') {
+        if (this._mode !== 'passive') {
             return true;
         }
 
@@ -152,6 +154,12 @@ export class EnemyMovement {
         const nextDistanceSquared = Vector3.DistanceSquared(position, this.spawnPosition);
         return nextDistanceSquared <= maxSpawnDistanceSquared
             || nextDistanceSquared < Vector3.DistanceSquared(previousPosition, this.spawnPosition);
+    }
+
+    private rotateDirection(direction: Vector3, angle: number): void {
+        const x = direction.x * Math.cos(angle) - direction.z * Math.sin(angle);
+        const z = direction.x * Math.sin(angle) + direction.z * Math.cos(angle);
+        direction.set(x, 0, z);
     }
 
     private turnTowards(direction: Vector3, elapsedSeconds: number): number {

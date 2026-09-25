@@ -12,6 +12,7 @@ export class Enemy extends Character {
     private static readonly minimumAimDotProduct = 0.95;
 
     private lastPlayerPos: Vector3 | null = null;
+    private hasClearShot = false;
     private combatElapsedTime = Enemy.combatUpdateInterval;
     private readonly movement: EnemyMovement;
 
@@ -33,15 +34,18 @@ export class Enemy extends Character {
         }
 
         this.lastPlayerPos = playerPos.clone();
-        this.movement.update(playerPos, playerAlive, deltaTime);
         this.combatElapsedTime += deltaTime;
 
-        if (this.combatElapsedTime < Enemy.combatUpdateInterval) {
-            return;
+        const shouldUpdateCombat = this.combatElapsedTime >= Enemy.combatUpdateInterval;
+        const isPlayerInRange = Vector3.Distance(this.position, playerPos) <= this.range;
+        if (shouldUpdateCombat) {
+            this.combatElapsedTime = 0;
+            this.hasClearShot = playerAlive && isPlayerInRange && this.hasLineOfSight(playerPos);
         }
-        this.combatElapsedTime = 0;
 
-        if (Vector3.Distance(this.position, playerPos) > this.range) {
+        this.movement.update(playerPos, playerAlive, this.hasClearShot, deltaTime);
+
+        if (!shouldUpdateCombat || !isPlayerInRange) {
             return;
         }
 
@@ -54,10 +58,10 @@ export class Enemy extends Character {
         if (!this.lastPlayerPos) {
             return false;
         }
-        return this.canSeePlayer(this.lastPlayerPos);
+        return this.hasClearShot && this.isAimedAtPlayer(this.lastPlayerPos);
     }
 
-    private canSeePlayer(playerPos: Vector3): boolean {
+    private hasLineOfSight(playerPos: Vector3): boolean {
         const playerP = playerPos.clone();
         playerP.y = 3;
 
@@ -71,18 +75,21 @@ export class Enemy extends Character {
             return mesh !== this.mesh && !mesh.name.includes('projectile') && mesh.isPickable;
         });
 
-        if (hit && hit.hit && hit.pickedMesh && hit.pickedMesh.name === 'player') {
+        return !!(hit?.hit && hit.pickedMesh?.name === 'player');
+    }
 
-            const forward = new Vector3(
-                Math.sin(this.mesh.rotation.y),
-                0,
-                Math.cos(this.mesh.rotation.y)
-            );
-
-            const dotProduct = Vector3.Dot(forward, direction.normalize());
-            return dotProduct > Enemy.minimumAimDotProduct;
+    private isAimedAtPlayer(playerPos: Vector3): boolean {
+        const direction = playerPos.subtract(this.position);
+        direction.y = 0;
+        if (direction.lengthSquared() === 0) {
+            return true;
         }
 
-        return false;
+        const forward = new Vector3(
+            Math.sin(this.mesh.rotation.y),
+            0,
+            Math.cos(this.mesh.rotation.y)
+        );
+        return Vector3.Dot(forward, direction.normalize()) > Enemy.minimumAimDotProduct;
     }
 }
