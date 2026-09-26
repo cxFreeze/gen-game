@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, inject, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, afterNextRender, inject, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import '@babylonjs/core/Animations/animatable';
 import '@babylonjs/core/Collisions/collisionCoordinator';
@@ -21,7 +21,6 @@ DracoCompression.Configuration = {
 @Component({
     selector: 'app-canvas',
     template: '<canvas #renderCanvas id="render-canvas" aria-label="Gen Game 3D viewport"></canvas>',
-    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CanvasComponent {
     private readonly renderCanvas = viewChild.required<ElementRef<HTMLCanvasElement>>('renderCanvas');
