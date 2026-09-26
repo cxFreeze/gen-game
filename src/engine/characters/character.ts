@@ -1,0 +1,238 @@
+import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
+import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
+import { Subscription } from 'rxjs';
+import { Params } from '../runtime/params';
+import type { CharacterStats } from './character-stats';
+import { AssetUtils } from '../utils/assets-utils';
+import { WorldUtils } from '../utils/world-utils';
+import { GG3DAsset } from '../assets/gg-asset';
+import { LightingManager } from '../world/lighting';
+import { Projectile } from '../projectiles/projectile';
+import { ProjectilesManager } from '../projectiles/projectiles';
+
+export type CharDirection = 'front' | 'back' | 'left' | 'right' | 'front-left' | 'front-right' | 'back-left' | 'back-right';
+
+export class Character {
+    protected _mesh: AbstractMesh;
+    get mesh(): AbstractMesh {
+        return this._mesh;
+    }
+
+    asset: GG3DAsset;
+
+    private maxHealth: number;
+    private health: number;
+    private damage: number;
+    //private speed: number;
+    protected range: number;
+    protected fireRate: number;
+    private projectileSpeed: number;
+    private currentDirection: CharDirection = 'front';
+
+    private lastFireTime = 0;
+
+    private _position: Vector3;
+    get position(): Vector3 {
+        return this._position;
+    }
+
+    get name(): string {
+        return this._mesh.name;
+    }
+
+    private currentRotateAnim$: Subscription | undefined;
+
+    private _isDead = false;
+    get isDead(): boolean {
+        return this._isDead;
+    }
+
+    private readonly projectileManager = ProjectilesManager.getInstance();
+    protected readonly lightingManager = LightingManager.getInstance();
+
+
+    constructor(asset: GG3DAsset, position: Vector3, stats: CharacterStats, createInstance: boolean = true) {
+        this.asset = asset;
+        this._mesh = asset.mesh;
+
+        if (createInstance) {
+            this._mesh = asset.mesh.createInstance(`char-${asset.name}${Params.enemyNameCount}`);
+            this._mesh.position = position.clone();
+            this._mesh.scaling = new Vector3(asset.scale, asset.scale, asset.scale);
+            this._mesh.receiveShadows = true;
+            this._mesh.checkCollisions = true;
+            this.lightingManager.shadowGenerator.addShadowCaster(this._mesh);
+
+            this._mesh.computeWorldMatrix(true);
+
+            Params.enemyNameCount++;
+        }
+
+        this.maxHealth = stats.health;
+        this.health = stats.health;
+        this.damage = stats.damage;
+        this.range = stats.range;
+        this.fireRate = stats.fireRate;
+        this.projectileSpeed = stats.projectileSpeed;
+        this._position = position;
+    }
+
+    protected tryFireProjectile() {
+        const now = Date.now();
+        if ((now - this.lastFireTime > 1000 / this.fireRate) && this.extraFireCondition()) {
+            this.lastFireTime = now;
+            this.fireProjectile();
+        }
+    }
+
+    protected fireProjectile(direction: number = this._mesh.rotation.y) {
+        if (this._isDead) {
+            return;
+        }
+        this.projectileManager.createProjectile({ speed: this.projectileSpeed, damage: this.damage, direction: direction, range: this.range }, this._mesh);
+    }
+
+    move(x: number, y: number, direction: CharDirection) {
+        if (this._isDead) {
+            return;
+        }
+
+        this.moveBy(x, y);
+
+        if (direction !== this.currentDirection) {
+            if (this.currentRotateAnim$) {
+                this.currentRotateAnim$.unsubscribe();
+            }
+
+            this.currentDirection = direction;
+
+            let rotation = 0;
+
+            switch (direction) {
+                case 'front':
+                    rotation = Math.PI;
+                    break;
+                case 'back':
+                    rotation = 0;
+                    break;
+                case 'left':
+                    rotation = Math.PI / 2;
+                    break;
+                case 'right':
+                    rotation = -Math.PI / 2;
+                    break;
+                case 'front-left':
+                    rotation = Math.PI / 4;
+                    break;
+                case 'front-right':
+                    rotation = - Math.PI / 4;
+                    break;
+                case 'back-left':
+                    rotation = Math.PI - Math.PI / 4;
+                    break;
+                case 'back-right':
+                    rotation = Math.PI + Math.PI / 4;
+                    break;
+            }
+
+            this.rotate(rotation);
+        }
+    }
+
+    moveBy(x: number, y: number, isPositionValid?: (position: Vector3) => boolean) {
+        if (this._isDead) {
+            return;
+        }
+
+        this._mesh.computeWorldMatrix(true);
+
+        let oldPos = this._mesh.position.clone();
+        this._mesh.moveWithCollisions(new Vector3(x, 0, y));
+
+        this.resetMeshPositionIfInvalid(oldPos, isPositionValid);
+
+        const tempX = this._mesh.position.x;
+        const tempY = this._mesh.position.z;
+
+        if (tempX === oldPos.x && tempY === oldPos.z && (x !== 0 && y !== 0)) {
+            oldPos = this._mesh.position.clone();
+            this._mesh.moveWithCollisions(new Vector3(x, 0, 0));
+            this.resetMeshPositionIfInvalid(oldPos, isPositionValid);
+
+            if (this._mesh.position.x === oldPos.x) {
+                oldPos = this._mesh.position.clone();
+                this._mesh.moveWithCollisions(new Vector3(0, 0, y));
+                this.resetMeshPositionIfInvalid(oldPos, isPositionValid);
+            }
+        }
+
+        this._position = this._mesh.position.clone();
+    }
+
+    private resetMeshPositionIfInvalid(oldPosition: Vector3, isPositionValid?: (position: Vector3) => boolean): void {
+        if (this._mesh.position.y !== oldPosition.y
+            || !WorldUtils.isInWorldBounds(this._mesh.position.x, this._mesh.position.z)
+            || (isPositionValid && !isPositionValid(this._mesh.position))) {
+            this._mesh.position = oldPosition;
+            this._mesh.computeWorldMatrix(true);
+        }
+    }
+
+    protected rotate(rotation: number) {
+        if (this.currentRotateAnim$) {
+            this.currentRotateAnim$.unsubscribe();
+        }
+
+        this.currentRotateAnim$ = AssetUtils.rotateMeshY(this._mesh, rotation, 8);
+    }
+
+    checkDamageCollisions(projectile: Projectile): boolean {
+        if (this._isDead || projectile.origMeshName === this.name) {
+            return false;
+        }
+
+        projectile.mesh.computeWorldMatrix();
+        this.mesh.computeWorldMatrix();
+
+        if (this.mesh.intersectsMesh(projectile.mesh, true)) {
+            this.takeDamage(projectile.damage);
+            return true;
+        }
+
+        return false;
+    }
+
+    takeDamage(damage: number) {
+        if (this._isDead) {
+            return;
+        }
+
+        this.health -= damage;
+
+        if (this.health <= 0) {
+            this.health = 0;
+        }
+
+        if (this.health > this.maxHealth) {
+            this.health = this.maxHealth;
+        }
+
+        if (this.health === 0) {
+            this.die();
+        }
+    }
+
+    die() {
+        this._isDead = true;
+        this.delete();
+    }
+
+    delete() {
+        this.currentRotateAnim$?.unsubscribe();
+        this._mesh.dispose();
+    }
+
+    protected extraFireCondition(): boolean {
+        return true;
+    }
+}

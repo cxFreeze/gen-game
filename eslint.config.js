@@ -58,5 +58,28 @@ export default [
         }
       ],
     }
-  }
+  },
+  {
+    files: ['src/app/**/*.ts'],
+    ignores: ['src/app/game/game-engine.service.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['**/engine/**'],
+          message: 'Access the engine through GameEngineService.',
+        }],
+      }],
+    },
+  },
+  {
+    files: ['src/engine/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['@angular/*'],
+          message: 'Keep the game engine independent of Angular.',
+        }],
+      }],
+    },
+  },
 ];

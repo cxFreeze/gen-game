@@ -1,0 +1,179 @@
+import { Ray } from '@babylonjs/core/Culling/ray.js';
+import { Color4 } from '@babylonjs/core/Maths/math.js';
+import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
+import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
+import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh.js';
+import { ParticleSystem } from '@babylonjs/core/Particles/particleSystem.js';
+import { GameRuntime } from '../runtime/game-runtime';
+import { WorldUtils } from '../utils/world-utils';
+import { AssetManager } from '../assets/assets';
+import { EnemiesManager } from '../enemies/enemies';
+import { Player } from '../player/player';
+
+export interface ProjectileInfos {
+    speed: number;
+    direction: number;
+    damage: number;
+    range: number;
+    color?: string;
+}
+
+export class Projectile {
+    protected _mesh: InstancedMesh | null;
+    get mesh(): InstancedMesh {
+        if (!this._mesh) {
+            throw new Error('Cannot access the mesh of a destroyed projectile');
+        }
+
+        return this._mesh;
+    }
+    private speed: number;
+    private direction: number;
+    private _damage: number;
+    get damage(): number {
+        return this._damage;
+    }
+    private origMesh: AbstractMesh;
+
+    get origMeshName(): string {
+        return this.origMesh.name;
+    }
+
+    private _isDestroyed: boolean = false;
+    get isDestroyed(): boolean {
+        return this._isDestroyed;
+    }
+
+    private meshY;
+    private initialPosition: Vector3;
+
+    private timeCreated: number = Date.now();
+    private timeUpdated: number = Date.now();
+
+    private maxDistanceToTravel: number = 500;
+    private distanceToTravel: number = 0;
+
+    private enemiesManager = EnemiesManager.getInstance();
+    private player = Player.getInstance();
+
+    constructor(projectileInfos: ProjectileInfos, origMesh: AbstractMesh) {
+        this.speed = projectileInfos.speed * 30;
+        this.direction = projectileInfos.direction;
+        this._damage = projectileInfos.damage;
+        this.maxDistanceToTravel = projectileInfos.range;
+        this.origMesh = origMesh;
+
+        this.distanceToTravel = this.maxDistanceToTravel;
+
+        const scale = 2.5 * Math.cbrt(this.damage);
+
+        const projectileMesh = AssetManager.projectile.createInstance('projectile');
+        this._mesh = projectileMesh;
+        projectileMesh.scaling = new Vector3(scale, scale, scale);
+        const pos = origMesh.position.clone();
+
+        this.meshY = scale / 2;
+        pos.y = this.meshY;
+        pos.x += scale / 2 * Math.sin(this.direction);
+        pos.z += scale / 2 * Math.cos(this.direction);
+
+        projectileMesh.position = pos;
+        this.initialPosition = pos;
+
+        const directionVector = new Vector3(Math.sin(this.direction), 0, Math.cos(this.direction));
+
+        const ray = new Ray(projectileMesh.position, directionVector.normalize(), 500);
+        const hit = GameRuntime.scene.pickWithRay(ray, (mesh) => {
+            return mesh.name !== projectileMesh.name && mesh !== this.origMesh && !mesh.name.includes('collider') && !mesh.name.includes('projectile') && mesh.name !== 'player' && !mesh.name.startsWith('char-') && !mesh.name.startsWith('noproj-');
+        });
+
+        if (hit && hit.pickedMesh) {
+            this.distanceToTravel = hit.distance - scale / 2;
+        }
+
+        if (this.distanceToTravel > this.maxDistanceToTravel) {
+            this.distanceToTravel = this.maxDistanceToTravel;
+        }
+    }
+
+    updatePosition() {
+        if (this._mesh == null || this._isDestroyed) {
+            return;
+        }
+
+        this.timeUpdated = Date.now();
+
+        const distance = this.speed * ((this.timeUpdated - this.timeCreated) / 1000);
+
+        this._mesh.position = this.initialPosition.add(new Vector3(Math.sin(this.direction) * distance, 0, Math.cos(this.direction) * distance));
+        this._mesh.position.y = this.meshY;
+
+        if (distance > this.distanceToTravel || !this.isPositionValid(this._mesh.position)) {
+            this.destroy();
+            return;
+        }
+
+        if (this.player.checkDamageCollisions(this) || this.enemiesManager.checkDamageCollisions(this)) {
+            this.destroy();
+        }
+    }
+
+    private isPositionValid(position: Vector3) {
+        if (!WorldUtils.isInWorldBounds(position.x, position.z)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private destroy() {
+        if (!this._mesh) {
+            return;
+        }
+
+        GameRuntime.scene.removeMesh(this._mesh);
+        this._isDestroyed = true;
+        this.createExplosion(this._mesh.position);
+        this._mesh.dispose();
+        this._mesh = null;
+    }
+
+    private createExplosion(position: Vector3) {
+        const particleSystem = new ParticleSystem('particles', 100, GameRuntime.scene);
+        particleSystem.particleTexture = AssetManager.flareSprite.clone();
+
+        // Position de l’explosion
+        particleSystem.emitter = position.clone();
+
+        // Couleur des particules
+        particleSystem.color1 = new Color4(0.36, 0.15, 0.8, 1);
+        particleSystem.color2 = new Color4(0.5, 0.4, 0.9, 1);
+        particleSystem.colorDead = new Color4(0, 0, 0, 0);
+        // Taille des particules
+        particleSystem.minSize = 2;
+        particleSystem.maxSize = 5;
+
+        // Durée de vie des particules
+        particleSystem.minLifeTime = 0.1;
+        particleSystem.maxLifeTime = 0.3;
+
+        // Direction et vitesse d'éparpillement
+        particleSystem.emitRate = 500;
+        particleSystem.direction1 = new Vector3(-1, 1, -1);
+        particleSystem.direction2 = new Vector3(1, 1, 1);
+        particleSystem.minEmitPower = 20;
+        particleSystem.maxEmitPower = 40;
+        particleSystem.gravity = new Vector3(0, -25, 0); // Gravité pour effet réaliste
+
+        // Lancer l'effet
+        particleSystem.start();
+
+        // Supprimer après 1 seconde pour éviter d'utiliser trop de mémoire
+        GameRuntime.schedule(() => {
+            particleSystem.stop();
+        }, 200);
+        GameRuntime.schedule(() => {
+            particleSystem.dispose();
+        }, 500);
+    }
+}
