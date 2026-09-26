@@ -1,5 +1,5 @@
 import { Component, input } from '@angular/core';
-import { PanelComponent } from '../../shared/panel/panel.component';
+import { PanelComponent } from '../../../shared/panel/panel.component';
 
 @Component({
     selector: 'gg-fps-counter',

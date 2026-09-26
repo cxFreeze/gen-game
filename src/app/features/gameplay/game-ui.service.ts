@@ -1,8 +1,13 @@
 import { computed, Service, signal } from '@angular/core';
-import type { GameLoadingState } from './game-loading-state';
+
+export type GameLoadingState =
+    | { readonly status: 'loading' }
+    | { readonly status: 'ready' }
+    | { readonly status: 'error', readonly message: string };
+
 
 @Service()
-export class GameUiStore {
+export class GameUiService {
     private readonly loadingState = signal<GameLoadingState>({ status: 'loading' });
 
     readonly state = this.loadingState.asReadonly();

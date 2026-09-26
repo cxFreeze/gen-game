@@ -4,12 +4,11 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
 import { BehaviorSubject, debounceTime, merge, Subject, take, takeUntil, throttleTime } from 'rxjs';
-import { GameRuntime } from '../runtime/game-runtime';
-import { Debug } from '../runtime/debug';
-import { Params } from '../runtime/params';
-import { MathUtils } from '../utils/math';
 import { AssetManager } from '../assets/assets';
 import { Character, CharDirection } from '../characters/character';
+import { GameRuntime } from '../runtime/game-runtime';
+import { Params } from '../runtime/params';
+import { MathUtils } from '../utils/math';
 import { PlayerInputs } from './player-inputs';
 
 export class Player extends Character {
@@ -67,12 +66,14 @@ export class Player extends Character {
 
         this.createAimLine();
 
+        /*
         if (Debug.showPlayerCollider) {
             const ellipsoid = MeshBuilder.CreateSphere('debug', { diameterX: (this._mesh.ellipsoid.x * 2) / scale, diameterY: (this._mesh.ellipsoid.y * 2) / scale, diameterZ: (this._mesh.ellipsoid.z * 2) / scale, segments: 16 }, GameRuntime.scene);
             ellipsoid.position = new Vector3(0, (playerHeight / 2) / scale, 0);
             ellipsoid.position.addInPlace(this._mesh.ellipsoidOffset.divide(new Vector3(scale, scale, scale)));
             ellipsoid.parent = this._mesh;
         }
+        */
 
         GameRuntime.scene.addMesh(this._mesh, false);
         this.lightingManager.shadowGenerator.addShadowCaster(this._mesh);

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { setTimeout as wait } from 'node:timers/promises';
 import test from 'node:test';
 import { firstValueFrom } from 'rxjs';
+import { signal } from '@angular/core';
 import { createGameLifetime } from '../src/engine/runtime/game-lifetime.ts';
 import { loadTypeScript } from './load-typescript.mjs';
 
@@ -155,14 +156,13 @@ test('a failed startup releases the scene, engine and every manager', async () =
 function createSessionService(GameRuntime) {
     const destroyRef = {};
     const uiStoreToken = {};
-    const debugPanelToken = {};
     const errors = [];
     const destroyCallbacks = [];
-    const { GameEngineService } = loadTypeScript('../src/app/game/game-engine.service.ts', {
-        '@angular/core': { Service: () => target => target },
-        '../../engine/runtime/game-runtime': { GameRuntime },
-        '../../engine/runtime/debug': { Debug: {}, DebugManager: {} },
-        '../../engine/utils/random': { Random: { setSeed() {}, seed: 'test' } },
+    const { GameEngineService } = loadTypeScript('../src/app/core/game-engine/game-engine.service.ts', {
+        '@angular/core': { Service: () => target => target, signal },
+        '../../../engine/runtime/game-runtime': { GameRuntime },
+        '../../../engine/runtime/debug': { Debug: {}, DebugManager: {} },
+        '../../../engine/utils/random': { Random: { setSeed() {}, seed: 'test' } },
     });
     const ui = {
         initialize() {
@@ -178,17 +178,15 @@ function createSessionService(GameRuntime) {
         [GameEngineService, new GameEngineService()],
         [destroyRef, { onDestroy: callback => destroyCallbacks.push(callback) }],
         [uiStoreToken, ui],
-        [debugPanelToken, { initialize() {}, updateStats() {} }],
     ]);
-    const { GameSessionService } = loadTypeScript('../src/app/game/game-session.service.ts', {
+    const { GameSessionService } = loadTypeScript('../src/app/features/gameplay/game-session.service.ts', {
         '@angular/core': {
             Service: () => target => target,
             inject: token => instances.get(token),
             DestroyRef: destroyRef,
         },
-        './game-engine.service': { GameEngineService },
-        './debug-panel/debug-panel.service': { DebugPanelService: debugPanelToken },
-        './game-ui.store': { GameUiStore: uiStoreToken },
+        '../../core/game-engine/game-engine.service': { GameEngineService },
+        './game-ui.service': { GameUiService: uiStoreToken },
     }, { console: { error: error => errors.push(error) } });
     return { service: new GameSessionService(), ui, errors, destroyCallbacks };
 }

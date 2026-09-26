@@ -10,9 +10,11 @@ This project uses Angular 22 with standalone components, signals, and zoneless c
 - `npm run build`: create the production bundle in `dist/`
 - `npm test`: run session lifecycle and input regression tests in Node without a browser or application build (Node 24+)
 
-The Angular shell is split between `CanvasComponent`, which exposes the canvas and forwards its lifecycle to `GameSessionService`, and `GameOverlayComponent`, which composes the loading and debug overlays. `GameUiStore` owns the loading state; `DebugPanelService` owns debug controls and statistics. They expose read-only signals.
+The Angular shell is split between `GameViewportComponent`, which exposes the canvas and forwards its lifecycle to `GameSessionService`, and `GameOverlayComponent`, which composes the loading and debug overlays. `GameUiService` owns the loading state; `DebugPanelService` owns debug controls and statistics. They expose read-only signals.
 
-Game features live under `src/app/game/`, while reusable UI components and directives live under `src/app/shared/`. `GameEngineService` is the Angular entry point to `src/engine/`; components and UI state services do not access engine managers directly.
+Angular infrastructure lives under `src/app/core/`, features under `src/app/features/`, and reusable UI components and directives under `src/app/shared/`. `features/gameplay` owns the viewport, overlays, loading, and session lifecycle; `features/debug` owns the debug panel and FPS counter. Services stay alongside the feature they serve.
+
+`core/game-engine/GameEngineService` is the Angular entry point to `src/engine/`. It exposes the current seed, statistics, and debug control state through read-only signals. Debug reads those signals directly; `GameSessionService` manages startup, loading, and shutdown without depending on debug services.
 
 The engine is organized by domain: `runtime`, `assets`, `characters`, `player`, `enemies`, `projectiles`, `world`, and `utils`. Types live next to their domain. World placement calculations receive their random functions and configuration explicitly, and the render queue manages progressive rendering separately from scene generation.
 

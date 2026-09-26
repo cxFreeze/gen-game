@@ -1,14 +1,12 @@
 import { DestroyRef, inject, Service } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { DebugPanelService } from './debug-panel/debug-panel.service';
-import { GameEngineService } from './game-engine.service';
-import { GameUiStore } from './game-ui.store';
+import { GameEngineService } from '../../core/game-engine/game-engine.service';
+import { GameUiService } from './game-ui.service';
 
 @Service()
 export class GameSessionService {
-    private readonly gameUiStore = inject(GameUiStore);
-    private readonly debugPanelService = inject(DebugPanelService);
-    private readonly gameEngine = inject(GameEngineService);
+    private readonly gameUiService = inject(GameUiService);
+    private readonly gameEngineService = inject(GameEngineService);
     private loadingSubscription: Subscription | undefined;
     private session: object | undefined;
 
@@ -20,19 +18,14 @@ export class GameSessionService {
         this.dispose();
         const session = {};
         this.session = session;
-        this.gameUiStore.initialize();
+        this.gameUiService.initialize();
 
         try {
-            this.debugPanelService.initialize(this.gameEngine.createSeed());
-            const initialization = this.gameEngine.start(canvas, stats => {
-                if (this.session !== session) {
-                    return;
-                }
-                this.debugPanelService.updateStats(stats);
-            });
-            this.loadingSubscription = this.gameEngine.loaded$.subscribe(() => {
+            this.gameEngineService.createSeed();
+            const initialization = this.gameEngineService.start(canvas);
+            this.loadingSubscription = this.gameEngineService.loaded$.subscribe(() => {
                 if (this.session === session) {
-                    this.gameUiStore.finishLoading();
+                    this.gameUiService.finishLoading();
                 }
             });
             await initialization;
@@ -42,7 +35,7 @@ export class GameSessionService {
                 return;
             }
             this.dispose();
-            this.gameUiStore.failLoading(error);
+            this.gameUiService.failLoading(error);
             console.error(error);
         }
     }
@@ -51,6 +44,6 @@ export class GameSessionService {
         this.session = undefined;
         this.loadingSubscription?.unsubscribe();
         this.loadingSubscription = undefined;
-        this.gameEngine.dispose();
+        this.gameEngineService.dispose();
     }
 }

@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
-import { DebugPanelComponent } from '../debug-panel/debug-panel.component';
-import { GameUiStore } from '../game-ui.store';
+import { DebugPanelComponent } from '../../debug/debug-panel/debug-panel.component';
+import { GameUiService } from '../game-ui.service';
 import { LoadingScreenComponent } from '../loading-screen/loading-screen.component';
 
 @Component({
@@ -9,5 +9,5 @@ import { LoadingScreenComponent } from '../loading-screen/loading-screen.compone
     imports: [DebugPanelComponent, LoadingScreenComponent],
 })
 export class GameOverlayComponent {
-    protected readonly gameUiStore = inject(GameUiStore);
+    protected readonly gameUiService = inject(GameUiService);
 }

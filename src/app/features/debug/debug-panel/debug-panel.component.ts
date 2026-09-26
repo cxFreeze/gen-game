@@ -1,8 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { FpsCounterComponent } from '../fps-counter/fps-counter.component';
-import { ButtonDirective } from '../../shared/button/button.directive';
-import { PanelComponent } from '../../shared/panel/panel.component';
-import { DebugPanelService } from './debug-panel.service';
+import { ButtonDirective } from '../../../shared/button/button.directive';
+import { PanelComponent } from '../../../shared/panel/panel.component';
+import { DebugPanelService } from '../debug-panel.service';
 
 @Component({
     selector: 'gg-debug-panel',

@@ -1,0 +1,4 @@
+@if (gameUiService.hasLoadingOverlay()) {
+<gg-loading-screen [error]="gameUiService.loadingError()" />
+}
+<gg-debug-panel />

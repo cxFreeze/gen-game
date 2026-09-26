@@ -3,13 +3,6 @@ import { LightingManager } from '../world/lighting';
 import { WorldManager } from '../world/world';
 import { GameRuntime } from './game-runtime';
 
-export class Debug {
-    static showInspector = false;
-    static showFps = true;
-    static showPlayerCollider = false;
-    static showDebugPanel = false;
-}
-
 export class DebugManager {
     show3DItem = true;
     skyView = false;

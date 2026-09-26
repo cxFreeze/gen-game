@@ -61,12 +61,23 @@ export default [
   },
   {
     files: ['src/app/**/*.ts'],
-    ignores: ['src/app/game/game-engine.service.ts'],
+    ignores: ['src/app/core/game-engine/game-engine.service.ts'],
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [{
           group: ['**/engine/**'],
           message: 'Access the engine through GameEngineService.',
+        }],
+      }],
+    },
+  },
+  {
+    files: ['src/app/core/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['**/features/**'],
+          message: 'Core infrastructure must not depend on application features.',
         }],
       }],
     },
