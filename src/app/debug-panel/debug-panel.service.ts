@@ -5,6 +5,7 @@ import { Debug, DebugManager } from '../../core/debug';
 @Service()
 export class DebugPanelService {
     readonly isVisible = signal(Debug.showDebugPanel);
+    readonly showFps = signal(Debug.showFps);
     readonly seed = signal('');
     readonly worldX = signal(0);
     readonly worldY = signal(0);
@@ -13,6 +14,7 @@ export class DebugPanelService {
     readonly isDuckVisible = signal(true);
     readonly areTreesVisible = signal(true);
     readonly isSkyView = signal(false);
+    readonly fps = signal(0);
 
     readonly worldPosition = computed(() => `${this.worldX().toFixed(0)} / ${this.worldY().toFixed(0)}`);
 
@@ -30,6 +32,7 @@ export class DebugPanelService {
         this.isDuckVisible.set(true);
         this.areTreesVisible.set(true);
         this.isSkyView.set(false);
+        this.fps.set(0);
     }
 
     updateStats(stats: GameStats) {
@@ -37,6 +40,7 @@ export class DebugPanelService {
         this.worldY.set(stats.worldY);
         this.meshCount.set(stats.meshCount);
         this.polygonCount.set(stats.polygonCount);
+        this.fps.set(stats.fps);
     }
 
     togglePanel() {

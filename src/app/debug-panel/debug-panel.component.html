@@ -4,15 +4,19 @@
     <div>seed : {{ debugPanelService.seed() }}</div>
     <div>3D items : assets : {{ debugPanelService.meshCount() }} - polys : {{ debugPanelService.polygonCount() }}</div>
     <div>position : {{ debugPanelService.worldPosition() }}</div>
-    <button type="button" (click)="debugPanelService.hideShadows()">Hide shadows</button>
-    <button type="button" (click)="debugPanelService.toggleDuck()">
+    <button appButton type="button" (click)="debugPanelService.hideShadows()">Hide shadows</button>
+    <button appButton type="button" (click)="debugPanelService.toggleDuck()">
         {{ debugPanelService.isDuckVisible() ? 'Hide duck' : 'Show duck' }}
     </button>
-    <button type="button" (click)="debugPanelService.toggleTrees()">
+    <button appButton type="button" (click)="debugPanelService.toggleTrees()">
         {{ debugPanelService.areTreesVisible() ? 'Hide trees' : 'Show trees' }}
     </button>
-    <button type="button" (click)="debugPanelService.toggleSkyView()">
+    <button appButton type="button" (click)="debugPanelService.toggleSkyView()">
         {{ debugPanelService.isSkyView() ? 'Player view' : 'Sky view' }}
     </button>
 </app-panel>
+}
+
+@if (debugPanelService.showFps()) {
+<app-fps-counter [fps]="debugPanelService.fps()" />
 }

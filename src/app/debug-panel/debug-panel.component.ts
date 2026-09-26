@@ -1,10 +1,12 @@
 import { Component, inject } from '@angular/core';
+import { FpsCounterComponent } from '../fps-counter/fps-counter.component';
+import { ButtonDirective } from '../shared/button/button.directive';
 import { PanelComponent } from '../shared/panel/panel.component';
 import { DebugPanelService } from './debug-panel.service';
 
 @Component({
     selector: 'app-debug-panel',
-    imports: [PanelComponent],
+    imports: [PanelComponent, FpsCounterComponent, ButtonDirective],
     templateUrl: './debug-panel.component.html',
     styleUrl: './debug-panel.component.scss',
     host: {

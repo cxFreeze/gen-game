@@ -1,9 +1,4 @@
 @if (gameUiStore.isLoading()) {
 <app-loading-screen [error]="gameUiStore.loadingError()" />
 }
-
 <app-debug-panel />
-
-@if (showFps) {
-<app-fps-counter [fps]="gameUiStore.fps()" />
-}
