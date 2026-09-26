@@ -1,4 +1,5 @@
 import { AnimationGroup } from '@babylonjs/core/Animations/animationGroup.js';
+import { AssetContainer } from '@babylonjs/core/assetContainer.js';
 import { loadAssetContainerAsync } from '@babylonjs/core/Loading/sceneLoader.js';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture.js';
@@ -34,6 +35,31 @@ interface TextureAsset {
 
 
 export class AssetManager {
+    private static readonly containers = new Set<AssetContainer>();
+
+    static dispose() {
+        this.containers.forEach(container => container.dispose());
+        this.containers.clear();
+        Object.values(this.biomeAssets).forEach(collection => {
+            Object.values(collection).forEach(assets => {
+                assets.length = 0;
+            });
+        });
+        Object.values(this.zoneAssets).forEach(collection => {
+            Object.values(collection).forEach(assets => {
+                assets.length = 0;
+            });
+        });
+        this.worldAssets.clear();
+        this.enemyAssets.clear();
+        Object.keys(this.animations).forEach(path => {
+            delete this.animations[path];
+        });
+        this._projectile?.dispose();
+        this._flareSprite?.dispose();
+        this._projectile = undefined;
+        this._flareSprite = undefined;
+    }
 
     private static readonly groundTileSize = Params.chunckSize / 2;
 
@@ -63,11 +89,25 @@ export class AssetManager {
     private static readonly enemyAssets = new Map<EnemyAsset, GG3DAsset>();
     static readonly animations: { [key: string]: AnimationGroup[] } = {};
 
-    static projectile: Mesh;
-    static flareSprite: Texture;
+    private static _projectile: Mesh | undefined;
+    static get projectile(): Mesh {
+        if (!this._projectile) {
+            throw new Error('Projectile assets are not loaded');
+        }
+        return this._projectile;
+    }
 
-    static async loadAssets() {
-        this.projectile = MeshBuilder.CreateSphere('projectile', { diameter: 1 }, App.scene);
+    private static _flareSprite: Texture | undefined;
+    static get flareSprite(): Texture {
+        if (!this._flareSprite) {
+            throw new Error('Flare assets are not loaded');
+        }
+        return this._flareSprite;
+    }
+
+    static async loadAssets(signal: AbortSignal) {
+        signal.throwIfAborted();
+        this._projectile = MeshBuilder.CreateSphere('projectile', { diameter: 1 }, App.scene);
         this.projectile.isVisible = false;
         this.projectile.isPickable = false;
 
@@ -87,9 +127,11 @@ export class AssetManager {
 
         this.projectile.material = magicMaterial;
 
-        this.flareSprite = new Texture(`${this.texturesPath}/flare.png`, App.scene);
+        this._flareSprite = new Texture(`${this.texturesPath}/flare.png`, App.scene);
 
-        const player = new GG3DAsset('player', await this.load3DAsset(`${this.Assets3dPath}/player.glb`), undefined, this.animations[`${this.Assets3dPath}/player.glb`]);
+        const playerMesh = await this.load3DAsset(`${this.Assets3dPath}/player.glb`, signal);
+        signal.throwIfAborted();
+        const player = new GG3DAsset('player', playerMesh, undefined, this.animations[`${this.Assets3dPath}/player.glb`]);
         player.scale = 13;
         player.type = 'player';
         this.worldAssets.set('player', player);
@@ -104,19 +146,24 @@ export class AssetManager {
         ocean.isPickable = false;
         this.worldAssets.set('ocean', ocean);
 
-        const fence = new GG3DAsset('fence', await this.load3DAsset(`${this.Assets3dPath}/fence.glb`));
+        const fenceMesh = await this.load3DAsset(`${this.Assets3dPath}/fence.glb`, signal);
+        signal.throwIfAborted();
+        const fence = new GG3DAsset('fence', fenceMesh);
         fence.scale = 22;
         fence.ignoreCollisions = true;
         fence.isPickable = false;
         fence.disableShadow = true;
         this.worldAssets.set('fence', fence);
 
-        await this.loadForestAssets();
-        await this.loadTownAssets();
-        await this.loadEnemyAssets();
+        await this.loadForestAssets(signal);
+        signal.throwIfAborted();
+        await this.loadTownAssets(signal);
+        signal.throwIfAborted();
+        await this.loadEnemyAssets(signal);
+        signal.throwIfAborted();
     }
 
-    private static async loadForestAssets() {
+    private static async loadForestAssets(signal: AbortSignal) {
         const forestTexture = this.loadTextureAsset('forestGround', `${this.texturesPath}/forest/ground_texture.jpg`);
         const forestGround = new GG3DAsset('forestGround', MeshBuilder.CreateGround('forestGround', { width: this.groundTileSize, height: this.groundTileSize }), forestTexture.material);
         forestGround.height = this.groundTileSize;
@@ -127,14 +174,18 @@ export class AssetManager {
         forestTexture.material.zOffset = 20;
         this.biomeAssets[BiomeType.forest].ground.push(forestGround);
 
-        const tree1 = new GG3DAsset('tree1', await this.load3DAsset(`${this.Assets3dPath}/forest/tree1.glb`));
+        const tree1Mesh = await this.load3DAsset(`${this.Assets3dPath}/forest/tree1.glb`, signal);
+        signal.throwIfAborted();
+        const tree1 = new GG3DAsset('tree1', tree1Mesh);
         tree1.safeZone = 50;
         tree1.displacementRatio = 0.2;
         tree1.sizeRatio = 0.4;
         tree1.scale = 75;
         tree1.maxVerticalDisplacement = 0.1;
 
-        const tree2 = new GG3DAsset('tree2', await this.load3DAsset(`${this.Assets3dPath}/forest/tree2.glb`));
+        const tree2Mesh = await this.load3DAsset(`${this.Assets3dPath}/forest/tree2.glb`, signal);
+        signal.throwIfAborted();
+        const tree2 = new GG3DAsset('tree2', tree2Mesh);
         tree2.safeZone = 50;
         tree2.displacementRatio = 0.2;
         tree2.sizeRatio = 0.4;
@@ -143,14 +194,18 @@ export class AssetManager {
 
         this.biomeAssets[BiomeType.forest].tree.push(tree1, tree2);
 
-        const rock1 = new GG3DAsset('rock1', await this.load3DAsset(`${this.Assets3dPath}/forest/rock1.glb`));
+        const rock1Mesh = await this.load3DAsset(`${this.Assets3dPath}/forest/rock1.glb`, signal);
+        signal.throwIfAborted();
+        const rock1 = new GG3DAsset('rock1', rock1Mesh);
         rock1.safeZone = 20;
         rock1.displacementRatio = 0.2;
         rock1.sizeRatio = 0.4;
         rock1.scale = 5;
         rock1.maxVerticalDisplacement = 0.3;
 
-        const rock2 = new GG3DAsset('rock2', await this.load3DAsset(`${this.Assets3dPath}/forest/rock2.glb`));
+        const rock2Mesh = await this.load3DAsset(`${this.Assets3dPath}/forest/rock2.glb`, signal);
+        signal.throwIfAborted();
+        const rock2 = new GG3DAsset('rock2', rock2Mesh);
         rock2.safeZone = 20;
         rock2.displacementRatio = 0.2;
         rock2.sizeRatio = 0.4;
@@ -170,7 +225,7 @@ export class AssetManager {
         this.biomeAssets[BiomeType.forest].grass.push(grassSprite);
     }
 
-    private static async loadTownAssets() {
+    private static async loadTownAssets(signal: AbortSignal) {
         const townTextureAsset = this.loadTextureAsset('townGround', `${this.texturesPath}/town/ground_texture.jpg`);
         const townGround = new GG3DAsset('townGround', MeshBuilder.CreateDisc('disc', { radius: 250, tessellation: 128 }, App.scene), townTextureAsset.material);
         townGround.mesh.rotation.x = Math.PI / 2;
@@ -202,21 +257,27 @@ export class AssetManager {
 
         this.zoneAssets[ZoneType.town].plazaGround.push(plazaGround);
 
-        const house1 = new GG3DAsset('house1', await this.load3DAsset(`${this.Assets3dPath}/town/house1.glb`));
+        const house1Mesh = await this.load3DAsset(`${this.Assets3dPath}/town/house1.glb`, signal);
+        signal.throwIfAborted();
+        const house1 = new GG3DAsset('house1', house1Mesh);
         house1.safeZone = 80;
         house1.displacementRatio = 0.3;
         house1.sizeRatio = 0.2;
         house1.scale = 80;
         house1.createCollider(0.85);
 
-        const house2 = new GG3DAsset('house2', await this.load3DAsset(`${this.Assets3dPath}/town/house2.glb`));
+        const house2Mesh = await this.load3DAsset(`${this.Assets3dPath}/town/house2.glb`, signal);
+        signal.throwIfAborted();
+        const house2 = new GG3DAsset('house2', house2Mesh);
         house2.safeZone = 80;
         house2.displacementRatio = 0.3;
         house2.sizeRatio = 0.2;
         house2.scale = 80;
         house2.createCollider(0.9);
 
-        const house3 = new GG3DAsset('house3', await this.load3DAsset(`${this.Assets3dPath}/town/house3.glb`));
+        const house3Mesh = await this.load3DAsset(`${this.Assets3dPath}/town/house3.glb`, signal);
+        signal.throwIfAborted();
+        const house3 = new GG3DAsset('house3', house3Mesh);
         house3.safeZone = 80;
         house3.displacementRatio = 0.3;
         house3.sizeRatio = 0.2;
@@ -225,7 +286,9 @@ export class AssetManager {
 
         this.zoneAssets[ZoneType.town].house.push(house1, house2, house3);
 
-        const tower = new GG3DAsset('tower', await this.load3DAsset(`${this.Assets3dPath}/town/tower.glb`));
+        const towerMesh = await this.load3DAsset(`${this.Assets3dPath}/town/tower.glb`, signal);
+        signal.throwIfAborted();
+        const tower = new GG3DAsset('tower', towerMesh);
         tower.safeZone = 500;
         tower.displacementRatio = 0.8;
         tower.sizeRatio = 0.1;
@@ -234,14 +297,18 @@ export class AssetManager {
 
         this.zoneAssets[ZoneType.town].tower.push(tower);
 
-        const townCenter1 = new GG3DAsset('center1', await this.load3DAsset(`${this.Assets3dPath}/town/statue1.glb`));
+        const townCenter1Mesh = await this.load3DAsset(`${this.Assets3dPath}/town/statue1.glb`, signal);
+        signal.throwIfAborted();
+        const townCenter1 = new GG3DAsset('center1', townCenter1Mesh);
         townCenter1.safeZone = 100;
         townCenter1.scale = 12;
         townCenter1.isPickable = false;
         townCenter1.rotation = Math.PI;
         townCenter1.createCollider(0.9);
 
-        const townCenter2 = new GG3DAsset('center2', await this.load3DAsset(`${this.Assets3dPath}/town/statue2.glb`));
+        const townCenter2Mesh = await this.load3DAsset(`${this.Assets3dPath}/town/statue2.glb`, signal);
+        signal.throwIfAborted();
+        const townCenter2 = new GG3DAsset('center2', townCenter2Mesh);
         townCenter2.safeZone = 100;
         townCenter2.scale = 20;
         townCenter2.isPickable = false;
@@ -251,8 +318,10 @@ export class AssetManager {
         this.zoneAssets[ZoneType.town].center.push(townCenter1, townCenter2);
     }
 
-    static async loadEnemyAssets() {
-        const blob = new GG3DAsset('blob', await this.load3DAsset(`${AssetManager.Assets3dPath}/enemies/blob.glb`));
+    static async loadEnemyAssets(signal: AbortSignal) {
+        const blobMesh = await this.load3DAsset(`${AssetManager.Assets3dPath}/enemies/blob.glb`, signal);
+        signal.throwIfAborted();
+        const blob = new GG3DAsset('blob', blobMesh);
         blob.scale = 10;
 
         this.enemyAssets.set('blob', blob);
@@ -305,9 +374,15 @@ export class AssetManager {
         return asset;
     }
 
-    private static async load3DAsset(path: string): Promise<Mesh> {
+    private static async load3DAsset(path: string, signal: AbortSignal): Promise<Mesh> {
+        signal.throwIfAborted();
         const container = await loadAssetContainerAsync(path, App.scene);
-        const meshes = container.meshes.splice(1).filter((mesh): mesh is Mesh => mesh instanceof Mesh);
+        if (signal.aborted) {
+            container.dispose();
+            signal.throwIfAborted();
+        }
+        this.containers.add(container);
+        const meshes = container.meshes.slice(1).filter((mesh): mesh is Mesh => mesh instanceof Mesh);
 
         if (meshes.length === 0) {
             throw new Error(`No mesh found in 3D asset: ${path}`);

@@ -47,7 +47,13 @@ export class WorldGenerator {
     private readonly lightingManager = LightingManager.getInstance();
     private readonly enemiesManager = EmeniesManager.getInstance();
 
-    private static instance: WorldGenerator;
+    private static instance: WorldGenerator | undefined;
+    static dispose() {
+        if (this.instance) {
+            this.instance.renderQueue.length = 0;
+        }
+        this.instance = undefined;
+    }
     static getInstance(): WorldGenerator {
         if (!this.instance) {
             this.instance = new WorldGenerator();
@@ -72,8 +78,7 @@ export class WorldGenerator {
                     if (!this.initialRenderEnded && this.initialRenderStarted) {
                         this.initialRenderSuccessiveFrameWith0ItemToRender++;
                         if (this.initialRenderSuccessiveFrameWith0ItemToRender > Params.framesWithoutDraw) {
-                            App.hideLoadingScreenSubject.next();
-                            App.hideLoadingScreenSubject.complete();
+                            App.finishLoading();
                             this.initialRenderEnded = true;
                         }
                     }
@@ -168,7 +173,7 @@ export class WorldGenerator {
         //unload 
         Object.keys(this.loadedChuncksItems).forEach((chunk) => {
             if (!chuncks.includes(chunk)) {
-                setTimeout(() => {
+                App.schedule(() => {
                     this.unloadChunk(chunk);
                 }, timeout);
                 timeout += timeoutDelay;
@@ -178,7 +183,7 @@ export class WorldGenerator {
         //load
         chuncks.forEach((chunk) => {
             if (!this.loadedChuncksItems[chunk]) {
-                setTimeout(() => {
+                App.schedule(() => {
                     this.loadChunk(chunk);
                 }, timeout);
                 timeout += timeoutDelay;

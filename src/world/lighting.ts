@@ -18,7 +18,10 @@ export class LightingManager {
         return this._shadowGenerator;
     }
 
-    private static instance: LightingManager;
+    private static instance: LightingManager | undefined;
+    static dispose() {
+        this.instance = undefined;
+    }
     static getInstance(): LightingManager {
         if (!this.instance) {
             this.instance = new LightingManager();

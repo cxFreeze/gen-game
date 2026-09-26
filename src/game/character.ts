@@ -228,6 +228,7 @@ export class Character {
     }
 
     delete() {
+        this.currentRotateAnim$?.unsubscribe();
         this._mesh.dispose();
     }
 

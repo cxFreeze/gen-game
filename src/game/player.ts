@@ -3,7 +3,7 @@ import { Color3 } from '@babylonjs/core/Maths/math.color.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
-import { BehaviorSubject, debounceTime, merge, Subject, take, throttleTime } from 'rxjs';
+import { BehaviorSubject, debounceTime, merge, Subject, take, takeUntil, throttleTime } from 'rxjs';
 import { App } from '../core/app.js';
 import { Debug } from '../core/debug.js';
 import { Params } from '../core/params.js';
@@ -26,7 +26,12 @@ export class Player extends Character {
 
     private currentAnimation: 'Running' | 'Idle' = 'Idle';
 
-    private static instance: Player;
+    private static instance: Player | undefined;
+    static dispose() {
+        this.instance?._playerMoved$.complete();
+        this.instance?.recalculateAimLine$.complete();
+        this.instance = undefined;
+    }
     static getInstance(): Player {
         if (!this.instance) {
             this.instance = new Player();
@@ -72,18 +77,18 @@ export class Player extends Character {
         App.scene.addMesh(this._mesh, false);
         this.lightingManager.shadowGenerator.addShadowCaster(this._mesh);
 
-        merge(this.recalculateAimLine$, PlayerInputs.aimChanged).pipe(throttleTime(25)).subscribe((direction) => {
+        merge(this.recalculateAimLine$, PlayerInputs.aimChanged).pipe(throttleTime(25), takeUntil(App.disposed$)).subscribe((direction) => {
             this.updateAimLine(direction);
         });
 
-        PlayerInputs.firePressed.pipe(throttleTime(1000 / this.fireRate))
+        PlayerInputs.firePressed.pipe(throttleTime(1000 / this.fireRate), takeUntil(App.disposed$))
             .subscribe((direction) => {
                 this.setAimLineVisible(true);
                 const projDir = MathUtils.normalizeAngle(direction);
                 this.fireProjectile(projDir);
             });
 
-        PlayerInputs.firePressed.pipe(debounceTime(50))
+        PlayerInputs.firePressed.pipe(debounceTime(50), takeUntil(App.disposed$))
             .subscribe(() => {
                 this.setAimLineVisible(false);
             });

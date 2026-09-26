@@ -10,6 +10,7 @@ export class GameUiStore {
     initialize() {
         this.isLoading.set(true);
         this.loadingError.set(null);
+        this.fps.set(0);
     }
 
     updateStats(stats: GameStats) {

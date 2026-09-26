@@ -6,7 +6,10 @@ export class ProjectilesManager {
 
     private projectiles: Projectile[] = [];
 
-    private static instance: ProjectilesManager;
+    private static instance: ProjectilesManager | undefined;
+    static dispose() {
+        this.instance = undefined;
+    }
     static getInstance(): ProjectilesManager {
         if (!this.instance) {
             this.instance = new ProjectilesManager();

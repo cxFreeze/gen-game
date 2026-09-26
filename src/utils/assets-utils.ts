@@ -1,5 +1,6 @@
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
+import { Observable, takeUntil } from 'rxjs';
 import { Anim } from './anim.js';
 
 
@@ -27,7 +28,13 @@ export abstract class AssetUtils {
             }
         }
 
-        return Anim.tween(mesh.rotation.y, rotation, (Math.abs(rotation - mesh.rotation.y) / velocity) * 1000).subscribe(v => {
+        const disposed$ = new Observable<void>(subscriber => {
+            const observer = mesh.onDisposeObservable.add(() => subscriber.next());
+            return () => {
+                mesh.onDisposeObservable.remove(observer);
+            };
+        });
+        return Anim.tween(mesh.rotation.y, rotation, (Math.abs(rotation - mesh.rotation.y) / velocity) * 1000).pipe(takeUntil(disposed$)).subscribe(v => {
             mesh.rotation = new Vector3(0, v, 0);
         });
     }

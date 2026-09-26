@@ -1,5 +1,5 @@
 import { computed, Service, signal } from '@angular/core';
-import { GameStats } from '../../core/app';
+import { App, GameStats } from '../../core/app';
 import { Debug, DebugManager } from '../../core/debug';
 
 @Service()
@@ -16,10 +16,20 @@ export class DebugPanelService {
 
     readonly worldPosition = computed(() => `${this.worldX().toFixed(0)} / ${this.worldY().toFixed(0)}`);
 
-    private readonly debugManager = DebugManager.getInstance();
+    private get debugManager() {
+        return DebugManager.getInstance();
+    }
 
     initialize(seed: string) {
         this.seed.set(seed);
+        this.isVisible.set(Debug.showDebugPanel);
+        this.worldX.set(0);
+        this.worldY.set(0);
+        this.meshCount.set(0);
+        this.polygonCount.set(0);
+        this.isDuckVisible.set(true);
+        this.areTreesVisible.set(true);
+        this.isSkyView.set(false);
     }
 
     updateStats(stats: GameStats) {
@@ -34,20 +44,32 @@ export class DebugPanelService {
     }
 
     hideShadows() {
+        if (!App.isReady) {
+            return;
+        }
         this.debugManager.deleteShadows();
     }
 
     toggleDuck() {
+        if (!App.isReady) {
+            return;
+        }
         this.debugManager.toggleCharMesh();
         this.isDuckVisible.update(isVisible => !isVisible);
     }
 
     toggleTrees() {
+        if (!App.isReady) {
+            return;
+        }
         this.debugManager.toggle3ditems();
         this.areTreesVisible.update(isVisible => !isVisible);
     }
 
     toggleSkyView() {
+        if (!App.isReady) {
+            return;
+        }
         this.debugManager.toggleSkyview();
         this.isSkyView.update(isEnabled => !isEnabled);
     }

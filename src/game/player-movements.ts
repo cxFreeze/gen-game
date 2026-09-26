@@ -14,7 +14,10 @@ export class PlayerMovements {
     private readonly worldManager = WorldManager.getInstance();
     private readonly player = Player.getInstance();
 
-    private static instance: PlayerMovements;
+    private static instance: PlayerMovements | undefined;
+    static dispose() {
+        this.instance = undefined;
+    }
     static getInstance(): PlayerMovements {
         if (!this.instance) {
             this.instance = new PlayerMovements();

@@ -5,6 +5,7 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh.js';
 import { FxaaPostProcess } from '@babylonjs/core/PostProcesses/fxaaPostProcess.js';
+import { takeUntil } from 'rxjs';
 import { App } from '../core/app.js';
 import { Player } from '../game/player.js';
 import { Anim } from '../utils/anim.js';
@@ -37,7 +38,10 @@ export class WorldManager {
     private readonly worldGenerator = WorldGenerator.getInstance();
     private readonly player = Player.getInstance();
 
-    private static instance: WorldManager;
+    private static instance: WorldManager | undefined;
+    static dispose() {
+        this.instance = undefined;
+    }
     static getInstance(): WorldManager {
         if (!this.instance) {
             this.instance = new WorldManager();
@@ -65,10 +69,10 @@ export class WorldManager {
         const initRot = this.camera.rotation?.clone() ?? Vector3.Zero();
         this.camera.rotation = initRot.clone().addInPlace(new Vector3(0, Math.PI, 0));
 
-        App.hideLoadingScreen$.subscribe(() => {
+        App.hideLoadingScreen$.pipe(takeUntil(App.disposed$)).subscribe(() => {
             const posAnim = Animation.CreateAndStartAnimation('initCamera1', this.camera, 'position', 30, 120, this.camera.position, finalCameraPos, 2, Anim.cubicEaseInOut);
             const rotAnim = Animation.CreateAndStartAnimation('initCamera2', this.camera, 'rotation', 30, 120, this.camera.rotation, initRot, 2, Anim.cubicEaseInOut);
-            this.player.playerMoved$.subscribe((moved) => {
+            this.player.playerMoved$.pipe(takeUntil(App.disposed$)).subscribe((moved) => {
                 if (moved) {
                     posAnim?.stop();
                     rotAnim?.stop();
@@ -144,7 +148,7 @@ export class WorldManager {
         this.lightingManager.shadowGenerator.addShadowCaster(ghostMesh);
         this.ghostMeshes.set(mesh, ghostMesh);
 
-        setTimeout(() => {
+        App.schedule(() => {
             mesh.isVisible = false;
         }, 50);
 

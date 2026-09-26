@@ -169,10 +169,10 @@ export class Projectile {
         particleSystem.start();
 
         // Supprimer après 1 seconde pour éviter d'utiliser trop de mémoire
-        setTimeout(() => {
+        App.schedule(() => {
             particleSystem.stop();
         }, 200);
-        setTimeout(() => {
+        App.schedule(() => {
             particleSystem.dispose();
         }, 500);
     }

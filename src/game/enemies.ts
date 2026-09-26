@@ -6,7 +6,10 @@ export class EmeniesManager {
     private loadedEnemies: Enemy[] = [];
     chunckEnemies: { [key: string]: Enemy[] } = {};
 
-    private static instance: EmeniesManager;
+    private static instance: EmeniesManager | undefined;
+    static dispose() {
+        this.instance = undefined;
+    }
     static getInstance(): EmeniesManager {
         if (!this.instance) {
             this.instance = new EmeniesManager();

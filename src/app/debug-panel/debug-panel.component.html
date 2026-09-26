@@ -1,18 +1,18 @@
 @if (debugPanelService.isVisible()) {
-<div class="box" id="debug-panel">
+<app-panel class="debug-panel">
     <h3>DEBUG PANEL</h3>
     <div>seed : {{ debugPanelService.seed() }}</div>
     <div>3D items : assets : {{ debugPanelService.meshCount() }} - polys : {{ debugPanelService.polygonCount() }}</div>
     <div>position : {{ debugPanelService.worldPosition() }}</div>
-    <button type="button" class="btn-small" (click)="debugPanelService.hideShadows()">Hide shadows</button>
-    <button type="button" class="btn-small" (click)="debugPanelService.toggleDuck()">
+    <button type="button" (click)="debugPanelService.hideShadows()">Hide shadows</button>
+    <button type="button" (click)="debugPanelService.toggleDuck()">
         {{ debugPanelService.isDuckVisible() ? 'Hide duck' : 'Show duck' }}
     </button>
-    <button type="button" class="btn-small" (click)="debugPanelService.toggleTrees()">
+    <button type="button" (click)="debugPanelService.toggleTrees()">
         {{ debugPanelService.areTreesVisible() ? 'Hide trees' : 'Show trees' }}
     </button>
-    <button type="button" class="btn-small" (click)="debugPanelService.toggleSkyView()">
+    <button type="button" (click)="debugPanelService.toggleSkyView()">
         {{ debugPanelService.isSkyView() ? 'Player view' : 'Sky view' }}
     </button>
-</div>
+</app-panel>
 }

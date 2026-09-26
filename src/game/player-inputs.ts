@@ -2,167 +2,128 @@ import { VirtualJoystick } from '@babylonjs/core/Misc/virtualJoystick';
 import { Subject } from 'rxjs';
 
 export class PlayerInputs {
-
-    private static disableJoystick: boolean = true;
-
-    private static kUpArrowPressed: boolean = false;
-    private static kDownArrowPressed: boolean = false;
-    private static kLeftArrowPressed: boolean = false;
-    private static kRightArrowPressed: boolean = false;
-    private static kSpacePressed: boolean = false;
-
-    private static mLeftPressed: boolean = false;
-
-    private static jUpArrowPressed: boolean = false;
-    private static jDownArrowPressed: boolean = false;
-    private static jLeftArrowPressed: boolean = false;
-    private static jRightArrowPressed: boolean = false;
-
-    private static cursorDirection: number = 0;
+    private static readonly disableJoystick = true;
+    private static readonly pressedKeys = new Set<string>();
+    private static readonly pressedPointers = new Set<number>();
+    private static jUpArrowPressed = false;
+    private static jDownArrowPressed = false;
+    private static jLeftArrowPressed = false;
+    private static jRightArrowPressed = false;
+    private static cursorDirection = 0;
+    private static controller: AbortController | undefined;
+    private static joystick: VirtualJoystick | undefined;
+    private static canvas: HTMLCanvasElement | undefined;
 
     static readonly firePressed = new Subject<number>();
     static readonly aimChanged = new Subject<number>();
 
     static get forwardPressed() {
-        return this.kUpArrowPressed || this.jUpArrowPressed;
+        return this.pressedKeys.has('ArrowUp') || this.pressedKeys.has('KeyW') || this.jUpArrowPressed;
     }
 
     static get backwardsPressed() {
-        return this.kDownArrowPressed || this.jDownArrowPressed;
+        return this.pressedKeys.has('ArrowDown') || this.pressedKeys.has('KeyS') || this.jDownArrowPressed;
     }
 
     static get leftPressed() {
-        return this.kLeftArrowPressed || this.jLeftArrowPressed;
+        return this.pressedKeys.has('ArrowLeft') || this.pressedKeys.has('KeyA') || this.jLeftArrowPressed;
     }
 
     static get rightPressed() {
-        return this.kRightArrowPressed || this.jRightArrowPressed;
+        return this.pressedKeys.has('ArrowRight') || this.pressedKeys.has('KeyD') || this.jRightArrowPressed;
     }
 
-    private static joystick: VirtualJoystick;
+    static init(canvas: HTMLCanvasElement) {
+        this.dispose();
+        this.canvas = canvas;
+        this.controller = new AbortController();
+        const options = { signal: this.controller.signal };
 
-    static init() {
         if (!this.disableJoystick) {
             this.joystick = new VirtualJoystick(true);
             this.joystick.setJoystickSensibility(10);
         }
 
-        this.initCursorTracking();
-
-        addEventListener('pointerdown', () => {
-            this.mLeftPressed = true;
-        });
-
-        addEventListener('pointerup', () => {
-            this.mLeftPressed = false;
-        });
-
-        window.addEventListener('keydown', (event) => {
-            switch (event.code) {
-                case 'Space':
-                    this.kSpacePressed = true;
-                    break;
-                case 'ArrowUp':
-                    this.kUpArrowPressed = true;
-                    break;
-                case 'KeyW':
-                    this.kUpArrowPressed = true;
-                    break;
-                case 'ArrowDown':
-                    this.kDownArrowPressed = true;
-                    break;
-                case 'KeyS':
-                    this.kDownArrowPressed = true;
-                    break;
-                case 'ArrowLeft':
-                    this.kLeftArrowPressed = true;
-                    break;
-                case 'KeyA':
-                    this.kLeftArrowPressed = true;
-                    break;
-                case 'ArrowRight':
-                    this.kRightArrowPressed = true;
-                    break;
-                case 'KeyD':
-                    this.kRightArrowPressed = true;
-                    break;
+        canvas.addEventListener('pointerdown', event => {
+            if (event.button !== 0) {
+                return;
             }
-        });
+            this.updateCursorDirection(event);
+            this.pressedPointers.add(event.pointerId);
+        }, options);
+        const releasePointer = (event: PointerEvent) => this.pressedPointers.delete(event.pointerId);
+        window.addEventListener('pointerup', releasePointer, options);
+        window.addEventListener('pointercancel', releasePointer, options);
+        canvas.addEventListener('pointermove', event => this.updateCursorDirection(event), options);
 
-        window.addEventListener('keyup', (event) => {
-            switch (event.code) {
-                case 'Space':
-                    this.kSpacePressed = false;
-                    break;
-                case 'ArrowUp':
-                    this.kUpArrowPressed = false;
-                    break;
-                case 'KeyW':
-                    this.kUpArrowPressed = false;
-                    break;
-                case 'ArrowDown':
-                    this.kDownArrowPressed = false;
-                    break;
-                case 'KeyS':
-                    this.kDownArrowPressed = false;
-                    break;
-                case 'ArrowLeft':
-                    this.kLeftArrowPressed = false;
-                    break;
-                case 'KeyA':
-                    this.kLeftArrowPressed = false;
-                    break;
-                case 'ArrowRight':
-                    this.kRightArrowPressed = false;
-                    break;
-                case 'KeyD':
-                    this.kRightArrowPressed = false;
-                    break;
+        window.addEventListener('keydown', event => {
+            if (event.defaultPrevented || this.isInteractiveTarget(event)) {
+                return;
             }
-        });
+            this.pressedKeys.add(event.code);
+        }, options);
+        window.addEventListener('keyup', event => this.pressedKeys.delete(event.code), options);
+        window.addEventListener('blur', () => this.resetPressedInputs(), options);
+        window.addEventListener('focusin', event => {
+            if (this.isInteractiveTarget(event)) {
+                this.resetPressedInputs();
+            }
+        }, options);
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.resetPressedInputs();
+            }
+        }, options);
+    }
 
+    static dispose() {
+        this.controller?.abort();
+        this.controller = undefined;
+        this.joystick?.releaseCanvas();
+        this.joystick = undefined;
+        this.canvas = undefined;
+        this.resetPressedInputs();
+        this.cursorDirection = 0;
     }
 
     static checkInputs() {
-        if (this.kSpacePressed || this.mLeftPressed) {
-            this.firePressed.next(this.cursorDirection);
-        }
-
-        if (this.disableJoystick) {
+        if (!this.controller) {
             return;
         }
-        if (this.joystick.pressed) {
-            const direction = this.joystick.deltaPosition;
-            this.jUpArrowPressed = direction.y > 0.5;
-            this.jDownArrowPressed = direction.y < -0.5;
-            this.jLeftArrowPressed = direction.x < -0.5;
-            this.jRightArrowPressed = direction.x > 0.5;
+        if (this.pressedKeys.has('Space') || this.pressedPointers.size > 0) {
+            this.firePressed.next(this.cursorDirection);
         }
-        else {
-            this.jUpArrowPressed = false;
-            this.jDownArrowPressed = false;
-            this.jLeftArrowPressed = false;
-            this.jRightArrowPressed = false;
-        }
+        const direction = this.joystick?.pressed ? this.joystick.deltaPosition : undefined;
+        this.jUpArrowPressed = direction !== undefined && direction.y > 0.5;
+        this.jDownArrowPressed = direction !== undefined && direction.y < -0.5;
+        this.jLeftArrowPressed = direction !== undefined && direction.x < -0.5;
+        this.jRightArrowPressed = direction !== undefined && direction.x > 0.5;
     }
 
-    private static updateCursorDirection(event: MouseEvent) {
-        event.preventDefault();
-        event.stopPropagation();
-        const centerX = window.innerWidth / 2;
-        const centerY = (window.innerHeight / 2) * 0.95;
+    private static resetPressedInputs() {
+        this.pressedKeys.clear();
+        this.pressedPointers.clear();
+        this.jUpArrowPressed = false;
+        this.jDownArrowPressed = false;
+        this.jLeftArrowPressed = false;
+        this.jRightArrowPressed = false;
+    }
 
+    private static isInteractiveTarget(event: Event) {
+        return event.composedPath().some(target => target instanceof HTMLElement
+            && (target.isContentEditable || target.matches('button, input, textarea, select, a[href], [role="button"]')));
+    }
+
+    private static updateCursorDirection(event: PointerEvent) {
+        if (!this.canvas) {
+            return;
+        }
+        const bounds = this.canvas.getBoundingClientRect();
+        const centerX = bounds.left + bounds.width / 2;
+        const centerY = bounds.top + bounds.height / 2 * 0.95;
         const dx = event.clientX - centerX;
         const dy = centerY - event.clientY;
-
-        const angle = Math.atan2(dy, dx) - Math.PI / 2;
-
-        this.cursorDirection = angle;
-        this.aimChanged.next(angle);
+        this.cursorDirection = Math.atan2(dy, dx) - Math.PI / 2;
+        this.aimChanged.next(this.cursorDirection);
     }
-
-    private static initCursorTracking() {
-        window.addEventListener('pointermove', this.updateCursorDirection.bind(this));
-    }
-
 }

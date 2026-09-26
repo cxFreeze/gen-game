@@ -6,5 +6,6 @@ import { UiComponent } from './ui/ui.component';
     selector: 'app-root',
     imports: [CanvasComponent, UiComponent],
     template: '<app-canvas /><app-ui />',
+    styleUrl: './app.component.scss',
 })
 export class AppComponent { }

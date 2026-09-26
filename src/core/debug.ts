@@ -26,7 +26,10 @@ export class DebugManager {
         return WorldManager.getInstance();
     }
 
-    private static instance: DebugManager;
+    private static instance: DebugManager | undefined;
+    static dispose() {
+        this.instance = undefined;
+    }
     static getInstance(): DebugManager {
         if (!this.instance) {
             this.instance = new DebugManager();

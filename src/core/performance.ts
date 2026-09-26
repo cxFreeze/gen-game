@@ -2,6 +2,12 @@ import { HardwareScalingOptimization, PostProcessesOptimization, SceneOptimizer,
 import { App } from './app';
 
 export class Performance {
+    private static readonly optimizers: SceneOptimizer[] = [];
+
+    static dispose() {
+        this.optimizers.forEach(optimizer => optimizer.dispose());
+        this.optimizers.length = 0;
+    }
 
     public static setPerformance(maxRefreshRate: number) {
         App.engine.setHardwareScalingLevel(1);
@@ -21,13 +27,14 @@ export class Performance {
         //options2.addOptimization(new TextureOptimization(2, 4096));
 
         const optimizer2 = new SceneOptimizer(App.scene, options2, true, true);
+        this.optimizers.push(optimizer, optimizer2);
 
         optimizer2.onNewOptimizationAppliedObservable.add((opt) => {
             console.info('High framerate : ', opt.getDescription());
         });
 
         optimizer2.onFailureObservable.add(() => {
-            setTimeout(() => {
+            App.schedule(() => {
                 optimizer2.start();
             }, 5000);
         });
@@ -38,7 +45,7 @@ export class Performance {
         });
 
         optimizer.onFailureObservable.add(() => {
-            setTimeout(() => {
+            App.schedule(() => {
                 optimizer.start();
             }, 5000);
         });

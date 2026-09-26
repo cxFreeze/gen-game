@@ -1,21 +1,9 @@
 @if (gameUiStore.isLoading()) {
-<div id="loading">
-    <h1>GEN-GAME</h1>
-    <img src="images/duck.gif" alt="Gen Game duck" />
-    @if (gameUiStore.loadingError(); as error) {
-    <h2>ERROR</h2>
-    <p>{{ error }}</p>
-    }
-    @else {
-    <h2>LOADING...</h2>
-    }
-</div>
+<app-loading-screen [error]="gameUiStore.loadingError()" />
 }
 
 <app-debug-panel />
 
 @if (showFps) {
-<div class="box" id="render-info">
-    <div>{{ gameUiStore.fps() }} fps</div>
-</div>
+<app-fps-counter [fps]="gameUiStore.fps()" />
 }
