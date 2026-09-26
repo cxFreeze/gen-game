@@ -3,9 +3,9 @@ import { CanvasComponent } from './canvas/canvas.component';
 import { UiComponent } from './ui/ui.component';
 
 @Component({
-    selector: 'app-root',
+    selector: 'gg-root',
     imports: [CanvasComponent, UiComponent],
-    template: '<app-canvas /><app-ui />',
+    template: '<gg-canvas /><gg-ui />',
     styleUrl: './app.component.scss',
 })
 export class AppComponent { }

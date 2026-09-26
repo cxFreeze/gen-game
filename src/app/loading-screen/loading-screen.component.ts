@@ -2,7 +2,7 @@ import { NgOptimizedImage } from '@angular/common';
 import { Component, input } from '@angular/core';
 
 @Component({
-    selector: 'app-loading-screen',
+    selector: 'gg-loading-screen',
     imports: [NgOptimizedImage],
     template: `
         <h1>GEN-GAME</h1>

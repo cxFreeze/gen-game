@@ -2,9 +2,9 @@ import { Component, input } from '@angular/core';
 import { PanelComponent } from '../shared/panel/panel.component';
 
 @Component({
-    selector: 'app-fps-counter',
+    selector: 'gg-fps-counter',
     imports: [PanelComponent],
-    template: '<app-panel>{{ fps() }} fps</app-panel>',
+    template: '<gg-panel>{{ fps() }} fps</gg-panel>',
     styleUrl: './fps-counter.component.scss',
 })
 export class FpsCounterComponent {

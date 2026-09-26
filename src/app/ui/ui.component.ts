@@ -4,7 +4,7 @@ import { GameUiStore } from '../game-ui.store';
 import { LoadingScreenComponent } from '../loading-screen/loading-screen.component';
 
 @Component({
-    selector: 'app-ui',
+    selector: 'gg-ui',
     templateUrl: './ui.component.html',
     imports: [DebugPanelComponent, LoadingScreenComponent],
 })

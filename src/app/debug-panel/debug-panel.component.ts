@@ -5,7 +5,7 @@ import { PanelComponent } from '../shared/panel/panel.component';
 import { DebugPanelService } from './debug-panel.service';
 
 @Component({
-    selector: 'app-debug-panel',
+    selector: 'gg-debug-panel',
     imports: [PanelComponent, FpsCounterComponent, ButtonDirective],
     templateUrl: './debug-panel.component.html',
     styleUrl: './debug-panel.component.scss',

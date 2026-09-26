@@ -2,7 +2,7 @@ import { Component, DestroyRef, ElementRef, afterNextRender, inject, viewChild }
 import { GameSessionService } from '../game-session.service';
 
 @Component({
-    selector: 'app-canvas',
+    selector: 'gg-canvas',
     template: '<canvas #renderCanvas id="render-canvas" aria-label="Gen Game 3D viewport"></canvas>',
     styleUrl: './canvas.component.scss',
 })

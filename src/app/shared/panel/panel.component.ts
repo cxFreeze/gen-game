@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 
 @Component({
-    selector: 'app-panel',
+    selector: 'gg-panel',
     template: '<ng-content />',
     styleUrl: './panel.component.scss',
 })
