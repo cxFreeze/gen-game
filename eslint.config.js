@@ -61,21 +61,25 @@ export default [
   },
   {
     files: ['src/app/**/*.ts'],
-    ignores: ['src/app/core/game-engine/game-engine.service.ts'],
+    ignores: ['src/app/core/**/*.ts'],
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [{
-          group: ['**/engine/**'],
-          message: 'Access the engine through GameEngineService.',
+          group: ['**/game/**'],
+          message: 'Access the game through GameRuntimeService.',
         }],
       }],
     },
   },
   {
     files: ['src/app/core/**/*.ts'],
+    ignores: ['src/app/core/game-runtime/game-runtime.service.ts'],
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [{
+          group: ['**/game/**'],
+          message: 'Access the game through GameRuntimeService.',
+        }, {
           group: ['**/features/**'],
           message: 'Core infrastructure must not depend on application features.',
         }],
@@ -83,14 +87,69 @@ export default [
     },
   },
   {
-    files: ['src/engine/**/*.ts'],
+    files: ['src/app/core/game-runtime/game-runtime.service.ts'],
     rules: {
       'no-restricted-imports': ['error', {
         patterns: [{
-          group: ['@angular/*'],
-          message: 'Keep the game engine independent of Angular.',
+          group: ['**/features/**'],
+          message: 'Core infrastructure must not depend on application features.',
+        }, {
+          group: ['**/game/gameplay/**', '**/game/rendering/**', '**/game/input/**', '**/game/math/**'],
+          message: 'The Angular facade must access the game through its runtime.',
         }],
       }],
+    },
+  },
+  {
+    files: ['src/game/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['@angular/*', '**/app/**'],
+          message: 'Keep the game independent of Angular.',
+        }],
+      }],
+    },
+  },
+  {
+    files: ['src/game/rendering/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['@angular/*', '**/app/**'],
+          message: 'Keep the game independent of Angular.',
+        }, {
+          group: ['**/gameplay/game', '**/gameplay/characters/**', '**/gameplay/player/**', '**/gameplay/enemies/**', '**/gameplay/projectiles/**'],
+          allowTypeImports: true,
+          message: 'Rendering uses gameplay interfaces and snapshots, never entity implementations.',
+        }],
+      }],
+    },
+  },
+  {
+    files: ['src/game/runtime/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['@angular/*', '**/app/**'],
+          message: 'Keep the game independent of Angular.',
+        }, {
+          group: ['**/gameplay/**', '!**/gameplay/game'],
+          message: 'Runtime coordinates Game; entities and managers belong to gameplay.',
+        }],
+      }],
+    },
+  },
+  {
+    files: ['src/game/gameplay/**/*.ts', 'src/game/math/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['@angular/*', '@babylonjs/*', '**/app/**', '**/rendering/**', '**/runtime/**', '**/input/**'],
+          message: 'Gameplay and math must remain independent of Angular, Babylon, rendering, input, and runtime.',
+        }],
+      }],
+      'no-restricted-globals': ['error', 'window', 'document', 'navigator', 'crypto', 'performance'],
     },
   },
 ];

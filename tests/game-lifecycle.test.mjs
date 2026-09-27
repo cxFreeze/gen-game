@@ -3,11 +3,11 @@ import { setTimeout as wait } from 'node:timers/promises';
 import test from 'node:test';
 import { firstValueFrom } from 'rxjs';
 import { signal } from '@angular/core';
-import { createGameLifetime } from '../src/engine/runtime/game-lifetime.ts';
+import { GameLifetime } from '../src/game/runtime/game-lifetime.ts';
 import { loadTypeScript } from './load-typescript.mjs';
 
 test('disposal cancels deferred work and delayed loading notifications', async () => {
-    const session = createGameLifetime();
+    const session = new GameLifetime();
     let callbackCount = 0;
     let loadingCount = 0;
     const loading = session.loaded$.subscribe(() => loadingCount++);
@@ -25,12 +25,12 @@ test('disposal cancels deferred work and delayed loading notifications', async (
 });
 
 test('a new session receives its own loading notification after the previous one completed', async () => {
-    const first = createGameLifetime();
+    const first = new GameLifetime();
     const firstLoaded = firstValueFrom(first.loaded$);
     first.finishLoading();
     await firstLoaded;
     first.dispose();
-    const second = createGameLifetime();
+    const second = new GameLifetime();
     const secondLoaded = firstValueFrom(second.loaded$);
     second.finishLoading();
     await secondLoaded;
@@ -41,6 +41,8 @@ test('a new session receives its own loading notification after the previous one
 function createRuntime(loadAssets) {
     const engines = [];
     const scenes = [];
+    const playerViews = [];
+    const worldViews = [];
     const cleanups = new Map();
     const counts = { players: 0, inputs: 0 };
     const manager = name => ({
@@ -78,27 +80,52 @@ function createRuntime(loadAssets) {
  this.isDisposed = true; 
 }
     }
-    const { GameRuntime } = loadTypeScript('../src/engine/runtime/game-runtime.ts', {
+    const { GameRuntime } = loadTypeScript('../src/game/runtime/game-runtime.ts', {
         '@babylonjs/core/Engines/engine.js': { Engine },
         '@babylonjs/core/scene.js': { Scene, ScenePerformancePriority: { Intermediate: 1 } },
-        '../enemies/enemies': { EnemiesManager: manager('enemies') },
-        '../player/player': { Player: manager('player') },
-        '../player/player-inputs': { PlayerInputs: { ...manager('inputs'), init() {
+        '../gameplay/game': { Game: class {
+            constructor() {
+                counts.players++;
+            }
+            update() {}
+            dispose() {
+                cleanups.set('game', (cleanups.get('game') ?? 0) + 1);
+            }
+        } },
+        '../rendering/game-presentation': { GamePresentation: class {
+            bodies = {};
+            physics = {};
+            world = {};
+            playerView = {};
+            constructor() {
+                playerViews.push(this.playerView);
+            }
+            dispose() {}
+        } },
+        '../input/player-inputs': { PlayerInputs: { ...manager('inputs'), init() {
  counts.inputs++; 
 } } },
-        '../player/player-movements': { PlayerMovements: manager('movements') },
-        '../projectiles/projectiles': { ProjectilesManager: manager('projectiles') },
-        '../assets/assets': { AssetManager: { ...manager('assets'), loadAssets } },
-        '../world/lighting': { LightingManager: manager('lighting') },
-        '../world/world': { WorldManager: manager('world') },
-        '../world/world-generator': { WorldGenerator: manager('generator') },
-        './debug': { DebugManager: manager('debug') },
-        './babylon-configuration': { configureBabylon() {} },
-        './game-lifetime': { createGameLifetime },
-        './params': { Params: { initPlayerInitPos() {} } },
-        './performance': { Performance: { ...manager('performance'), setPerformance() {} } },
+        '../rendering/assets/assets': { AssetManager: { ...manager('assets'), loadAssets } },
+        '../rendering/lighting/lighting': { LightingManager: manager('lighting') },
+        '../rendering/camera/world-view': { WorldView: class {
+            constructor(player) {
+                this.player = player;
+                worldViews.push(this);
+            }
+            generateWorld() {}
+        } },
+        '../rendering/world/world-renderer': { WorldRenderer: manager('generator') },
+        './debug': { DebugManager: class {
+            constructor(player, worldView) {
+                this.player = player;
+                this.worldView = worldView;
+            }
+        } },
+        '../rendering/scene/babylon-configuration': { configureBabylon() {} },
+        './game-lifetime': { GameLifetime },
+        '../rendering/scene/performance': { Performance: { ...manager('performance'), setPerformance() {} } },
     }, { window: new EventTarget() });
-    return { GameRuntime, engines, scenes, counts, cleanups };
+    return { GameRuntime, engines, scenes, counts, cleanups, playerViews, worldViews };
 }
 
 function deferred() {
@@ -133,13 +160,19 @@ test('a late failure from an old startup cannot dispose the replacement session'
     const firstStartup = runtime.GameRuntime.start({}, () => {});
     const firstFailed = assert.rejects(firstStartup, /old request failed/);
     await runtime.GameRuntime.start({}, () => {});
+    const debug = runtime.GameRuntime.debug;
+    assert.equal(debug.player, runtime.playerViews[0]);
+    assert.equal(debug.worldView, runtime.worldViews[0]);
+    assert.equal(debug.worldView.player, debug.player);
     oldAssets.reject(new Error('old request failed'));
     await firstFailed;
     assert.equal(runtime.engines[0].isDisposed, true);
     assert.equal(runtime.engines[1].isDisposed, undefined);
     assert.equal(runtime.engines[1].isRunning, true);
     assert.equal(runtime.counts.players, 1);
+    assert.equal(runtime.GameRuntime.debug, debug);
     runtime.GameRuntime.dispose();
+    assert.throws(() => runtime.GameRuntime.debug, /not initialized/);
 });
 
 test('a failed startup releases the scene, engine and every manager', async () => {
@@ -158,11 +191,10 @@ function createSessionService(GameRuntime) {
     const uiStoreToken = {};
     const errors = [];
     const destroyCallbacks = [];
-    const { GameEngineService } = loadTypeScript('../src/app/core/game-engine/game-engine.service.ts', {
+    const { GameRuntimeService } = loadTypeScript('../src/app/core/game-runtime/game-runtime.service.ts', {
         '@angular/core': { Service: () => target => target, signal },
-        '../../../engine/runtime/game-runtime': { GameRuntime },
-        '../../../engine/runtime/debug': { Debug: {}, DebugManager: {} },
-        '../../../engine/utils/random': { Random: { setSeed() {}, seed: 'test' } },
+        '../../../game/runtime/game-runtime': { GameRuntime },
+        '../../../game/runtime/game-seed': { GameSeed: class { value = 'test'; } },
     });
     const ui = {
         initialize() {
@@ -175,7 +207,7 @@ function createSessionService(GameRuntime) {
 },
     };
     const instances = new Map([
-        [GameEngineService, new GameEngineService()],
+        [GameRuntimeService, new GameRuntimeService()],
         [destroyRef, { onDestroy: callback => destroyCallbacks.push(callback) }],
         [uiStoreToken, ui],
     ]);
@@ -185,7 +217,7 @@ function createSessionService(GameRuntime) {
             inject: token => instances.get(token),
             DestroyRef: destroyRef,
         },
-        '../../core/game-engine/game-engine.service': { GameEngineService },
+        '../../core/game-runtime/game-runtime.service': { GameRuntimeService },
         './game-ui.service': { GameUiService: uiStoreToken },
     }, { console: { error: error => errors.push(error) } });
     return { service: new GameSessionService(), ui, errors, destroyCallbacks };

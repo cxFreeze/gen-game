@@ -10,13 +10,13 @@ function createAssets(loadAssetContainerAsync) {
             this.mesh = mesh;
         }
     }
-    const { AssetManager } = loadTypeScript('../src/engine/assets/assets.ts', {
+    const { AssetManager } = loadTypeScript('../src/game/rendering/assets/assets.ts', {
         '@babylonjs/core/Loading/sceneLoader.js': { loadAssetContainerAsync },
         '@babylonjs/core/Meshes/mesh.js': { Mesh },
-        '../runtime/game-runtime': { GameRuntime: { scene: {} } },
-        '../runtime/params': { Params: { chunkSize: 500 } },
-        '../world/world-types': { BiomeType: { forest: 1 }, ZoneType: { town: 1 } },
-        '../utils/random': { Random: {} },
+        '../../runtime/game-runtime': { GameRuntime: { scene: {} } },
+        '../../gameplay/world/world-config': { worldConfig: { chunkSize: 500 } },
+        '../../gameplay/world/world-types': { BiomeType: { forest: 1 }, ZoneType: { town: 1 } },
+        '../../math/random': { Random: {} },
         './gg-asset': { GG3DAsset: Asset, GGSpriteAsset: Asset },
     });
     const container = () => ({

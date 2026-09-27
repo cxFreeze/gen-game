@@ -1,23 +1,23 @@
 import { computed, inject, Service, signal } from '@angular/core';
-import { GameEngineService } from '../../core/game-engine/game-engine.service';
+import { GameRuntimeService } from '../../core/game-runtime/game-runtime.service';
 
 @Service()
 export class DebugPanelService {
-    private readonly gameEngine = inject(GameEngineService);
+    private readonly gameRuntime = inject(GameRuntimeService);
     private readonly panelDisplayed = signal(false);
     private readonly fpsDisplayed = signal(true);
 
     readonly isVisible = this.panelDisplayed.asReadonly();
     readonly showFps = this.fpsDisplayed.asReadonly();
-    readonly seed = this.gameEngine.seed;
-    readonly worldX = computed(() => this.gameEngine.stats().worldX);
-    readonly worldY = computed(() => this.gameEngine.stats().worldY);
-    readonly meshCount = computed(() => this.gameEngine.stats().meshCount);
-    readonly polygonCount = computed(() => this.gameEngine.stats().polygonCount);
-    readonly fps = computed(() => this.gameEngine.stats().fps);
-    readonly isDuckVisible = computed(() => this.gameEngine.controls().isDuckVisible);
-    readonly areTreesVisible = computed(() => this.gameEngine.controls().areTreesVisible);
-    readonly isSkyView = computed(() => this.gameEngine.controls().isSkyView);
+    readonly seed = this.gameRuntime.seed;
+    readonly worldX = computed(() => this.gameRuntime.stats().worldX);
+    readonly worldY = computed(() => this.gameRuntime.stats().worldY);
+    readonly meshCount = computed(() => this.gameRuntime.stats().meshCount);
+    readonly polygonCount = computed(() => this.gameRuntime.stats().polygonCount);
+    readonly fps = computed(() => this.gameRuntime.stats().fps);
+    readonly isDuckVisible = computed(() => this.gameRuntime.controls().isDuckVisible);
+    readonly areTreesVisible = computed(() => this.gameRuntime.controls().areTreesVisible);
+    readonly isSkyView = computed(() => this.gameRuntime.controls().isSkyView);
     readonly worldPosition = computed(() => `${this.worldX().toFixed(0)} / ${this.worldY().toFixed(0)}`);
 
     togglePanel() {
@@ -25,18 +25,18 @@ export class DebugPanelService {
     }
 
     hideShadows() {
-        this.gameEngine.hideShadows();
+        this.gameRuntime.hideShadows();
     }
 
     toggleDuck() {
-        this.gameEngine.toggleDuck();
+        this.gameRuntime.toggleDuck();
     }
 
     toggleTrees() {
-        this.gameEngine.toggleTrees();
+        this.gameRuntime.toggleTrees();
     }
 
     toggleSkyView() {
-        this.gameEngine.toggleSkyView();
+        this.gameRuntime.toggleSkyView();
     }
 }

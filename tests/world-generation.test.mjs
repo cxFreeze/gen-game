@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getChunkKey, getNeighborChunks } from '../src/engine/world/chunk-coordinates.ts';
-import { createRenderQueue } from '../src/engine/world/render-queue.ts';
-import { Random } from '../src/engine/utils/random.ts';
+import { getChunkKey, getNeighborChunks } from '../src/game/gameplay/world/chunk-coordinates.ts';
+import { RenderQueue } from '../src/game/rendering/world/render-queue.ts';
+import { Random } from '../src/game/math/random.ts';
 import { loadTypeScript } from './load-typescript.mjs';
 
-const { createWorldPlacement } = loadTypeScript('../src/engine/world/world-placement.ts', {
+const { WorldPlacement } = loadTypeScript('../src/game/gameplay/world/world-placement.ts', {
     './chunk-coordinates': { getChunkKey, getNeighborChunks },
 });
 
@@ -24,7 +24,7 @@ test('chunk coordinates preserve rounding at positive and negative boundaries', 
 test('render batches preserve order and wait for consecutive idle frames before announcing readiness', () => {
     const rendered = [];
     let readyCount = 0;
-    const queue = createRenderQueue({ batchSize: 2, idleFrameCount: 2, onReady: () => readyCount++ });
+    const queue = new RenderQueue({ batchSize: 2, idleFrameCount: 2, onReady: () => readyCount++ });
     queue.processFrame();
     assert.equal(readyCount, 0);
     for (const item of [1, 2, 3]) {
@@ -47,7 +47,7 @@ test('render batches preserve order and wait for consecutive idle frames before 
 test('clearing a render queue discards pending scene operations', () => {
     let rendered = false;
     let ready = false;
-    const queue = createRenderQueue({ batchSize: 1, idleFrameCount: 0, onReady: () => {
+    const queue = new RenderQueue({ batchSize: 1, idleFrameCount: 0, onReady: () => {
         ready = true;
     } });
     queue.enqueue(() => {
@@ -70,7 +70,7 @@ test('seeded placement remains reproducible and keeps spawn positions inside the
         hugeSizeRatio: 3,
         playerSpawn: { x: 0, y: 0, minDistance: 200 },
     };
-    const placement = createWorldPlacement(options);
+    const placement = new WorldPlacement(options);
     Random.setSeed('refactor');
     const position = placement.getRandomPositionInChunk(500, -500, 'blob', 1);
     const count = placement.getSpawnNumber(3, 'blob', 500, -500);

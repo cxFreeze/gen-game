@@ -1,12 +1,12 @@
 import { DestroyRef, inject, Service } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { GameEngineService } from '../../core/game-engine/game-engine.service';
+import { GameRuntimeService } from '../../core/game-runtime/game-runtime.service';
 import { GameUiService } from './game-ui.service';
 
 @Service()
 export class GameSessionService {
     private readonly gameUiService = inject(GameUiService);
-    private readonly gameEngineService = inject(GameEngineService);
+    private readonly gameRuntimeService = inject(GameRuntimeService);
     private loadingSubscription: Subscription | undefined;
     private session: object | undefined;
 
@@ -21,9 +21,9 @@ export class GameSessionService {
         this.gameUiService.initialize();
 
         try {
-            this.gameEngineService.createSeed();
-            const initialization = this.gameEngineService.start(canvas);
-            this.loadingSubscription = this.gameEngineService.loaded$.subscribe(() => {
+            this.gameRuntimeService.createSeed();
+            const initialization = this.gameRuntimeService.start(canvas);
+            this.loadingSubscription = this.gameRuntimeService.loaded$.subscribe(() => {
                 if (this.session === session) {
                     this.gameUiService.finishLoading();
                 }
@@ -44,6 +44,6 @@ export class GameSessionService {
         this.session = undefined;
         this.loadingSubscription?.unsubscribe();
         this.loadingSubscription = undefined;
-        this.gameEngineService.dispose();
+        this.gameRuntimeService.dispose();
     }
 }

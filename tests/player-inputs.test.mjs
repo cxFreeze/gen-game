@@ -25,7 +25,7 @@ function createInputs() {
     const window = new EventTarget();
     const document = new EventTarget();
     const canvas = new Element();
-    const { PlayerInputs } = loadTypeScript('../src/engine/player/player-inputs.ts', {
+    const { PlayerInputs } = loadTypeScript('../src/game/input/player-inputs.ts', {
         '@babylonjs/core/Misc/virtualJoystick.js': { VirtualJoystick: class {} },
     }, { window, document, HTMLElement: Element });
     PlayerInputs.init(canvas);

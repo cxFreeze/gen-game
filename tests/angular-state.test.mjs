@@ -40,7 +40,7 @@ function createDebugService(engine) {
     const engineToken = {};
     const { DebugPanelService } = loadTypeScript('../src/app/features/debug/debug-panel.service.ts', {
         '@angular/core': { ...angular, inject: token => token === engineToken ? engine : undefined },
-        '../../core/game-engine/game-engine.service': { GameEngineService: engineToken },
+        '../../core/game-runtime/game-runtime.service': { GameRuntimeService: engineToken },
     });
     return new DebugPanelService();
 }
@@ -49,6 +49,11 @@ function createEngine() {
     const callbacks = [];
     const runtime = {
         isReady: false,
+        debug: {
+            toggleCharMesh: () => false,
+            toggle3ditems: () => false,
+            toggleSkyview: () => true,
+        },
         start(canvas, updateStats) {
             this.isReady = true;
             callbacks.push(updateStats);
@@ -58,17 +63,12 @@ function createEngine() {
             this.isReady = false;
         },
     };
-    const { GameEngineService } = loadTypeScript('../src/app/core/game-engine/game-engine.service.ts', {
+    const { GameRuntimeService } = loadTypeScript('../src/app/core/game-runtime/game-runtime.service.ts', {
         '@angular/core': angular,
-        '../../../engine/runtime/game-runtime': { GameRuntime: runtime },
-        '../../../engine/runtime/debug': { DebugManager: { getInstance: () => ({
-            toggleCharMesh: () => false,
-            toggle3ditems: () => false,
-            toggleSkyview: () => true,
-        }) } },
-        '../../../engine/utils/random': { Random: { setSeed() {}, seed: 'test-session' } },
+        '../../../game/runtime/game-runtime': { GameRuntime: runtime },
+        '../../../game/runtime/game-seed': { GameSeed: class { value = 'test-session'; } },
     });
-    return { engine: new GameEngineService(), callbacks };
+    return { engine: new GameRuntimeService(), callbacks };
 }
 
 test('debug reads engine telemetry directly and keeps visibility preferences across sessions', async () => {

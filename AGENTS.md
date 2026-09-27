@@ -19,17 +19,30 @@ GenGame is a 3D game with Angular UI
 
 ### Code Style and Structure
 
-- Write concise, technical TypeScript code
-- Use functional and declarative programming patterns; avoid classes
 - Prefer iteration and modularization over code duplication
 - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError)
 
 ### Naming Conventions
 
 - Use lowercase with dashes for directories (e.g., components/auth-wizard)
+- Use lowercase with dashes for file names (e.g., `enemy-system.ts`, `player-view.ts`)
+- Files containing only interfaces or type aliases must use the `.interface.ts` suffix (e.g., `enemy-type.interface.ts`, `asset-types.interface.ts`)
+- Files containing implementation or runtime values keep a descriptive `.ts` name; do not use the `.interface.ts` suffix for mixed files
+- Name class implementation files after their class in kebab-case (e.g., `EnemySystem` in `enemy-system.ts`, `ProjectileSystem` in `projectile-system.ts`)
 - Favor named exports for components
 - Use PascalCase for component names
 - Use camelCase for functions, variables, and props
+
+### Architecture Boundaries
+
+- `src/app/` is the Angular application. It owns the UI and communication with the game through `GameRuntimeService`; game rules and Babylon rendering do not belong here
+- `src/game/gameplay/` contains game logic: entities, movement decisions, combat, spawning, and world rules. It must not depend on Angular, Babylon.js, rendering, or runtime, including through type-only imports
+- Gameplay communicates with technical implementations through interfaces and plain data defined in gameplay or math
+- `src/game/rendering/` contains Babylon.js rendering, meshes, assets, animation, cameras, lighting, and implementations of the physical interfaces used by gameplay
+- `src/game/runtime/` coordinates startup, shutdown, the game loop, and dependency wiring. Babylon.js engine and scene lifecycle management belongs here
+- All Babylon.js dependencies must remain in `rendering/` or `runtime/`
+- Rendering may import gameplay interfaces and data, but must not depend on gameplay entity implementations or own game rules
+- Keep `src/game/` independent of Angular
 
 You are an expert in TypeScript, Angular, and scalable web application development. You write functional, maintainable, performant, and accessible code following Angular and TypeScript best practices.
 
@@ -48,7 +61,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Implement lazy loading for feature routes
 - Do NOT use the `@HostBinding` and `@HostListener` decorators. Put host bindings inside the `host` object of the `@Component` or `@Directive` decorator instead
 - Use `NgOptimizedImage` for all static images.
-  - `NgOptimizedImage` does not work for inline base64 images.
+- `NgOptimizedImage` does not work for inline base64 images.
 
 ### Components
 
