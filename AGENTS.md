@@ -35,7 +35,7 @@ GenGame is a 3D game with Angular UI
 
 ### Architecture Boundaries
 
-- `src/app/` is the Angular application. It owns the UI and communication with the game through `GameRuntimeService`; game rules and Babylon rendering do not belong here
+- `src/app/` is the Angular application. It owns the UI and communication with the game through services; game rules and Babylon rendering do not belong here
 - `src/game/gameplay/` contains game logic: entities, movement decisions, combat, spawning, and world rules. It must not depend on Angular, Babylon.js, rendering, or runtime, including through type-only imports
 - Gameplay communicates with technical implementations through interfaces and plain data defined in gameplay or math
 - `src/game/rendering/` contains Babylon.js rendering, meshes, assets, animation, cameras, lighting, and implementations of the physical interfaces used by gameplay
