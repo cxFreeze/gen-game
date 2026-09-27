@@ -1,10 +1,10 @@
 :host {
     display: block;
-    background-color: #00000099;
-    border: 2px solid rgb(127, 127, 127);
+    background-color: var(--surface-color);
+    border: var(--size-025) solid var(--border-color);
     text-align: center;
-    font-size: 16px;
-    color: white;
-    padding: 5px;
-    border-radius: 12px;
+    font-size: var(--size-200);
+    color: var(--text-color);
+    padding: var(--size-075);
+    border-radius: var(--size-150);
 }

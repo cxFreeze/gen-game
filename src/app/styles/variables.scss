@@ -1,0 +1,81 @@
+:root {
+    // Every color family has lighter, light, base, dark, and darker shades.
+    // Primary: aged gold and parchment
+    --primary-lighter: #f4e6c7;
+    --primary-light: #d8b978;
+    --primary: #b38a45;
+    --primary-dark: #7a5729;
+    --primary-darker: #49351c;
+
+    // Secondary: leather and earth
+    --secondary-lighter: #ead9cb;
+    --secondary-light: #bda18a;
+    --secondary: #7b5848;
+    --secondary-dark: #503a31;
+    --secondary-darker: #2b211d;
+
+    // Success: forest green
+    --success-lighter: #e0e8d6;
+    --success-light: #9eb38a;
+    --success: #5f7954;
+    --success-dark: #3b5134;
+    --success-darker: #223321;
+
+    // Danger: muted burgundy
+    --danger-lighter: #eedad7;
+    --danger-light: #c88c81;
+    --danger: #985747;
+    --danger-dark: #6f3734;
+    --danger-darker: #42211f;
+
+    // Warning: copper and ochre
+    --warning-lighter: #f4e4c6;
+    --warning-light: #dfb873;
+    --warning: #be7835;
+    --warning-dark: #875026;
+    --warning-darker: #502f1e;
+
+    // Info: slate blue
+    --info-lighter: #e1e9ee;
+    --info-light: #a4b8c5;
+    --info: #647e92;
+    --info-dark: #405667;
+    --info-darker: #26343f;
+
+    // Neutrals: warm stone grays
+    --neutral-lighter: #f2f0e9;
+    --neutral-light: #c6c2b8;
+    --neutral: #8c8880;
+    --neutral-dark: #514f49;
+    --neutral-darker: #24231f;
+
+    // Shared UI roles, derived from the palette
+    --text-color: var(--neutral-lighter);
+    --heading-color: var(--primary-lighter);
+    --accent-color: var(--primary-light);
+    --background-color: var(--neutral-darker);
+    --background-gradient: linear-gradient(0.5turn, var(--secondary-darker), var(--success-darker));
+    --surface-color: color-mix(in srgb, var(--neutral-darker) 92%, transparent);
+    --border-color: var(--secondary-light);
+    --focus-color: var(--primary-lighter);
+
+    // Sizes: 100 units = 0.5rem
+    --size-025: 0.125rem;
+    --size-050: 0.25rem;
+    --size-075: 0.375rem;
+    --size-100: 0.5rem;
+    --size-125: 0.625rem;
+    --size-150: 0.75rem;
+    --size-175: 0.875rem;
+    --size-200: 1rem;
+    --size-250: 1.25rem;
+    --size-300: 1.5rem;
+    --size-350: 1.75rem;
+    --size-400: 2rem;
+    --size-500: 2.5rem;
+    --size-600: 3rem;
+    --size-700: 3.5rem;
+    --size-800: 4rem;
+    --size-900: 4.5rem;
+    --size-1000: 5rem;
+}

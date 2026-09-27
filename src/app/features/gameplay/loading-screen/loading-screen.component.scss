@@ -1,6 +1,6 @@
 :host {
-    --logo-color1: #5d9ecc;
-    --logo-color2: #baf507;
+    --loading-image-size: 15rem;
+    --loading-title-size: 8rem;
 
     position: fixed;
     inset: 0;
@@ -11,29 +11,31 @@
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    background: linear-gradient(0.5turn, #7177b8, #419264);
-    color: white;
-    gap: 1.5rem;
-    letter-spacing: 0.1em;
+    background: var(--background-gradient);
+    color: var(--text-color);
+    gap: var(--size-300);
+    letter-spacing: calc(0.2 * var(--size-100));
     font-family: stayPixel;
 }
 
 img {
-    width: 250px;
-    height: 250px;
+    width: var(--loading-image-size);
+    height: var(--loading-image-size);
 }
 
 h1 {
-    font-size: 8rem;
-    margin: 0 0 3rem;
-    text-shadow: 3px 1px 1px var(--logo-color1), 2px 2px 1px var(--logo-color2), 4px 2px 1px var(--logo-color1),
-        3px 3px 1px var(--logo-color2), 5px 3px 1px var(--logo-color1), 4px 4px 1px var(--logo-color2),
-        6px 4px 1px var(--logo-color1), 5px 5px 1px var(--logo-color2), 7px 5px 1px var(--logo-color1),
-        6px 6px 1px var(--logo-color2), 8px 6px 1px var(--logo-color1), 7px 7px 1px var(--logo-color2),
-        9px 7px 1px var(--logo-color1);
+    color: var(--heading-color);
+    font-size: var(--loading-title-size);
+    margin: 0 0 var(--size-600);
+    text-shadow: 3px 1px 1px var(--primary-dark), 2px 2px 1px var(--secondary-darker), 4px 2px 1px var(--primary-dark),
+        3px 3px 1px var(--secondary-darker), 5px 3px 1px var(--primary-dark), 4px 4px 1px var(--secondary-darker),
+        6px 4px 1px var(--primary-dark), 5px 5px 1px var(--secondary-darker), 7px 5px 1px var(--primary-dark),
+        6px 6px 1px var(--secondary-darker), 8px 6px 1px var(--primary-dark), 7px 7px 1px var(--secondary-darker),
+        9px 7px 1px var(--primary-dark);
 }
 
 h2 {
-    font-size: 3rem;
+    color: var(--accent-color);
+    font-size: var(--size-600);
     margin: 0;
 }

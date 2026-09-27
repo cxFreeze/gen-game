@@ -1,19 +1,26 @@
 button.gg-button {
+    --button-text-color: var(--secondary-darker);
+    --button-background-color: var(--primary-light);
+    --button-hover-color: var(--primary-lighter);
+    --button-active-color: var(--primary);
+    --button-border-color: var(--primary-dark);
+    --button-shadow-color: var(--primary-darker);
+
     position: relative;
     display: inline-block;
     vertical-align: middle;
     text-decoration: none;
-    font-size: 8px;
+    font-size: var(--size-100);
     font-family: inherit;
     font-weight: 600;
     text-transform: uppercase;
-    padding: 1.15em 2em;
-    border-radius: 0.75em;
+    padding: var(--size-125) var(--size-200);
+    border-radius: var(--size-075);
     transform-style: preserve-3d;
     transition: transform 0.15s ease-out, background 0.15s ease-out;
-    color: rgb(190, 133, 11);
-    background: rgb(255, 239, 204);
-    border: 2px solid rgb(222, 156, 13);
+    color: var(--button-text-color);
+    background: var(--button-background-color);
+    border: var(--size-025) solid var(--button-border-color);
     cursor: pointer;
 
     &::before {
@@ -23,30 +30,32 @@ button.gg-button {
         height: 100%;
         inset: 0;
         border-radius: inherit;
-        transform: translate3d(0, 0.75em, -1em);
+        transform: translate3d(0, var(--size-075), calc(-1 * var(--size-100)));
         transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
-        background: rgb(255, 215, 128);
-        box-shadow: rgb(222, 156, 13) 0 0 0 2px;
+        background: var(--button-border-color);
+        box-shadow: var(--button-shadow-color) 0 0 0 2px;
     }
 
     &:hover {
-        transform: translateY(0.25em);
+        background: var(--button-hover-color);
+        transform: translateY(var(--size-025));
     }
 
     &:active {
-        transform: translateY(0.35em);
+        background: var(--button-active-color);
+        transform: translateY(calc(0.35 * var(--size-100)));
     }
 
     &:hover::before {
-        transform: translate3d(0, 0.5em, -1em);
+        transform: translate3d(0, var(--size-050), calc(-1 * var(--size-100)));
     }
 
     &:active::before {
-        transform: translate3d(0, 0.4em, -1em);
+        transform: translate3d(0, calc(0.4 * var(--size-100)), calc(-1 * var(--size-100)));
     }
 
     &:focus-visible {
-        outline: 2px solid white;
-        outline-offset: 4px;
+        outline: var(--size-025) solid var(--focus-color);
+        outline-offset: var(--size-050);
     }
 }

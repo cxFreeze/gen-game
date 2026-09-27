@@ -1,6 +1,6 @@
 :host {
     position: absolute;
     z-index: 10;
-    top: 10px;
-    right: 10px;
+    top: var(--size-125);
+    right: var(--size-125);
 }
