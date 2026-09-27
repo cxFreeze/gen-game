@@ -5,16 +5,19 @@ button.gg-button {
     --button-active-color: var(--primary);
     --button-border-color: var(--primary-dark);
     --button-shadow-color: var(--primary-darker);
+    --button-font-size: var(--size-175);
+    --button-padding-y: var(--size-100);
+    --button-padding-x: var(--size-200);
 
     position: relative;
     display: inline-block;
     vertical-align: middle;
     text-decoration: none;
-    font-size: var(--size-100);
+    font-size: var(--button-font-size);
     font-family: inherit;
     font-weight: 600;
     text-transform: uppercase;
-    padding: var(--size-125) var(--size-200);
+    padding: var(--button-padding-y) var(--button-padding-x);
     border-radius: var(--size-075);
     transform-style: preserve-3d;
     transition: transform 0.15s ease-out, background 0.15s ease-out;
@@ -22,6 +25,24 @@ button.gg-button {
     background: var(--button-background-color);
     border: var(--size-025) solid var(--button-border-color);
     cursor: pointer;
+
+    &[data-size='sm'] {
+        --button-font-size: var(--size-150);
+        --button-padding-y: var(--size-075);
+        --button-padding-x: var(--size-150);
+    }
+
+    &[data-size='lg'] {
+        --button-font-size: var(--size-200);
+        --button-padding-y: var(--size-125);
+        --button-padding-x: var(--size-250);
+    }
+
+    &[data-size='xl'] {
+        --button-font-size: var(--size-250);
+        --button-padding-y: var(--size-150);
+        --button-padding-x: var(--size-300);
+    }
 
     &::before {
         position: absolute;
@@ -57,5 +78,23 @@ button.gg-button {
     &:focus-visible {
         outline: var(--size-025) solid var(--focus-color);
         outline-offset: var(--size-050);
+    }
+
+    &[data-variant='secondary'] {
+        --button-text-color: var(--secondary-lighter);
+        --button-background-color: transparent;
+        --button-hover-color: transparent;
+        --button-active-color: transparent;
+        --button-border-color: var(--secondary-light);
+
+        &::before {
+            content: none;
+        }
+
+        &:hover,
+        &:active {
+            border-color: var(--secondary-lighter);
+            transform: none;
+        }
     }
 }
