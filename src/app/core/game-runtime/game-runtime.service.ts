@@ -1,5 +1,6 @@
 import { Service, signal } from '@angular/core';
 import { GameRuntime } from '../../../game/runtime/game-runtime';
+import { MenuRuntime } from '../../../game/runtime/menu-runtime';
 import type { GameStats } from '../../../game/runtime/game-stats.interface';
 import { GameSeed } from '../../../game/runtime/game-seed';
 
@@ -26,6 +27,7 @@ export class GameRuntimeService {
     private readonly latestStats = signal<Readonly<GameStats>>(new EmptyStats());
     private readonly debugControls = signal<Readonly<DebugControls>>(new DebugControls());
     private session: object | undefined;
+    private menuPreview: MenuRuntime | undefined;
 
     readonly seed = this.currentSeed.asReadonly();
     readonly stats = this.latestStats.asReadonly();
@@ -41,7 +43,28 @@ export class GameRuntimeService {
         return seed;
     }
 
+    async startMenuPreview(canvas: HTMLCanvasElement) {
+        this.stopMenuPreview();
+        const preview = new MenuRuntime(canvas);
+        this.menuPreview = preview;
+        try {
+            await preview.start();
+        }
+        catch (error: unknown) {
+            if (this.menuPreview === preview) {
+                this.stopMenuPreview();
+            }
+            throw error;
+        }
+    }
+
+    stopMenuPreview() {
+        this.menuPreview?.dispose();
+        this.menuPreview = undefined;
+    }
+
     start(canvas: HTMLCanvasElement) {
+        this.stopMenuPreview();
         const session = {};
         this.session = session;
         this.latestStats.set(new EmptyStats());
@@ -54,6 +77,7 @@ export class GameRuntimeService {
     }
 
     dispose() {
+        this.stopMenuPreview();
         this.session = undefined;
         GameRuntime.dispose();
         this.currentSeed.set('');

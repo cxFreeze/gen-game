@@ -1,7 +1,7 @@
 button.gg-button {
     --button-text-color: var(--secondary-darker);
     --button-background-color: var(--primary-light);
-    --button-hover-color: var(--primary-lighter);
+    --button-hover-color: var(--primary-light);
     --button-active-color: var(--primary);
     --button-border-color: var(--primary-dark);
     --button-shadow-color: var(--primary-darker);
@@ -39,9 +39,9 @@ button.gg-button {
     }
 
     &[data-size='xl'] {
-        --button-font-size: var(--size-250);
-        --button-padding-y: var(--size-150);
-        --button-padding-x: var(--size-300);
+        --button-font-size: var(--size-350);
+        --button-padding-y: var(--size-250);
+        --button-padding-x: var(--size-400);
     }
 
     &::before {

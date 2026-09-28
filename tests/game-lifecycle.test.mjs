@@ -194,6 +194,7 @@ function createSessionService(GameRuntime) {
     const { GameRuntimeService } = loadTypeScript('../src/app/core/game-runtime/game-runtime.service.ts', {
         '@angular/core': { Service: () => target => target, signal },
         '../../../game/runtime/game-runtime': { GameRuntime },
+        '../../../game/runtime/menu-runtime': { MenuRuntime: class {} },
         '../../../game/runtime/game-seed': { GameSeed: class { value = 'test'; } },
     });
     const ui = {

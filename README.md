@@ -12,6 +12,8 @@ This project uses Angular 22 with standalone components, signals, and zoneless c
 
 The Angular shell is split between `GameViewportComponent`, which exposes the canvas and forwards its lifecycle to `GameSessionService`, and `GameOverlayComponent`, which composes the loading and debug overlays. `GameUiService` owns the loading state; `DebugPanelService` owns debug controls and statistics. They expose read-only signals.
 
+The application opens on `MainMenuComponent` with a Play button and the player duck looping its `Idle` animation. `MenuRuntime` owns a separate preview scene implemented by `MenuView`; it loads only the player model. Clicking Play releases the preview and creates the gameplay viewport and overlays. Cancelling a pending preview load disposes any late asset result.
+
 Angular infrastructure lives under `src/app/core/`, features under `src/app/features/`, and reusable UI components and directives under `src/app/shared/`. `features/gameplay` owns the viewport, overlays, loading, and session lifecycle; `features/debug` owns the debug panel and FPS counter. Services stay alongside the feature they serve.
 
 `core/game-runtime/GameRuntimeService` is the Angular entry point to `src/game/runtime/`. It exposes the current seed, statistics, and debug control state through read-only signals. Debug reads those signals directly; `GameSessionService` manages startup, loading, and shutdown without depending on debug services.

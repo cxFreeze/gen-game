@@ -66,6 +66,7 @@ function createEngine() {
     const { GameRuntimeService } = loadTypeScript('../src/app/core/game-runtime/game-runtime.service.ts', {
         '@angular/core': angular,
         '../../../game/runtime/game-runtime': { GameRuntime: runtime },
+        '../../../game/runtime/menu-runtime': { MenuRuntime: class {} },
         '../../../game/runtime/game-seed': { GameSeed: class { value = 'test-session'; } },
     });
     return { engine: new GameRuntimeService(), callbacks };
