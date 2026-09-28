@@ -7,6 +7,14 @@
     padding: var(--size-400);
 }
 
+:host(.loading-screen) {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    width: 100vw;
+    height: 100vh;
+}
+
 main {
     display: grid;
     grid-template-columns: 3fr 4fr;
@@ -29,13 +37,11 @@ h1 {
     font-family: stayPixel;
     font-size: clamp(var(--size-600), 6vw, calc(var(--size-1000) * 1.6));
     letter-spacing: var(--size-025);
-    text-shadow: 3px 3px 0 var(--primary-darker);
-}
-
-.subtitle {
-    margin: 0;
-    color: var(--accent-color);
-    font-size: var(--size-250);
+    text-shadow: 3px 1px 1px var(--primary-dark), 2px 2px 1px var(--secondary-darker), 4px 2px 1px var(--primary-dark),
+        3px 3px 1px var(--secondary-darker), 5px 3px 1px var(--primary-dark), 4px 4px 1px var(--secondary-darker),
+        6px 4px 1px var(--primary-dark), 5px 5px 1px var(--secondary-darker), 7px 5px 1px var(--primary-dark),
+        6px 6px 1px var(--secondary-darker), 8px 6px 1px var(--primary-dark), 7px 7px 1px var(--secondary-darker),
+        9px 7px 1px var(--primary-dark);
 }
 
 .preview {
@@ -51,14 +57,19 @@ canvas {
     height: min(78vh, calc(var(--size-1000) * 10));
 }
 
-.preview-status {
-    min-height: var(--size-600);
+.status {
     margin: 0;
-    padding: 0 var(--size-100);
+    font-size: var(--size-350);
+    font-weight: 600;
+}
+
+.error-message {
+    margin: 0;
     font-size: var(--size-175);
 }
 
-button {
+button,
+.status {
     margin-bottom: var(--size-200);
 }
 

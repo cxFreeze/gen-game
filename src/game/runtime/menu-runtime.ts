@@ -11,7 +11,15 @@ export class MenuRuntime {
     private view: MenuView | undefined;
     private resizeObserver: ResizeObserver | undefined;
 
-    constructor(private readonly canvas: HTMLCanvasElement) { }
+    constructor(private readonly canvas: HTMLCanvasElement, private animation: 'Idle' | 'Running' = 'Idle') { }
+
+    setAnimation(animation: 'Idle' | 'Running') {
+        if (this.controller.signal.aborted || this.animation === animation) {
+            return;
+        }
+        this.animation = animation;
+        this.view?.setAnimation(animation);
+    }
 
     async start() {
         const signal = this.controller.signal;
@@ -26,8 +34,12 @@ export class MenuRuntime {
             scene.useRightHandedSystem = true;
             const view = new MenuView(scene);
             this.view = view;
-            await view.load(signal);
+            const initialAnimation = this.animation;
+            await view.load(signal, initialAnimation);
             signal.throwIfAborted();
+            if (this.animation !== initialAnimation) {
+                view.setAnimation(this.animation);
+            }
 
             const resize = () => {
                 if (signal.aborted) {

@@ -1,3 +1,4 @@
+import type { AnimationGroup } from '@babylonjs/core/Animations/animationGroup.js';
 import { ArcRotateCamera } from '@babylonjs/core/Cameras/arcRotateCamera.js';
 import { DirectionalLight } from '@babylonjs/core/Lights/directionalLight.js';
 import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight.js';
@@ -6,19 +7,19 @@ import { Color3, Color4 } from '@babylonjs/core/Maths/math.color.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import type { AssetContainer } from '@babylonjs/core/assetContainer.js';
-import type { AnimationGroup } from '@babylonjs/core/Animations/animationGroup.js';
 import type { Scene } from '@babylonjs/core/scene.js';
 
 /** Presents the player model without creating a gameplay session. */
 export class MenuView {
     private readonly camera;
     private container: AssetContainer | undefined;
+    private currentAnimation: AnimationGroup | undefined;
     private modelRadius = 1;
     private readonly modelCorners: Vector3[] = [];
 
     constructor(private readonly scene: Scene) {
         scene.clearColor = new Color4(0, 0, 0, 0);
-        this.camera = new ArcRotateCamera('menu-camera', Math.PI / 2 - 0.3, Math.PI / 2 - 0.15, 4, Vector3.Zero(), scene);
+        this.camera = new ArcRotateCamera('menu-camera', Math.PI / 2 + Math.PI / 12, Math.PI / 2 - 0.15, 4, Vector3.Zero(), scene);
         this.camera.minZ = 0.01;
 
         const ambient = new HemisphericLight('menu-ambient', Vector3.Up(), scene);
@@ -29,7 +30,7 @@ export class MenuView {
         key.diffuse = new Color3(1, 0.86, 0.65);
     }
 
-    async load(signal: AbortSignal) {
+    async load(signal: AbortSignal, animationName: 'Idle' | 'Running' = 'Idle') {
         signal.throwIfAborted();
         const container = await LoadAssetContainerAsync('./3d/player.glb', this.scene);
         if (signal.aborted) {
@@ -46,28 +47,57 @@ export class MenuView {
         for (const animation of container.animationGroups) {
             animation.stop();
         }
-        const idle = container.animationGroups.find(animation => animation.name === 'Idle');
-        if (!idle) {
-            throw new Error('The player model has no Idle animation');
+        const previewAnimations = container.animationGroups.filter(animation => animation.name === 'Idle' || animation.name === 'Running');
+        const initialAnimation = previewAnimations.find(animation => animation.name === animationName);
+        if (!initialAnimation) {
+            throw new Error(`The player model has no ${animationName} animation`);
         }
-        idle.start(true);
-        this.frameAnimatedModel(model, container, idle);
+        this.frameAnimatedModel(model, container, previewAnimations, initialAnimation);
+        for (const animation of previewAnimations) {
+            animation.enableBlending = true;
+            animation.blendingSpeed = 0.06;
+        }
+        this.setAnimation(animationName);
     }
 
-    private frameAnimatedModel(model: TransformNode, container: AssetContainer, animation: AnimationGroup) {
+    setAnimation(animationName: 'Idle' | 'Running') {
+        const container = this.container;
+        if (!container) {
+            return;
+        }
+        const animation = container.animationGroups.find(group => group.name === animationName);
+        if (!animation) {
+            throw new Error(`The player model has no ${animationName} animation`);
+        }
+        if (this.currentAnimation === animation) {
+            return;
+        }
+        this.currentAnimation?.stop().reset();
+        animation.start(true);
+        this.currentAnimation = animation;
+    }
+
+    private frameAnimatedModel(model: TransformNode, container: AssetContainer, animations: AnimationGroup[], initialAnimation: AnimationGroup) {
         let min = new Vector3(Infinity, Infinity, Infinity);
         let max = new Vector3(-Infinity, -Infinity, -Infinity);
         const sampleCount = 24;
 
-        // Include the skinned geometry throughout Idle, rather than the unposed mesh bounds.
-        for (let sample = 0; sample <= sampleCount; sample++) {
-            animation.goToFrame(animation.from + (animation.to - animation.from) * sample / sampleCount);
-            this.refreshModelBounds(container);
-            const bounds = model.getHierarchyBoundingVectors();
-            min = Vector3.Minimize(min, bounds.min);
-            max = Vector3.Maximize(max, bounds.max);
+        // Frame both poses once so switching clips does not move the camera.
+        for (const animation of animations) {
+            animation.enableBlending = false;
+            animation.start(true);
+            for (let sample = 0; sample <= sampleCount; sample++) {
+                animation.goToFrame(animation.from + (animation.to - animation.from) * sample / sampleCount);
+                this.refreshModelBounds(container);
+                const bounds = model.getHierarchyBoundingVectors();
+                min = Vector3.Minimize(min, bounds.min);
+                max = Vector3.Maximize(max, bounds.max);
+            }
+            animation.stop();
         }
-        animation.goToFrame(animation.from);
+        initialAnimation.start(true);
+        initialAnimation.goToFrame(initialAnimation.from);
+        initialAnimation.stop();
         this.refreshModelBounds(container);
 
         const center = min.add(max).scale(0.5);
@@ -116,5 +146,6 @@ export class MenuView {
     dispose() {
         this.container?.dispose();
         this.container = undefined;
+        this.currentAnimation = undefined;
     }
 }

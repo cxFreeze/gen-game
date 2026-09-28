@@ -27,7 +27,7 @@ export class GameRuntimeService {
     private readonly latestStats = signal<Readonly<GameStats>>(new EmptyStats());
     private readonly debugControls = signal<Readonly<DebugControls>>(new DebugControls());
     private session: object | undefined;
-    private menuPreview: MenuRuntime | undefined;
+    private readonly menuPreviews = new Map<HTMLCanvasElement, MenuRuntime>();
 
     readonly seed = this.currentSeed.asReadonly();
     readonly stats = this.latestStats.asReadonly();
@@ -43,28 +43,38 @@ export class GameRuntimeService {
         return seed;
     }
 
-    async startMenuPreview(canvas: HTMLCanvasElement) {
-        this.stopMenuPreview();
-        const preview = new MenuRuntime(canvas);
-        this.menuPreview = preview;
+    async startMenuPreview(canvas: HTMLCanvasElement, animation: 'Idle' | 'Running' = 'Idle') {
+        this.stopMenuPreview(canvas);
+        const preview = new MenuRuntime(canvas, animation);
+        this.menuPreviews.set(canvas, preview);
         try {
             await preview.start();
         }
         catch (error: unknown) {
-            if (this.menuPreview === preview) {
-                this.stopMenuPreview();
+            if (this.menuPreviews.get(canvas) === preview) {
+                this.stopMenuPreview(canvas);
             }
             throw error;
         }
     }
 
-    stopMenuPreview() {
-        this.menuPreview?.dispose();
-        this.menuPreview = undefined;
+    setMenuPreviewAnimation(canvas: HTMLCanvasElement, animation: 'Idle' | 'Running') {
+        this.menuPreviews.get(canvas)?.setAnimation(animation);
+    }
+
+    stopMenuPreview(canvas?: HTMLCanvasElement) {
+        if (canvas) {
+            this.menuPreviews.get(canvas)?.dispose();
+            this.menuPreviews.delete(canvas);
+            return;
+        }
+        for (const preview of this.menuPreviews.values()) {
+            preview.dispose();
+        }
+        this.menuPreviews.clear();
     }
 
     start(canvas: HTMLCanvasElement) {
-        this.stopMenuPreview();
         const session = {};
         this.session = session;
         this.latestStats.set(new EmptyStats());

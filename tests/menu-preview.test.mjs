@@ -25,7 +25,7 @@ function deferred() {
     return { promise, resolve, reject };
 }
 
-test('menu preview preserves the model hierarchy, loops only Idle, and fits narrow canvases', async () => {
+test('preview switches from Idle to Running in the same scene and fits narrow canvases', async () => {
     const engine = new NullEngine({ renderWidth: 600, renderHeight: 400 });
     const scene = new Scene(engine);
     try {
@@ -37,8 +37,8 @@ test('menu preview preserves the model hierarchy, loops only Idle, and fits narr
         container.transformNodes.push(root);
         container.meshes.push(mesh);
         for (const name of ['Idle', 'Running']) {
-            const animation = new Animation(name, 'rotation.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
-            animation.setKeys([{ frame: 0, value: 0 }, { frame: 30, value: 0.1 }]);
+            const animation = new Animation(name, name === 'Running' ? 'position.y' : 'rotation.y', 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+            animation.setKeys([{ frame: 0, value: 0 }, { frame: 30, value: name === 'Running' ? 2 : 0.1 }]);
             const group = new AnimationGroup(name, scene);
             group.addTargetedAnimation(animation, root);
             container.animationGroups.push(group);
@@ -58,10 +58,23 @@ test('menu preview preserves the model hierarchy, loops only Idle, and fits narr
         assert.equal(mesh.parent, root);
         assert.equal(root.parent.name, 'menu-player');
         assert.equal(container.animationGroups[0].isStarted, true);
-        assert.equal(container.animationGroups[0].loopAnimation, true);
-        assert.equal(Boolean(container.animationGroups[1].isStarted), false);
-        assert.equal(scene.clearColor.a, 0);
+        const initialTarget = scene.activeCamera.target.clone();
         const initialRadius = scene.activeCamera.radius;
+        assert.ok(initialTarget.y > 0.5, 'Camera must include the higher Running pose before switching');
+        view.setAnimation('Running');
+        assert.equal(Boolean(container.animationGroups[0].isStarted), false);
+        assert.equal(container.animationGroups[1].isStarted, true);
+        assert.equal(container.animationGroups[1].loopAnimation, true);
+        assert.equal(container.animationGroups[1].isAdditive, false);
+        assert.ok(scene.activeCamera.target.equals(initialTarget));
+        assert.equal(scene.activeCamera.radius, initialRadius);
+        for (const animation of container.animationGroups) {
+            assert.equal(animation.enableBlending, true);
+            assert.equal(animation.blendingSpeed, 0.06);
+        }
+        assert.equal(root.parent.name, 'menu-player');
+        assert.equal(scene.meshes.includes(mesh), true);
+        assert.equal(scene.clearColor.a, 0);
         engine.getAspectRatio = () => 0.5;
         view.resize();
         assert.ok(scene.activeCamera.radius > initialRadius);
@@ -166,7 +179,7 @@ test('leaving the menu while the model loads discards the late asset container',
 });
 
 function createMenuRuntime(load = () => Promise.resolve()) {
-    const calls = { engineDisposals: 0, sceneDisposals: 0, viewDisposals: 0, starts: 0, stops: 0, resizes: 0, viewResizes: 0, disconnects: 0, renders: 0 };
+    const calls = { engineDisposals: 0, sceneDisposals: 0, viewDisposals: 0, starts: 0, stops: 0, resizes: 0, viewResizes: 0, disconnects: 0, renders: 0, animations: [] };
     let observedCanvas;
     let render;
     let resize;
@@ -197,6 +210,9 @@ function createMenuRuntime(load = () => Promise.resolve()) {
         '../rendering/menu/menu-view': { MenuView: class {
             load(lifetimeSignal) {
  signal = lifetimeSignal; return load(); 
+}
+            setAnimation(animation) {
+ calls.animations.push(animation);
 }
             resize() {
  calls.viewResizes++; 
@@ -231,8 +247,10 @@ function createMenuRuntime(load = () => Promise.resolve()) {
 test('menu runtime renders and resizes its preview, then releases every resource once', async () => {
     const menu = createMenuRuntime();
     await menu.runtime.start();
+    menu.runtime.setAnimation('Running');
     assert.equal(menu.observedCanvas, menu.canvas);
     assert.equal(menu.calls.starts, 1);
+    assert.deepEqual(menu.calls.animations, ['Running']);
     menu.render();
     menu.resize();
     assert.equal(menu.calls.renders, 1);
@@ -263,6 +281,18 @@ test('menu runtime never starts a render loop after cancellation during model lo
     assert.equal(menu.calls.sceneDisposals, 1);
 });
 
+test('animation changes during asset loading are applied without restarting the preview', async () => {
+    const pending = deferred();
+    const menu = createMenuRuntime(() => pending.promise);
+    const startup = menu.runtime.start();
+    menu.runtime.setAnimation('Running');
+    pending.resolve();
+    await startup;
+    assert.deepEqual(menu.calls.animations, ['Running', 'Running']);
+    assert.equal(menu.calls.starts, 1);
+    menu.runtime.dispose();
+});
+
 test('menu runtime cleans up a failed preview load', async () => {
     const menu = createMenuRuntime(() => Promise.reject(new Error('Model unavailable')));
     await assert.rejects(menu.runtime.start(), /Model unavailable/);
@@ -272,26 +302,30 @@ test('menu runtime cleans up a failed preview load', async () => {
     assert.equal(menu.calls.engineDisposals, 1);
 });
 
-test('Angular starts only the preview until Play and releases it before starting the game', async () => {
+test('Angular keeps the same preview while changing animation and starting the game', async () => {
     const calls = [];
+    const previews = [];
     const { GameRuntimeService } = loadTypeScript('../src/app/core/game-runtime/game-runtime.service.ts', {
         '@angular/core': { Service: () => target => target, signal },
         '../../../game/runtime/game-runtime': { GameRuntime: { start: async () => calls.push('game') } },
         '../../../game/runtime/menu-runtime': { MenuRuntime: class {
-            async start() {
- calls.push('preview'); 
-}
-            dispose() {
- calls.push('preview-disposed'); 
-}
+            constructor() { previews.push(this); }
+            async start() { calls.push('preview'); }
+            setAnimation(animation) { calls.push(animation); }
+            dispose() { calls.push('preview-disposed'); }
         } },
         '../../../game/runtime/game-seed': { GameSeed: class {} },
     });
     const runtime = new GameRuntimeService();
-    await runtime.startMenuPreview({});
+    const canvas = {};
+    await runtime.startMenuPreview(canvas);
     assert.deepEqual(calls, ['preview']);
+    runtime.setMenuPreviewAnimation(canvas, 'Running');
     await runtime.start({});
-    assert.deepEqual(calls, ['preview', 'preview-disposed', 'game']);
+    assert.equal(previews.length, 1);
+    assert.deepEqual(calls, ['preview', 'Running', 'game']);
+    runtime.stopMenuPreview(canvas);
+    assert.deepEqual(calls, ['preview', 'Running', 'game', 'preview-disposed']);
 });
 
 test('a late failure from an old menu preview cannot stop its replacement', async () => {
@@ -314,9 +348,10 @@ test('a late failure from an old menu preview cannot stop its replacement', asyn
         '../../../game/runtime/game-seed': { GameSeed: class {} },
     });
     const runtime = new GameRuntimeService();
-    const oldStartup = runtime.startMenuPreview({});
+    const canvas = {};
+    const oldStartup = runtime.startMenuPreview(canvas);
     const failed = assert.rejects(oldStartup, /Old request failed/);
-    await runtime.startMenuPreview({});
+    await runtime.startMenuPreview(canvas);
     pending.reject(new Error('Old request failed'));
     await failed;
     assert.equal(previews[0].isDisposed, true);

@@ -15,7 +15,9 @@ export class GameSessionService {
     }
 
     async start(canvas: HTMLCanvasElement) {
-        this.dispose();
+        if (this.session) {
+            this.dispose();
+        }
         const session = {};
         this.session = session;
         this.gameUiService.initialize();
