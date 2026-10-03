@@ -31,7 +31,7 @@ export class CharacterDeathEffect {
             Math.max(0, (size.y - particleSize) / 2),
             Math.max(0, (size.z - particleSize) / 2),
         );
-        const particles = new ParticleSystem(`${mesh.name}-death-cloud`, 480, this.scene);
+        const particles = new ParticleSystem(`${mesh.name}-death-cloud`, 50, this.scene);
         this.particles = particles;
         particles.particleTexture = this.createCloudTexture(this.scene);
         particles.emitter = bounds.min.add(bounds.max).scale(0.5);
@@ -62,29 +62,35 @@ export class CharacterDeathEffect {
         };
         particles.minSize = particleSize * 0.75;
         particles.maxSize = particleSize;
-        particles.minLifeTime = 0.9;
-        particles.maxLifeTime = 1.3;
+        particles.minLifeTime = 0.55;
+        particles.maxLifeTime = 0.7;
         particles.manualEmitCount = particles.getCapacity();
         particles.emitRate = 0;
-        particles.updateSpeed = 1 / 60;
+        particles.updateSpeed = 1 / 50;
         particles.blendMode = ParticleSystem.BLENDMODE_STANDARD;
         particles.renderingGroupId = mesh.renderingGroupId;
-        particles.direction1 = new Vector3(-size.x * 0.08, size.y * 0.06, -size.z * 0.08);
-        particles.direction2 = new Vector3(size.x * 0.08, size.y * 0.16, size.z * 0.08);
-        particles.minEmitPower = 0.5;
-        particles.maxEmitPower = 1;
+        const dispersionDistance = Math.max(size.x, size.y, size.z);
+        particles.direction1 = new Vector3(-dispersionDistance * 0.9, dispersionDistance * 0.15, -dispersionDistance * 0.9);
+        particles.direction2 = new Vector3(dispersionDistance * 0.9, dispersionDistance * 0.65, dispersionDistance * 0.9);
+        particles.minEmitPower = 1;
+        particles.maxEmitPower = 1.5;
         particles.minAngularSpeed = -0.6;
         particles.maxAngularSpeed = 0.6;
         const lightColor = new Color4(0.86, 0.82, 0.94, 1);
         const shadowColor = new Color4(0.56, 0.51, 0.68, 1);
-        particles.addColorGradient(0, lightColor, shadowColor);
-        particles.addColorGradient(0.25, lightColor, shadowColor);
+        particles.addColorGradient(0,
+            new Color4(lightColor.r, lightColor.g, lightColor.b, 0),
+            new Color4(shadowColor.r, shadowColor.g, shadowColor.b, 0),
+        );
+        particles.addColorGradient(0.12, lightColor, shadowColor);
+        particles.addColorGradient(0.22, lightColor, shadowColor);
+        particles.addColorGradient(0.6, new Color4(lightColor.r, lightColor.g, lightColor.b, 0.15));
         particles.addColorGradient(1, new Color4(lightColor.r, lightColor.g, lightColor.b, 0));
         particles.addSizeGradient(0, particles.minSize, particles.maxSize);
-        particles.addSizeGradient(0.2, particles.minSize, particles.maxSize);
-        particles.addSizeGradient(1, particles.minSize * 1.8, particles.maxSize * 1.8);
+        particles.addSizeGradient(0.22, particles.minSize, particles.maxSize);
+        particles.addSizeGradient(1, particles.minSize * 2.6, particles.maxSize * 2.6);
         particles.addVelocityGradient(0, 0);
-        particles.addVelocityGradient(0.2, 0);
+        particles.addVelocityGradient(0.22, 0);
         particles.addVelocityGradient(0.4, 1);
         particles.addVelocityGradient(1, 1);
         particles.onBeforeDrawParticlesObservable.add(() => this.hasRenderedParticles = true);

@@ -154,6 +154,12 @@ test('death cloud follows scaled, rotated model bounds and covers the model befo
     for (let frame = 0; frame < 7; frame++) {
         renderDeathFrame(scene, particles);
         assert.equal(mesh.isEnabled(), true);
+        if (frame === 0) {
+            assert.ok(particles.particles.every(particle => particle.color.a === 0), 'Cloud must start transparent');
+        }
+        if (frame === 2) {
+            assert.ok(particles.particles.every(particle => particle.color.a > 0 && particle.color.a < 1), 'Cloud must fade in while the model remains visible');
+        }
     }
     assert.equal(particles.getActiveCount(), particles.getCapacity());
     assert.ok(particles.particles.every(particle => particle.size >= particles.minSize && particle.size <= particles.maxSize));
@@ -162,15 +168,20 @@ test('death cloud follows scaled, rotated model bounds and covers the model befo
     assert.equal(mesh.isDisposed(), false);
     assert.ok(particles.particles.every(particle => particle.color.a === 1), 'Cloud must remain opaque while hiding the model');
 
-    for (let frame = 0; frame < 30; frame++) {
+    const coveringPositions = particles.particles.map(particle => particle.position.clone());
+    for (let frame = 0; frame < 18; frame++) {
         renderDeathFrame(scene, particles);
     }
-    assert.ok(particles.particles.some(particle => particle.color.a > 0 && particle.color.a < 1));
+    assert.ok(particles.particles.every(particle => particle.color.a > 0 && particle.color.a < 0.25), 'Smoke must be mostly faded shortly after the model disappears');
     assert.ok(particles.particles.some(particle => particle.size > particles.maxSize));
-    for (let frame = 0; frame < 50 && !mesh.isDisposed(); frame++) {
+    const modelSize = Math.max(size.x, size.y, size.z);
+    assert.ok(particles.particles.some((particle, index) => {
+        return Vector3.Distance(particle.position, coveringPositions[index]) > modelSize * 0.3;
+    }), 'Cloud must disperse well beyond its initial covering positions');
+    for (let frame = 0; frame < 19 && !mesh.isDisposed(); frame++) {
         renderDeathFrame(scene, particles);
     }
-    assert.equal(mesh.isDisposed(), true);
+    assert.equal(mesh.isDisposed(), true, 'The entire death effect must finish within 0.75 seconds');
     assert.equal(getRemovals(), 1);
     assert.equal(scene.particleSystems.length, 0);
     assert.equal(scene.textures.length, 0);

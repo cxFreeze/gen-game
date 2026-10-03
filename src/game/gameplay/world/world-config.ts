@@ -12,6 +12,6 @@ export const worldConfig = {
     spawnNoDrawZone: 50,
     hugeSizeRatio: 3,
     hugeSizeChance: 5,
-    zoneCount: { [ZoneType.town]: 2 },
+    zoneCount: { [ZoneType.town]: 300 },
     spawnMinDistanceFromPlayerSpawn: 200,
 };
