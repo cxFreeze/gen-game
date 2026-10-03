@@ -19,6 +19,10 @@ export class Biomes {
                 {
                     asset: 'grass',
                     drawCount: 280
+                },
+                {
+                    asset: 'flower',
+                    drawCount: 4
                 }
             ],
             enemySpawns: [{

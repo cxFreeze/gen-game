@@ -512,7 +512,7 @@ export class WorldRenderer {
         }
 
         items.some((item) => {
-            if (item.asset.type === 'ground') {
+            if (item.asset.type === 'ground' || item.asset.ignoreCollisions) {
                 return false;
             }
             if (mesh.intersectsMesh(item.mesh, true)) {

@@ -1,10 +1,12 @@
 import { worldConfig } from '../../gameplay/world/world-config';
 import { AnimationGroup } from '@babylonjs/core/Animations/animationGroup.js';
 import { AssetContainer } from '@babylonjs/core/assetContainer.js';
+import { VertexBuffer } from '@babylonjs/core/Buffers/buffer.js';
 import { loadAssetContainerAsync } from '@babylonjs/core/Loading/sceneLoader.js';
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture.js';
 import { Color3 } from '@babylonjs/core/Maths/math.color.js';
+import { Matrix } from '@babylonjs/core/Maths/math.vector.js';
 import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
 import { SpriteManager } from '@babylonjs/core/Sprites/spriteManager.js';
@@ -18,6 +20,7 @@ interface BiomeAssetByType {
     ground: GG3DAsset;
     tree: GG3DAsset;
     rock: GG3DAsset;
+    flower: GG3DAsset;
     grass: GGSpriteAsset;
 }
 
@@ -72,6 +75,7 @@ export class AssetManager {
             ground: new Array<GG3DAsset>(),
             tree: new Array<GG3DAsset>(),
             rock: new Array<GG3DAsset>(),
+            flower: new Array<GG3DAsset>(),
             grass: new Array<GGSpriteAsset>()
         }
     };
@@ -214,6 +218,21 @@ export class AssetManager {
         rock2.maxVerticalDisplacement = 0.3;
 
         this.biomeAssets[BiomeType.forest].rock.push(rock1, rock2);
+
+        for (const name of ['flower1', 'flower2']) {
+            const mesh = await this.load3DAsset(`${this.Assets3dPath}/forest/${name}.glb`, signal);
+            signal.throwIfAborted();
+            const bounds = mesh.getBoundingInfo().boundingBox;
+            mesh.bakeTransformIntoVertices(Matrix.Translation(-bounds.center.x, -bounds.minimum.y, -bounds.center.z));
+            const flower = new GG3DAsset(name, mesh);
+            flower.safeZone = 25;
+            flower.displacementRatio = 0.2;
+            flower.sizeRatio = 0.3;
+            flower.scale = 12 / flower.sizeY;
+            flower.ignoreCollisions = true;
+            flower.isPickable = false;
+            this.biomeAssets[BiomeType.forest].flower.push(flower);
+        }
 
         const grassSpriteManager = new SpriteManager('grassManager', `${this.texturesPath}/grass.png`, 10000, { width: 156, height: 153 }, GameRuntime.scene);
         const grassSprite = new GGSpriteAsset('grass', grassSpriteManager);
@@ -387,6 +406,20 @@ export class AssetManager {
 
         if (meshes.length === 0) {
             throw new Error(`No mesh found in 3D asset: ${path}`);
+        }
+
+        if (meshes.length > 1) {
+            // Some models mix parts with and without normals or texture coordinates.
+            const hasNormals = meshes.some(mesh => mesh.isVerticesDataPresent(VertexBuffer.NormalKind));
+            const hasUVs = meshes.some(mesh => mesh.isVerticesDataPresent(VertexBuffer.UVKind));
+            for (const mesh of meshes) {
+                if (hasNormals && !mesh.isVerticesDataPresent(VertexBuffer.NormalKind)) {
+                    mesh.createNormals(false);
+                }
+                if (hasUVs && !mesh.isVerticesDataPresent(VertexBuffer.UVKind)) {
+                    mesh.setVerticesData(VertexBuffer.UVKind, new Float32Array(mesh.getTotalVertices() * 2));
+                }
+            }
         }
 
         const mesh = meshes.length > 1 ? Mesh.MergeMeshes(meshes, true, true, undefined, false, true) : meshes[0];
