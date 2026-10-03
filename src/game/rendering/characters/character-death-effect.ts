@@ -25,13 +25,13 @@ export class CharacterDeathEffect {
         }
         const bounds = mesh.getHierarchyBoundingVectors(true, part => part.isVisible && part.isEnabled());
         const size = bounds.max.subtract(bounds.min);
-        const particleSize = Math.max(0.1, Math.min(size.x, size.y, size.z)) * 0.9;
+        const particleSize = Math.max(0.1, Math.min(size.x, size.y, size.z)) * 1.2;
         const halfExtents = new Vector3(
             Math.max(0, (size.x - particleSize) / 2),
             Math.max(0, (size.y - particleSize) / 2),
             Math.max(0, (size.z - particleSize) / 2),
         );
-        const particles = new ParticleSystem(`${mesh.name}-death-cloud`, 50, this.scene);
+        const particles = new ParticleSystem(`${mesh.name}-death-cloud`, 35, this.scene);
         this.particles = particles;
         particles.particleTexture = this.createCloudTexture(this.scene);
         particles.emitter = bounds.min.add(bounds.max).scale(0.5);
@@ -66,10 +66,10 @@ export class CharacterDeathEffect {
         particles.maxLifeTime = 0.7;
         particles.manualEmitCount = particles.getCapacity();
         particles.emitRate = 0;
-        particles.updateSpeed = 1 / 50;
+        particles.updateSpeed = 1 / 35;
         particles.blendMode = ParticleSystem.BLENDMODE_STANDARD;
         particles.renderingGroupId = mesh.renderingGroupId;
-        const dispersionDistance = Math.max(size.x, size.y, size.z);
+        const dispersionDistance = Math.max(size.x, size.y, size.z) * 0.6;
         particles.direction1 = new Vector3(-dispersionDistance * 0.9, dispersionDistance * 0.15, -dispersionDistance * 0.9);
         particles.direction2 = new Vector3(dispersionDistance * 0.9, dispersionDistance * 0.65, dispersionDistance * 0.9);
         particles.minEmitPower = 1;
