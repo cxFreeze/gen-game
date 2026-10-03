@@ -11,7 +11,7 @@ import { WorldRenderer } from '../rendering/world/world-renderer';
 import { configureBabylon } from '../rendering/scene/babylon-configuration';
 import { DebugManager } from './debug';
 import { GameLifetime } from './game-lifetime';
-import { publishDebugStats, resetDebugStats } from './game-observables';
+import { publishDebugStats, publishPlayerHealth, resetDebugStats, resetPlayerHealth } from './game-observables';
 import { Performance } from '../rendering/scene/performance';
 
 export class GameRuntime {
@@ -104,6 +104,7 @@ export class GameRuntime {
         this.presentation = presentation;
         const game = new Game(presentation);
         this.game = game;
+        publishPlayerHealth({ current: game.player.health, max: game.player.maxHealth });
 
         const worldManager = new WorldView(presentation.playerView);
 
@@ -119,6 +120,7 @@ export class GameRuntime {
             const time = engine.getDeltaTime();
             PlayerInputs.checkInputs();
             worldManager.present(game.update(PlayerInputs.getCommands(), time));
+            publishPlayerHealth({ current: game.player.health, max: game.player.maxHealth });
 
             if (engine.frameId % 10 === 0) {
                 publishDebugStats({
@@ -154,5 +156,6 @@ export class GameRuntime {
         this._scene = undefined;
         this._engine = undefined;
         resetDebugStats();
+        resetPlayerHealth();
     }
 }

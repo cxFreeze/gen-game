@@ -91,6 +91,10 @@ export class Character {
         return this.state.health;
     }
 
+    get maxHealth() {
+        return this.state.maxHealth;
+    }
+
     move(x: number, z: number, direction: CharDirection) {
         if (this.state.isDead || this.hasDisposed) {
             return;

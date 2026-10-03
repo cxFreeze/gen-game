@@ -1,0 +1,33 @@
+:host {
+    display: block;
+    width: var(--size-500);
+    height: var(--size-500);
+    flex-shrink: 0;
+}
+
+svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    shape-rendering: crispEdges;
+}
+
+.outline {
+    fill: none;
+    stroke: #d99696;
+    stroke-width: 1;
+    stroke-linejoin: miter;
+}
+
+.half-fill,
+.is-filled .outline {
+    fill: #e53945;
+}
+
+.is-filled .outline {
+    stroke: #ff8a8e;
+}
+
+.highlight {
+    fill: #ffb0ad;
+}

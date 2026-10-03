@@ -63,6 +63,7 @@ function createEngine(t) {
         dispose() {
             this.isReady = false;
             observables.resetDebugStats();
+            observables.resetPlayerHealth();
         },
     };
     const { GameRuntimeService } = loadTypeScript('../src/app/core/game-runtime/game-runtime.service.ts', {
@@ -138,5 +139,29 @@ test('destroying the Angular injector closes the statistics subscription', async
     injector.destroy();
     publishDebugStats({ ...stats, fps: 10 });
     assert.equal(engine.stats().fps, 60);
+    engine.dispose();
+});
+
+test('player health reaches Angular without duplicate updates and releases its subscription', t => {
+    const { engine, injector, playerHealth$, publishPlayerHealth, resetPlayerHealth } = createEngine(t);
+    const updates = [];
+    const subscription = playerHealth$.subscribe(health => updates.push({ ...health }));
+    t.after(() => subscription.unsubscribe());
+    assert.deepEqual({ ...engine.playerHealth() }, { current: 0, max: 0 });
+    const health = { current: 3, max: 5 };
+    publishPlayerHealth(health);
+    health.current = 0;
+    assert.deepEqual({ ...engine.playerHealth() }, { current: 3, max: 5 });
+    publishPlayerHealth({ current: 3, max: 5 });
+    assert.equal(updates.length, 2);
+    publishPlayerHealth({ current: 3, max: 6 });
+    assert.deepEqual({ ...engine.playerHealth() }, { current: 3, max: 6 });
+    resetPlayerHealth();
+    assert.deepEqual({ ...engine.playerHealth() }, { current: 0, max: 0 });
+    publishPlayerHealth({ current: 5, max: 5 });
+    injector.destroy();
+    publishPlayerHealth({ current: 1, max: 5 });
+    assert.deepEqual({ ...engine.playerHealth() }, { current: 5, max: 5 });
+    assert.equal(engine.playerHealth.set, undefined);
     engine.dispose();
 });

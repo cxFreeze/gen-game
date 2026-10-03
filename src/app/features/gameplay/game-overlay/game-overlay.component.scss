@@ -1,0 +1,17 @@
+:host {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+gg-health-bar {
+    position: absolute;
+    top: var(--size-300);
+    left: var(--size-300);
+}
+
+gg-debug-panel {
+    width: 100%;
+    position: absolute;
+    padding: var(--size-100);
+}

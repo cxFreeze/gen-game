@@ -1,9 +1,9 @@
 import { Service, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { debugStats$, playerHealth$ } from '../../../game/runtime/game-observables';
 import { GameRuntime } from '../../../game/runtime/game-runtime';
-import { debugStats$ } from '../../../game/runtime/game-observables';
-import { MenuRuntime } from '../../../game/runtime/menu-runtime';
 import { GameSeed } from '../../../game/runtime/game-seed';
+import { MenuRuntime } from '../../../game/runtime/menu-runtime';
 
 export type { GameStats } from '../../../game/runtime/game-stats.interface';
 
@@ -17,12 +17,12 @@ class DebugControls {
 @Service()
 export class GameRuntimeService {
     private readonly currentSeed = signal('');
-    private readonly latestStats = toSignal(debugStats$, { requireSync: true });
     private readonly debugControls = signal<Readonly<DebugControls>>(new DebugControls());
     private readonly menuPreviews = new Map<HTMLCanvasElement, MenuRuntime>();
 
     readonly seed = this.currentSeed.asReadonly();
-    readonly stats = this.latestStats;
+    readonly stats = toSignal(debugStats$, { requireSync: true });
+    readonly playerHealth = toSignal(playerHealth$, { requireSync: true });
     readonly controls = this.debugControls.asReadonly();
 
     get loaded$() {

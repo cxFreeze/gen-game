@@ -46,6 +46,7 @@ function createRuntime(loadAssets) {
     const worldViews = [];
     const cleanups = new Map();
     const counts = { players: 0, inputs: 0 };
+    const players = [];
     const manager = name => ({
         getInstance: () => ({
             createLightning() {},
@@ -95,8 +96,10 @@ function createRuntime(loadAssets) {
         '@babylonjs/core/Engines/engine.js': { Engine },
         '@babylonjs/core/scene.js': { Scene, ScenePerformancePriority: { Intermediate: 1 } },
         '../gameplay/game': { Game: class {
+            player = { health: 100, maxHealth: 100 };
             constructor() {
                 counts.players++;
+                players.push(this.player);
             }
             update() {}
             dispose() {
@@ -139,7 +142,7 @@ function createRuntime(loadAssets) {
         './game-observables': observables,
         '../rendering/scene/performance': { Performance: { ...manager('performance'), setPerformance() {} } },
     }, { window: new EventTarget() });
-    return { GameRuntime, engines, scenes, counts, cleanups, playerViews, worldViews, ...observables };
+    return { GameRuntime, engines, scenes, counts, cleanups, players, playerViews, worldViews, ...observables };
 }
 
 function deferred() {
@@ -232,7 +235,42 @@ test('runtime publishes debug statistics every ten frames and ignores stopped re
     assert.equal(updates.length, 4);
 });
 
-function createSessionService({ GameRuntime, debugStats$ }, t) {
+test('runtime publishes initial health, damage, healing, death, and resets between sessions', async t => {
+    const runtime = createRuntime(() => Promise.resolve());
+    const updates = [];
+    const subscription = runtime.playerHealth$.subscribe(health => updates.push({ ...health }));
+    t.after(() => {
+        subscription.unsubscribe();
+        runtime.GameRuntime.dispose();
+    });
+    assert.deepEqual(updates.at(-1), { current: 0, max: 0 });
+    await runtime.GameRuntime.start({});
+    assert.deepEqual(updates.at(-1), { current: 100, max: 100 });
+    const engine = runtime.engines[0];
+    const player = runtime.players[0];
+    const initialUpdateCount = updates.length;
+    engine.render();
+    assert.equal(updates.length, initialUpdateCount);
+    player.health = 75;
+    engine.render();
+    assert.deepEqual(updates.at(-1), { current: 75, max: 100 });
+    player.health = 90;
+    engine.render();
+    assert.deepEqual(updates.at(-1), { current: 90, max: 100 });
+    player.health = 0;
+    engine.render();
+    assert.deepEqual(updates.at(-1), { current: 0, max: 100 });
+    await runtime.GameRuntime.start({});
+    assert.deepEqual(updates.at(-2), { current: 0, max: 0 });
+    assert.deepEqual(updates.at(-1), { current: 100, max: 100 });
+    const restartUpdateCount = updates.length;
+    engine.render();
+    assert.equal(updates.length, restartUpdateCount);
+    runtime.GameRuntime.dispose();
+    assert.deepEqual(updates.at(-1), { current: 0, max: 0 });
+});
+
+function createSessionService({ GameRuntime, debugStats$, playerHealth$ }, t) {
     const destroyRef = {};
     const uiStoreToken = {};
     const errors = [];
@@ -240,7 +278,7 @@ function createSessionService({ GameRuntime, debugStats$ }, t) {
     const { GameRuntimeService } = loadTypeScript('../src/app/core/game-runtime/game-runtime.service.ts', {
         '@angular/core': { Service: () => target => target, signal },
         '../../../game/runtime/game-runtime': { GameRuntime },
-        '../../../game/runtime/game-observables': { debugStats$ },
+        '../../../game/runtime/game-observables': { debugStats$, playerHealth$ },
         '../../../game/runtime/menu-runtime': { MenuRuntime: class {} },
         '../../../game/runtime/game-seed': { GameSeed: class { value = 'test'; } },
     });

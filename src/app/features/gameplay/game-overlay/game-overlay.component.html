@@ -1,1 +1,4 @@
 <gg-debug-panel />
+@if (playerHealth().max > 0) {
+    <gg-health-bar [current]="playerHealth().current" [max]="playerHealth().max" />
+}

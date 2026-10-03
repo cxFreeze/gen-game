@@ -1,7 +1,7 @@
 import type { CharacterStats } from './character-stats.interface';
 
 export class CharacterState {
-    private readonly maxHealth;
+    readonly maxHealth;
     private readonly fireRate;
     private currentHealth;
     private hasDied = false;

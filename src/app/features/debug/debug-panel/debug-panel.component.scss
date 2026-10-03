@@ -1,9 +1,13 @@
+:host {
+    display: flex;
+    justify-content: space-between;
+    z-index: 100;
+}
+
 .debug-panel {
-    position: absolute;
-    z-index: 10;
-    top: var(--size-125);
-    left: var(--size-125);
+    max-width: 100%;
     padding: var(--size-200);
+    pointer-events: auto;
 }
 
 h3 {
