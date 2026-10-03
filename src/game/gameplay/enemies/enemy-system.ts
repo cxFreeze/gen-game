@@ -19,6 +19,10 @@ export class EnemySystem {
     ) {}
 
     spawnEnemy(type: EnemyAsset, position: Position, chunk: string, slot: string): boolean {
+        // A remembered death must not recreate a model or replay its death effect.
+        if (this.chunks.get(chunk)?.get(slot)?.isDead) {
+            return true;
+        }
         const name = `char-${type}${this.enemyCount++}`;
         const body = this.view.createEnemy(name, type, position);
         const enemy = new Enemy(body, EnemyTypes[type], this.projectiles);

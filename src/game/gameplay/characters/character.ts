@@ -59,7 +59,7 @@ export class Character {
         }
         this.state.takeDamage(damage);
         if (this.state.isDead) {
-            this.dispose();
+            this.die();
         }
     }
 
@@ -124,6 +124,9 @@ export class Character {
 
     die() {
         this.state.die();
-        this.dispose();
+        if (!this.hasDisposed) {
+            this.hasDisposed = true;
+            this.body.showDeath();
+        }
     }
 }

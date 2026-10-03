@@ -9,6 +9,8 @@ export interface CharacterBody {
     rotate(rotation: number): void;
     intersectsProjectile(id: string): boolean;
     hasLineOfSight(target: Position, range: number): boolean;
+    /** Presents death and releases the body when its visual transition finishes. */
+    showDeath(): void;
     dispose(): void;
 }
 export interface PlayerBody extends CharacterBody {

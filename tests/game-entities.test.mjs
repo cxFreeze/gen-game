@@ -17,6 +17,7 @@ function createBody(name = 'player') {
         position: { x: 0, y: 0, z: 0 },
         rotation: 0,
         disposeCount: 0,
+        deathCount: 0,
         presentations: [],
         translate(x, z) {
             body.position = { x: body.position.x + x, y: body.position.y, z: body.position.z + z };
@@ -31,6 +32,9 @@ function createBody(name = 'player') {
         hasLineOfSight: () => true,
         present(state) {
             body.presentations.push(state);
+        },
+        showDeath() {
+            body.deathCount++;
         },
         dispose() {
             body.disposeCount++;
@@ -123,7 +127,8 @@ test('character slides along a collision and restores a position rejected by gam
     character.moveBy(10, 0);
     assert.equal(character.isDead, true);
     assert.equal(character.position.x, 10);
-    assert.equal(body.disposeCount, 1);
+    assert.equal(body.deathCount, 1);
+    assert.equal(body.disposeCount, 0);
 });
 
 test('player owns movement, firing cooldowns, and immunity to its own projectiles', context => {
@@ -152,7 +157,8 @@ test('player owns movement, firing cooldowns, and immunity to its own projectile
     now = 2500;
     player.update(commands, 1000);
     assert.equal(shots.length, 2);
-    assert.equal(body.disposeCount, 1);
+    assert.equal(body.deathCount, 1);
+    assert.equal(body.disposeCount, 0);
 });
 
 test('enemy combines detection, aim, line of sight, and firing in gameplay', context => {
@@ -170,6 +176,50 @@ test('enemy combines detection, aim, line of sight, and firing in gameplay', con
     body.hasLineOfSight = () => false;
     enemy.update({ position: { x: 0, y: 0, z: 50 }, isDead: false }, 150);
     assert.equal(shots.length, 1);
+});
+
+test('death is presented once while ordinary disposal skips the death transition', () => {
+    const projectiles = new RecordedProjectiles();
+    for (const shouldTakeDamage of [false, true]) {
+        const body = createBody('enemy');
+        const character = new Character(body, playerConfig.stats, projectiles);
+        if (shouldTakeDamage) {
+            character.takeDamage(character.maxHealth);
+        }
+        else {
+            character.die();
+        }
+        character.die();
+        character.takeDamage(1);
+        character.dispose();
+        character.moveBy(10, 10);
+        assert.equal(character.isDead, true);
+        assert.equal(character.isDisposed, true);
+        assert.equal(character.tryFire(), false);
+        assert.equal(body.deathCount, 1);
+        assert.equal(body.disposeCount, 0);
+        assert.deepEqual(body.position, { x: 0, y: 0, z: 0 });
+    }
+    const body = createBody();
+    const character = new Character(body, playerConfig.stats, projectiles);
+    character.dispose();
+    character.dispose();
+    assert.equal(body.disposeCount, 1);
+    assert.equal(body.deathCount, 0);
+});
+
+test('reloading a chunk does not create a model or replay death for a defeated enemy', () => {
+    const view = new TestGameView();
+    const manager = new EnemySystem({ position: { x: 0, y: 0, z: 0 }, isDead: false }, new RecordedProjectiles(), view);
+    manager.spawnEnemy('blob', { x: 0, y: 0, z: 0 }, 'chunk', 'blob/1');
+    assert.equal(view.enemyBodies.length, 1);
+    manager.checkDamageCollisions({ id: 'projectile', ownerName: 'player', damage: 10000 });
+    assert.equal(view.enemyBodies[0].deathCount, 1);
+    manager.deleteEnemyChunk('chunk');
+    assert.equal(manager.spawnEnemy('blob', { x: 0, y: 0, z: 0 }, 'chunk', 'blob/1'), true);
+    assert.equal(view.enemyBodies.length, 1);
+    assert.equal(view.enemyBodies[0].deathCount, 1);
+    manager.dispose();
 });
 
 test('projectile system updates adjacent expired projectiles and never skips one', context => {

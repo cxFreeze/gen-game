@@ -67,6 +67,15 @@ export class PlayerView extends CharacterView implements PlayerBody {
         this.aimLine.rotation.y = state.aimDirection;
     }
 
+    override showDeath() {
+        if (this.isDisposed) {
+            return;
+        }
+        this.aimLine.isVisible = false;
+        this.asset.animations[this.currentAnimation]?.stop();
+        super.showDeath();
+    }
+
     override dispose() {
         if (this.isDisposed) {
             return;
