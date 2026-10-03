@@ -3,7 +3,9 @@ import test from 'node:test';
 import { NullEngine } from '@babylonjs/core/Engines/nullEngine.js';
 import { Scene } from '@babylonjs/core/scene.js';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
+import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import '@babylonjs/core/Collisions/collisionCoordinator.js';
+import { EMPTY, NEVER } from 'rxjs';
 import { loadTypeScript } from './load-typescript.mjs';
 
 test('player view keeps physical accessors live and releases its meshes without gameplay logic', () => {
@@ -51,4 +53,33 @@ test('player view keeps physical accessors live and releases its meshes without 
         scene.dispose();
         engine.dispose();
     }
+});
+
+test('camera FXAA stays on the game engine when a newer menu preview is disposed', t => {
+    const gameEngine = new NullEngine();
+    const gameScene = new Scene(gameEngine);
+    const previewEngine = new NullEngine();
+    new Scene(previewEngine);
+    t.after(() => {
+        previewEngine.dispose();
+        gameEngine.dispose();
+    });
+    const { WorldView } = loadTypeScript('../src/game/rendering/camera/world-view.ts', {
+        '../../runtime/game-runtime': {
+            GameRuntime: { scene: gameScene, engine: gameEngine, hideLoadingScreen$: EMPTY, disposed$: NEVER },
+        },
+        '../lighting/lighting': { LightingManager: { getInstance: () => ({ setSunPosition() {} }) } },
+    });
+    const player = MeshBuilder.CreateBox('player', {}, gameScene);
+    const view = new WorldView({ position: Vector3.Zero(), mesh: player });
+    view.generateWorld();
+
+    const fxaa = gameScene.postProcesses.find(postProcess => postProcess.name === 'fxaa');
+    assert.ok(fxaa);
+    assert.equal(fxaa.getEngine() === gameEngine, true);
+    assert.equal(fxaa._effectWrapper.options.engine === gameEngine, true, 'FXAA shaders must use the same engine as the game camera');
+
+    previewEngine.dispose();
+    assert.equal(fxaa._effectWrapper.options.engine.isDisposed, false);
+    assert.equal(gameScene.activeCamera._postProcesses.includes(fxaa), true);
 });

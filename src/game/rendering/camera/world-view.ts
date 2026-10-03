@@ -45,7 +45,7 @@ export class WorldView {
 
     generateWorld() {
         this._camera = new UniversalCamera('camera', new Vector3(0, 0, 0), GameRuntime.scene);
-        new FxaaPostProcess('fxaa', 1.0, this.camera);
+        new FxaaPostProcess('fxaa', 1.0, this.camera, undefined, GameRuntime.engine);
 
         this.setCameraPosition(this.player.position.x, this.player.position.z);
 

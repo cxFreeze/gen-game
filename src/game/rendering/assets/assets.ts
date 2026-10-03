@@ -142,7 +142,7 @@ export class AssetManager {
         this.worldAssets.set('player', player);
 
         const oceanTexture = this.loadTextureAsset('waterGround', `${this.texturesPath}/water_texture.jpg`);
-        const ocean = new GG3DAsset('ocean', MeshBuilder.CreateGround('ocean', { width: this.groundTileSize, height: this.groundTileSize }), oceanTexture.material);
+        const ocean = new GG3DAsset('ocean', MeshBuilder.CreateGround('ocean', { width: this.groundTileSize, height: this.groundTileSize }, GameRuntime.scene), oceanTexture.material);
         ocean.height = this.groundTileSize;
         ocean.width = this.groundTileSize;
         ocean.safeZone = this.groundTileSize;
@@ -170,7 +170,7 @@ export class AssetManager {
 
     private static async loadForestAssets(signal: AbortSignal) {
         const forestTexture = this.loadTextureAsset('forestGround', `${this.texturesPath}/forest/ground_texture.jpg`);
-        const forestGround = new GG3DAsset('forestGround', MeshBuilder.CreateGround('forestGround', { width: this.groundTileSize, height: this.groundTileSize }), forestTexture.material);
+        const forestGround = new GG3DAsset('forestGround', MeshBuilder.CreateGround('forestGround', { width: this.groundTileSize, height: this.groundTileSize }, GameRuntime.scene), forestTexture.material);
         forestGround.height = this.groundTileSize;
         forestGround.width = this.groundTileSize;
         forestGround.safeZone = this.groundTileSize;
