@@ -10,11 +10,11 @@ export class Projectile {
     private hasDestroyed = false;
     readonly damage;
 
-    constructor(id: string, infos: ProjectileInfos, ownerName: string, body: ProjectileBody) {
+    constructor(id: string, infos: ProjectileInfos, ownerName: string, body: ProjectileBody, private readonly getTime: () => number = () => Date.now()) {
         this.id = id;
         this.ownerName = ownerName;
         this.body = body;
-        this.trajectory = new ProjectileTrajectory(infos, body.position, Date.now(), body.obstacleDistance);
+        this.trajectory = new ProjectileTrajectory(infos, body.position, this.getTime(), body.obstacleDistance);
         this.damage = infos.damage;
     }
 
@@ -34,7 +34,7 @@ export class Projectile {
         if (this.hasDestroyed) {
             return;
         }
-        const { position, hasReachedLimit } = this.trajectory.sample(Date.now());
+        const { position, hasReachedLimit } = this.trajectory.sample(this.getTime());
         this.body.setPosition(position);
         if (hasReachedLimit || !isInWorldBounds(position.x, position.z, worldConfig.safeDrawWorldSize)) {
             this.destroy();

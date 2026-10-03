@@ -42,6 +42,10 @@ function createBody(name = 'player') {
 class RecordedProjectiles {
     shots = [];
 
+    getTime() {
+        return Date.now();
+    }
+
     createProjectile(infos, owner) {
         this.shots.push({ infos, owner });
     }
@@ -279,6 +283,32 @@ test('a complete gameplay session calls its view and releases its entities', con
     assert.equal(view.projectileBodies.length, 1);
     assert.equal(view.projectileBodies[0].disposals, 1);
     assert.ok(view.enemyBodies.every(enemyBody => enemyBody.disposeCount === 1));
+});
+
+test('gameplay projectiles and firing cooldowns advance only with simulated game time', context => {
+    let now = 1000;
+    context.mock.method(Date, 'now', () => now);
+    const view = new TestGameView();
+    const game = new Game(view);
+    context.after(() => game.dispose());
+    for (const body of view.enemyBodies) {
+        body.intersectsProjectile = () => false;
+    }
+    const commands = { forwardPressed: false, backwardsPressed: false, leftPressed: false, rightPressed: false, aimDirection: 0, isFiring: true };
+    game.update(commands, 16);
+    assert.equal(view.projectileBodies.length, 1);
+    const projectileBody = view.projectileBodies[0];
+    const origin = { ...projectileBody.position };
+
+    now += 60000;
+    game.update(commands, 16);
+    assert.equal(view.projectileBodies.length, 1, 'A pause must not finish the firing cooldown');
+    assert.equal(projectileBody.disposals, 0, 'A projectile must not expire during a pause');
+    const expectedDistance = playerConfig.stats.projectileSpeed * 30 * 16 / 1000;
+    assert.ok(Math.abs(projectileBody.position.z - origin.z - expectedDistance) < 1e-8);
+
+    game.update(commands, 500);
+    assert.equal(view.projectileBodies.length, 2, 'Firing resumes when the game-time cooldown elapses');
 });
 
 test('game creates and disposes enemies as its world loads and unloads chunks', () => {

@@ -20,6 +20,7 @@ export class GameRuntime {
     private static game: Game | undefined;
     private static presentation: GamePresentation | undefined;
     private static debugManager: DebugManager | undefined;
+    private static isPaused = false;
 
     public static get debug() {
         if (!this.debugManager) {
@@ -46,6 +47,18 @@ export class GameRuntime {
 
     public static schedule(callback: () => void, milliseconds: number) {
         this.lifetime?.schedule(callback, milliseconds);
+    }
+
+    public static setPaused(isPaused: boolean) {
+        if (!this.isReady || this.isPaused === isPaused) {
+            return;
+        }
+        this.isPaused = isPaused;
+        this.lifetime?.setPaused(isPaused);
+        PlayerInputs.setPaused(isPaused);
+        if (!isPaused) {
+            this._scene?.resetLastAnimationTimeFrame();
+        }
     }
 
     private static _scene: Scene | undefined;
@@ -113,7 +126,7 @@ export class GameRuntime {
         PlayerInputs.init(canvas);
 
         engine.runRenderLoop(() => {
-            if (signal.aborted) {
+            if (signal.aborted || this.isPaused) {
                 return;
             }
             scene.render(false);
@@ -137,6 +150,7 @@ export class GameRuntime {
     }
 
     public static dispose() {
+        this.isPaused = false;
         window.removeEventListener('resize', this.resizeHandler);
         this._engine?.stopRenderLoop();
         this.lifetime?.dispose();

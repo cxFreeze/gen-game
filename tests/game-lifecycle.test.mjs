@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { setTimeout as wait } from 'node:timers/promises';
 import test from 'node:test';
 import { firstValueFrom } from 'rxjs';
-import { Injector, runInInjectionContext, signal } from '@angular/core';
+import { computed, Injector, runInInjectionContext, signal } from '@angular/core';
 import { GameLifetime } from '../src/game/runtime/game-lifetime.ts';
 import { loadTypeScript } from './load-typescript.mjs';
 
@@ -38,6 +38,34 @@ test('a new session receives its own loading notification after the previous one
     second.dispose();
 });
 
+test('pausing preserves deferred work delays, including work scheduled while paused', t => {
+    t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: 1000 });
+    const lifetime = new GameLifetime();
+    t.after(() => lifetime.dispose());
+    const calls = [];
+    lifetime.schedule(() => calls.push('before-pause'), 100);
+    t.mock.timers.tick(25);
+    lifetime.setPaused(true);
+    lifetime.setPaused(true);
+    lifetime.schedule(() => calls.push('during-pause'), 50);
+    t.mock.timers.tick(60000);
+    assert.deepEqual(calls, []);
+    lifetime.setPaused(false);
+    lifetime.setPaused(false);
+    t.mock.timers.tick(49);
+    assert.deepEqual(calls, []);
+    t.mock.timers.tick(1);
+    assert.deepEqual(calls, ['during-pause']);
+    t.mock.timers.tick(25);
+    assert.deepEqual(calls, ['during-pause', 'before-pause']);
+    lifetime.schedule(() => calls.push('disposed'), 100);
+    lifetime.setPaused(true);
+    lifetime.dispose();
+    lifetime.setPaused(false);
+    t.mock.timers.tick(1000);
+    assert.deepEqual(calls, ['during-pause', 'before-pause']);
+});
+
 function createRuntime(loadAssets) {
     const observables = loadTypeScript('../src/game/runtime/game-observables.ts');
     const engines = [];
@@ -45,7 +73,7 @@ function createRuntime(loadAssets) {
     const playerViews = [];
     const worldViews = [];
     const cleanups = new Map();
-    const counts = { players: 0, inputs: 0 };
+    const counts = { players: 0, inputs: 0, renders: 0, updates: [], inputChecks: 0, pauseChanges: [], animationResets: 0 };
     const players = [];
     const manager = name => ({
         getInstance: () => ({
@@ -59,7 +87,8 @@ function createRuntime(loadAssets) {
     });
     class Engine {
         frameId = 0;
-        constructor() {
+        constructor(canvas) {
+ this.canvas = canvas;
  engines.push(this); 
 }
         stopRenderLoop() {
@@ -87,7 +116,12 @@ function createRuntime(loadAssets) {
         dispose() {
  this.isDisposed = true; 
 }
-        render() {}
+        render() {
+            counts.renders++;
+        }
+        resetLastAnimationTimeFrame() {
+            counts.animationResets++;
+        }
         getTotalVertices() {
             return 30;
         }
@@ -101,7 +135,9 @@ function createRuntime(loadAssets) {
                 counts.players++;
                 players.push(this.player);
             }
-            update() {}
+            update(commands, deltaTime) {
+                counts.updates.push(deltaTime);
+            }
             dispose() {
                 cleanups.set('game', (cleanups.get('game') ?? 0) + 1);
             }
@@ -113,7 +149,11 @@ function createRuntime(loadAssets) {
             }
             dispose() {}
         } },
-        '../input/player-inputs': { PlayerInputs: { ...manager('inputs'), checkInputs() {}, getCommands() {
+        '../input/player-inputs': { PlayerInputs: { ...manager('inputs'), setPaused(isPaused) {
+            counts.pauseChanges.push(isPaused);
+        }, checkInputs() {
+            counts.inputChecks++;
+        }, getCommands() {
             return {};
         }, init() {
  counts.inputs++; 
@@ -270,24 +310,67 @@ test('runtime publishes initial health, damage, healing, death, and resets betwe
     assert.deepEqual(updates.at(-1), { current: 0, max: 0 });
 });
 
+test('pause freezes rendering, inputs, and gameplay, then resumes without restarting the session', async t => {
+    const runtime = createRuntime(() => Promise.resolve());
+    t.after(() => runtime.GameRuntime.dispose());
+    await runtime.GameRuntime.start({});
+    const engine = runtime.engines[0];
+    runtime.GameRuntime.setPaused(true);
+    engine.render();
+    assert.equal(runtime.counts.renders, 1, 'Loading cannot be paused');
+    runtime.GameRuntime.finishLoading();
+    runtime.GameRuntime.setPaused(true);
+    runtime.GameRuntime.setPaused(true);
+    engine.render();
+    engine.render();
+    assert.equal(runtime.counts.renders, 1);
+    assert.deepEqual(runtime.counts.updates, [16]);
+    assert.equal(runtime.counts.inputChecks, 1);
+    assert.deepEqual(runtime.counts.pauseChanges, [true]);
+    runtime.GameRuntime.setPaused(false);
+    runtime.GameRuntime.setPaused(false);
+    engine.render();
+    assert.equal(runtime.counts.renders, 2);
+    assert.deepEqual(runtime.counts.updates, [16, 16]);
+    assert.equal(runtime.counts.inputChecks, 2);
+    assert.equal(runtime.counts.animationResets, 1);
+    assert.deepEqual(runtime.counts.pauseChanges, [true, false]);
+    assert.equal(runtime.counts.players, 1);
+
+    runtime.GameRuntime.setPaused(true);
+    await runtime.GameRuntime.start({});
+    runtime.engines[1].render();
+    assert.equal(runtime.counts.renders, 3, 'A new session starts unpaused');
+    engine.render();
+    assert.equal(runtime.counts.renders, 3);
+});
+
 function createSessionService({ GameRuntime, debugStats$, playerHealth$ }, t) {
     const destroyRef = {};
     const uiStoreToken = {};
     const errors = [];
     const destroyCallbacks = [];
     const { GameRuntimeService } = loadTypeScript('../src/app/core/game-runtime/game-runtime.service.ts', {
-        '@angular/core': { Service: () => target => target, signal },
+        '@angular/core': { Service: () => target => target, computed, signal },
         '../../../game/runtime/game-runtime': { GameRuntime },
         '../../../game/runtime/game-observables': { debugStats$, playerHealth$ },
         '../../../game/runtime/menu-runtime': { MenuRuntime: class {} },
         '../../../game/runtime/game-seed': { GameSeed: class { value = 'test'; } },
     });
     const ui = {
+        isLoading: true,
         initialize() {
+ this.initializations = (this.initializations ?? 0) + 1;
  this.error = undefined; 
+ this.isLoading = true;
 },
         updateStats() {},
-        finishLoading() {},
+        hasLoadingOverlay() {
+            return this.isLoading;
+        },
+        finishLoading() {
+            this.isLoading = false;
+        },
         failLoading(error) {
  this.error = error; 
 },
@@ -343,4 +426,74 @@ test('the Angular service reports a current startup failure after releasing its 
     assert.equal(runtime.engines[0].isDisposed, true);
     assert.equal(engine.stats().fps, 0);
     service.dispose();
+});
+
+test('replay replaces the dead session on the same canvas and restores player health', async t => {
+    const runtime = createRuntime(() => Promise.resolve());
+    const { service, engine, ui } = createSessionService(runtime, t);
+    t.after(() => service.dispose());
+    const canvas = {};
+    await service.start(canvas);
+    const firstEngine = runtime.engines[0];
+    runtime.players[0].health = 0;
+    firstEngine.render();
+    assert.equal(engine.isGameOver(), true);
+    await service.replay();
+    assert.equal(firstEngine.isDisposed, true);
+    assert.equal(firstEngine.isRunning, false);
+    assert.equal(runtime.engines[1].canvas, canvas);
+    assert.equal(runtime.engines[1].isRunning, true);
+    assert.equal(runtime.counts.players, 2);
+    assert.equal(runtime.counts.inputs, 2);
+    assert.equal(ui.initializations, 2);
+    assert.equal(engine.isGameOver(), false);
+    assert.deepEqual({ ...engine.playerHealth() }, { current: 100, max: 100 });
+    firstEngine.render();
+    assert.equal(engine.isGameOver(), false);
+    service.dispose();
+    await service.replay();
+    assert.equal(runtime.engines.length, 2);
+    assert.equal(engine.isGameOver(), false);
+});
+
+test('the session toggles pause only during gameplay and clears pause on resume, replay, and disposal', async t => {
+    const runtime = createRuntime(() => Promise.resolve());
+    const { service, engine, ui } = createSessionService(runtime, t);
+    t.after(() => service.dispose());
+    service.togglePause();
+    assert.equal(engine.isPaused(), false);
+    await service.start({});
+    service.togglePause();
+    assert.equal(engine.isPaused(), false);
+    runtime.GameRuntime.finishLoading();
+    service.togglePause();
+    assert.equal(engine.isPaused(), false, 'The loading overlay must be dismissed first');
+    ui.finishLoading();
+    service.togglePause();
+    assert.equal(engine.isPaused(), true);
+    service.togglePause();
+    assert.equal(engine.isPaused(), false);
+    service.togglePause();
+    service.resume();
+    assert.equal(engine.isPaused(), false);
+    service.togglePause();
+    await service.replay();
+    assert.equal(engine.isPaused(), false);
+    runtime.GameRuntime.finishLoading();
+    ui.finishLoading();
+    runtime.players[1].health = 0;
+    runtime.engines[1].render();
+    assert.equal(engine.isGameOver(), true);
+    service.togglePause();
+    assert.equal(engine.isPaused(), false, 'Game Over cannot be dismissed with Escape');
+    await service.replay();
+    runtime.GameRuntime.finishLoading();
+    ui.finishLoading();
+    service.togglePause();
+    assert.equal(engine.isPaused(), true);
+    service.dispose();
+    assert.equal(engine.isPaused(), false);
+    service.togglePause();
+    assert.equal(engine.isPaused(), false);
+    assert.equal(engine.isPaused.set, undefined);
 });

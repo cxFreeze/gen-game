@@ -9,6 +9,7 @@ export class GameSessionService {
     private readonly gameRuntimeService = inject(GameRuntimeService);
     private loadingSubscription: Subscription | undefined;
     private session: object | undefined;
+    private canvas: HTMLCanvasElement | undefined;
 
     constructor() {
         inject(DestroyRef).onDestroy(() => this.dispose());
@@ -20,6 +21,7 @@ export class GameSessionService {
         }
         const session = {};
         this.session = session;
+        this.canvas = canvas;
         this.gameUiService.initialize();
 
         try {
@@ -42,8 +44,27 @@ export class GameSessionService {
         }
     }
 
+    async replay() {
+        const canvas = this.canvas;
+        if (canvas) {
+            await this.start(canvas);
+        }
+    }
+
+    togglePause() {
+        if (!this.session || this.gameUiService.hasLoadingOverlay() || this.gameRuntimeService.isGameOver()) {
+            return;
+        }
+        this.gameRuntimeService.setPaused(!this.gameRuntimeService.isPaused());
+    }
+
+    resume() {
+        this.gameRuntimeService.setPaused(false);
+    }
+
     dispose() {
         this.session = undefined;
+        this.canvas = undefined;
         this.loadingSubscription?.unsubscribe();
         this.loadingSubscription = undefined;
         this.gameRuntimeService.dispose();

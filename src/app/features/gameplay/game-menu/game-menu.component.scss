@@ -1,0 +1,38 @@
+dialog {
+    position: fixed;
+    inset: 0;
+    box-sizing: border-box;
+    width: min(calc(100% - var(--size-400)), 26rem);
+    max-height: calc(100% - var(--size-400));
+    margin: auto;
+    padding: var(--size-500);
+    overflow: auto;
+    border: var(--size-025) solid var(--border-color);
+    border-radius: var(--size-150);
+    background: var(--surface-color);
+    color: var(--text-color);
+    text-align: center;
+    pointer-events: auto;
+
+    &[open] {
+        display: grid;
+        gap: var(--size-400);
+    }
+
+    &::backdrop {
+        background: color-mix(in srgb, var(--background-color) 45%, transparent);
+        pointer-events: auto;
+    }
+}
+
+h1 {
+    margin: 0;
+    color: var(--heading-color);
+    font-family: stayPixel;
+    font-size: clamp(var(--size-400), 8vw, var(--size-600));
+}
+
+.actions {
+    display: grid;
+    gap: var(--size-300);
+}

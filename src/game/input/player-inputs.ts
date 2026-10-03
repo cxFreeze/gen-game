@@ -13,6 +13,7 @@ export class PlayerInputs {
     private static controller: AbortController | undefined;
     private static joystick: VirtualJoystick | undefined;
     private static canvas: HTMLCanvasElement | undefined;
+    private static isPaused = false;
 
     static readonly firePressed = new Subject<number>();
     static readonly aimChanged = new Subject<number>();
@@ -45,7 +46,7 @@ export class PlayerInputs {
         }
 
         canvas.addEventListener('pointerdown', event => {
-            if (event.button !== 0) {
+            if (this.isPaused || event.button !== 0) {
                 return;
             }
             this.updateCursorDirection(event);
@@ -57,7 +58,7 @@ export class PlayerInputs {
         canvas.addEventListener('pointermove', event => this.updateCursorDirection(event), options);
 
         window.addEventListener('keydown', event => {
-            if (event.defaultPrevented || this.isInteractiveTarget(event)) {
+            if (this.isPaused || event.defaultPrevented || this.isInteractiveTarget(event)) {
                 return;
             }
             this.pressedKeys.add(event.code);
@@ -77,6 +78,7 @@ export class PlayerInputs {
     }
 
     static dispose() {
+        this.isPaused = false;
         this.controller?.abort();
         this.controller = undefined;
         this.joystick?.releaseCanvas();
@@ -86,8 +88,13 @@ export class PlayerInputs {
         this.cursorDirection = 0;
     }
 
+    static setPaused(isPaused: boolean) {
+        this.isPaused = isPaused;
+        this.resetPressedInputs();
+    }
+
     static checkInputs() {
-        if (!this.controller) {
+        if (!this.controller || this.isPaused) {
             return;
         }
         if (this.pressedKeys.has('Space') || this.pressedPointers.size > 0) {
@@ -126,7 +133,7 @@ export class PlayerInputs {
     }
 
     private static updateCursorDirection(event: PointerEvent) {
-        if (!this.canvas) {
+        if (!this.canvas || this.isPaused) {
             return;
         }
         const bounds = this.canvas.getBoundingClientRect();

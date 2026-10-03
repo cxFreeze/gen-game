@@ -87,3 +87,42 @@ test('keyboard input on an interactive control is ignored and hidden tabs releas
     assert.equal(PlayerInputs.forwardPressed, false);
     PlayerInputs.dispose();
 });
+
+test('pause releases held inputs and ignores gameplay controls until they are pressed again after resume', t => {
+    const { PlayerInputs, window, canvas } = createInputs();
+    let aimUpdates = 0;
+    let shots = 0;
+    const aiming = PlayerInputs.aimChanged.subscribe(() => aimUpdates++);
+    const firing = PlayerInputs.firePressed.subscribe(() => shots++);
+    t.after(() => {
+        aiming.unsubscribe();
+        firing.unsubscribe();
+        PlayerInputs.dispose();
+    });
+    window.dispatchEvent(event('keydown', { code: 'KeyW' }));
+    window.dispatchEvent(event('keydown', { code: 'Space' }));
+    canvas.dispatchEvent(event('pointerdown', { button: 0, pointerId: 1, clientX: 400, clientY: 300 }));
+    assert.equal(PlayerInputs.forwardPressed, true);
+    assert.equal(PlayerInputs.getCommands().isFiring, true);
+    PlayerInputs.setPaused(true);
+    assert.equal(PlayerInputs.forwardPressed, false);
+    assert.equal(PlayerInputs.getCommands().isFiring, false);
+    const pausedAimUpdates = aimUpdates;
+    window.dispatchEvent(event('keydown', { code: 'KeyW' }));
+    window.dispatchEvent(event('keydown', { code: 'Space' }));
+    canvas.dispatchEvent(event('pointerdown', { button: 0, pointerId: 2, clientX: 450, clientY: 320 }));
+    canvas.dispatchEvent(event('pointermove', { clientX: 450, clientY: 320 }));
+    PlayerInputs.checkInputs();
+    assert.equal(PlayerInputs.forwardPressed, false);
+    assert.equal(PlayerInputs.getCommands().isFiring, false);
+    assert.equal(shots, 0);
+    assert.equal(aimUpdates, pausedAimUpdates);
+    PlayerInputs.setPaused(false);
+    PlayerInputs.checkInputs();
+    assert.equal(shots, 0);
+    window.dispatchEvent(event('keydown', { code: 'KeyW' }));
+    window.dispatchEvent(event('keydown', { code: 'Space' }));
+    PlayerInputs.checkInputs();
+    assert.equal(PlayerInputs.forwardPressed, true);
+    assert.equal(shots, 1);
+});

@@ -165,3 +165,24 @@ test('player health reaches Angular without duplicate updates and releases its s
     assert.equal(engine.playerHealth.set, undefined);
     engine.dispose();
 });
+
+test('game over appears only for a dead player and resets on replay and disposal', async t => {
+    const { engine, publishPlayerHealth } = createEngine(t);
+    assert.equal(engine.isGameOver(), false);
+    await engine.start({});
+    assert.equal(engine.isGameOver(), false);
+    publishPlayerHealth({ current: 5, max: 5 });
+    assert.equal(engine.isGameOver(), false);
+    publishPlayerHealth({ current: 1, max: 5 });
+    assert.equal(engine.isGameOver(), false);
+    publishPlayerHealth({ current: 0, max: 5 });
+    assert.equal(engine.isGameOver(), true);
+    await engine.start({});
+    assert.equal(engine.isGameOver(), false);
+    publishPlayerHealth({ current: 5, max: 5 });
+    assert.equal(engine.isGameOver(), false);
+    publishPlayerHealth({ current: 0, max: 5 });
+    assert.equal(engine.isGameOver(), true);
+    engine.dispose();
+    assert.equal(engine.isGameOver(), false);
+});

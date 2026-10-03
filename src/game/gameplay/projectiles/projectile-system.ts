@@ -8,12 +8,12 @@ export class ProjectileSystem {
     private projectiles: Projectile[] = [];
     private count = 0;
 
-    constructor(private readonly view: GameView) {}
+    constructor(private readonly view: GameView, readonly getTime: () => number = () => Date.now()) {}
 
     createProjectile(infos: ProjectileInfos, owner: string) {
         const id = `projectile-${++this.count}`;
         const body = this.view.createProjectile(id, infos, owner);
-        const projectile = new Projectile(id, infos, owner, body);
+        const projectile = new Projectile(id, infos, owner, body, this.getTime);
         this.projectiles.push(projectile);
         return projectile;
     }

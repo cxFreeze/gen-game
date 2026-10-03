@@ -107,7 +107,7 @@ export class Character {
     }
 
     tryFire(direction = this.body.rotation, canFire = true): boolean {
-        if (this.hasDisposed || !this.state.canFire(Date.now(), canFire)) {
+        if (this.hasDisposed || !this.state.canFire(this.projectiles.getTime(), canFire)) {
             return false;
         }
         this.projectiles.createProjectile({ speed: this.stats.projectileSpeed, damage: this.stats.damage, range: this.stats.range, direction }, this.body.name);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { Injector, runInInjectionContext, signal } from '@angular/core';
+import { computed, Injector, runInInjectionContext, signal } from '@angular/core';
 import { Animation } from '@babylonjs/core/Animations/animation.js';
 import { AnimationGroup } from '@babylonjs/core/Animations/animationGroup.js';
 import '@babylonjs/core/Animations/animatable.js';
@@ -306,7 +306,7 @@ test('Angular keeps the same preview while changing animation and starting the g
     const calls = [];
     const previews = [];
     const { GameRuntimeService } = loadTypeScript('../src/app/core/game-runtime/game-runtime.service.ts', {
-        '@angular/core': { Service: () => target => target, signal },
+        '@angular/core': { Service: () => target => target, computed, signal },
         '../../../game/runtime/game-runtime': { GameRuntime: {
             start: async () => calls.push('game'),
             dispose() {},
@@ -338,7 +338,7 @@ test('a late failure from an old menu preview cannot stop its replacement', asyn
     const pending = deferred();
     const previews = [];
     const { GameRuntimeService } = loadTypeScript('../src/app/core/game-runtime/game-runtime.service.ts', {
-        '@angular/core': { Service: () => target => target, signal },
+        '@angular/core': { Service: () => target => target, computed, signal },
         '../../../game/runtime/game-runtime': { GameRuntime: {} },
         '../../../game/runtime/menu-runtime': { MenuRuntime: class {
             constructor() {

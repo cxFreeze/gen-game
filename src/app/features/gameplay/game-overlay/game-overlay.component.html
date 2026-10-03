@@ -2,3 +2,10 @@
 @if (playerHealth().max > 0) {
     <gg-health-bar [current]="playerHealth().current" [max]="playerHealth().max" />
 }
+@if (isGameOver() || isPaused()) {
+    <gg-game-menu
+        [mode]="isGameOver() ? 'game-over' : 'pause'"
+        (resume)="session.resume()"
+        (replay)="replay.emit()"
+        (mainMenu)="mainMenu.emit()" />
+}

@@ -1,4 +1,4 @@
-import { Service, signal } from '@angular/core';
+import { computed, Service, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { debugStats$, playerHealth$ } from '../../../game/runtime/game-observables';
 import { GameRuntime } from '../../../game/runtime/game-runtime';
@@ -17,12 +17,18 @@ class DebugControls {
 @Service()
 export class GameRuntimeService {
     private readonly currentSeed = signal('');
+    private readonly paused = signal(false);
     private readonly debugControls = signal<Readonly<DebugControls>>(new DebugControls());
     private readonly menuPreviews = new Map<HTMLCanvasElement, MenuRuntime>();
 
     readonly seed = this.currentSeed.asReadonly();
+    readonly isPaused = this.paused.asReadonly();
     readonly stats = toSignal(debugStats$, { requireSync: true });
     readonly playerHealth = toSignal(playerHealth$, { requireSync: true });
+    readonly isGameOver = computed(() => {
+        const health = this.playerHealth();
+        return health.max > 0 && health.current === 0;
+    });
     readonly controls = this.debugControls.asReadonly();
 
     get loaded$() {
@@ -67,13 +73,23 @@ export class GameRuntimeService {
     }
 
     start(canvas: HTMLCanvasElement) {
+        this.paused.set(false);
         this.debugControls.set(new DebugControls());
         return GameRuntime.start(canvas);
+    }
+
+    setPaused(isPaused: boolean) {
+        if (!GameRuntime.isReady || (isPaused && this.isGameOver())) {
+            return;
+        }
+        GameRuntime.setPaused(isPaused);
+        this.paused.set(isPaused);
     }
 
     dispose() {
         this.stopMenuPreview();
         GameRuntime.dispose();
+        this.paused.set(false);
         this.currentSeed.set('');
         this.debugControls.set(new DebugControls());
     }

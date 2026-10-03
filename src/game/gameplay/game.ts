@@ -12,11 +12,12 @@ export class Game {
     private readonly enemies;
     private readonly projectiles;
     private readonly world;
+    private gameTime = Date.now();
 
     constructor(view: GameView) {
         const spawn = new WorldState();
         const layout = new WorldLayout(spawn);
-        this.projectiles = new ProjectileSystem(view);
+        this.projectiles = new ProjectileSystem(view, () => this.gameTime);
         const playerBody = view.createPlayer({ x: spawn.playerInitX, y: 0, z: spawn.playerInitY }, playerConfig.stats.range);
         this.player = new Player(playerBody, this.projectiles);
         this.enemies = new EnemySystem(this.player, this.projectiles, view);
@@ -25,6 +26,7 @@ export class Game {
     }
 
     update(commands: PlayerCommands, deltaTime: number) {
+        this.gameTime += deltaTime;
         const frame = this.player.update(commands, deltaTime);
         this.projectiles.updatePositions(this.player, this.enemies);
         this.enemies.updateEnemies(deltaTime);
