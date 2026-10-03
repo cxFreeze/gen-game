@@ -1,13 +1,33 @@
-import type { Enemy } from './enemy';
+import { Enemy } from './enemy';
+import { EnemyTypes } from './enemy-types';
 import type { Player } from '../player/player';
 import type { Projectile } from '../projectiles/projectile';
+import type { ProjectileSystem } from '../projectiles/projectile-system';
+import type { GameView } from '../game-view.interface';
+import type { EnemyAsset } from '../world/asset-types.interface';
+import type { Position } from '../../math/position';
+
 export class EnemySystem {
-    private readonly player: Player;
+    private enemyCount = 0;
     private readonly activeEnemies = new Set<Enemy>();
     private readonly chunks = new Map<string, Map<string, Enemy>>();
 
-    constructor(player: Player) {
-        this.player = player;
+    constructor(
+        private readonly player: Player,
+        private readonly projectiles: ProjectileSystem,
+        private readonly view: GameView,
+    ) {}
+
+    spawnEnemy(type: EnemyAsset, position: Position, chunk: string, slot: string): boolean {
+        const name = `char-${type}${this.enemyCount++}`;
+        const body = this.view.createEnemy(name, type, position);
+        const enemy = new Enemy(body, EnemyTypes[type], this.projectiles);
+        if (!this.view.isEnemySpaceAvailable(name, enemy.position)) {
+            enemy.dispose();
+            return false;
+        }
+        this.addEnemy(enemy, chunk, slot);
+        return true;
     }
 
     addEnemy(enemy: Enemy, chunk: string, slot: string) {

@@ -1,5 +1,6 @@
-import { Character, type CharacterOptions } from '../characters/character';
+import { Character } from '../characters/character';
 import type { PlayerBody } from '../characters/character-body.interface';
+import type { ProjectileSystem } from '../projectiles/projectile-system';
 import { MathUtils } from '../../math/math';
 import { getPlayerMovement, type MovementInput } from './player-movement';
 import { playerConfig } from './player-config';
@@ -11,11 +12,8 @@ export interface PlayerCommands extends MovementInput {
 
 export class Player extends Character {
     private hasMoved = false;
-    private readonly playerBody: PlayerBody;
-
-    constructor(options: Omit<CharacterOptions, 'stats' | 'body'> & { body: PlayerBody }) {
-        super({ ...options, stats: playerConfig.stats });
-        this.playerBody = options.body;
+    constructor(private readonly playerBody: PlayerBody, projectiles: ProjectileSystem) {
+        super(playerBody, playerConfig.stats, projectiles);
     }
 
     update(commands: PlayerCommands, deltaTime: number) {

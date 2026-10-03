@@ -33,8 +33,8 @@ export class CharacterState {
         this.hasDied = true;
     }
 
-    canFire(now: number, canFire: () => boolean): boolean {
-        if (this.hasDied || now - this.lastFireTime <= 1000 / this.fireRate || !canFire()) {
+    canFire(now: number, canFire = true): boolean {
+        if (this.hasDied || now - this.lastFireTime <= 1000 / this.fireRate || !canFire) {
             return false;
         }
         this.lastFireTime = now;

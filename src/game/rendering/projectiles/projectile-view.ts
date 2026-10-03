@@ -7,16 +7,17 @@ import type { Position } from '../../math/position';
 import type { ProjectileBody } from '../../gameplay/projectiles/projectile-body.interface';
 import { GameRuntime } from '../../runtime/game-runtime';
 import { AssetManager } from '../assets/assets';
+import type { GamePresentation } from '../game-presentation';
 
 export class ProjectileView implements ProjectileBody {
     readonly mesh;
     readonly obstacleDistance: number;
-    private readonly onDispose: () => void;
+    private isDisposed = false;
 
     constructor(id: string, appearance: {
         damage: number;
         direction: number;
-    }, owner: AbstractMesh, onDispose: () => void) {
+    }, owner: AbstractMesh, private readonly presentation: GamePresentation) {
         const scale = 2.5 * Math.cbrt(appearance.damage);
         const mesh = AssetManager.projectile.createInstance(id);
         mesh.scaling = new Vector3(scale, scale, scale);
@@ -26,11 +27,6 @@ export class ProjectileView implements ProjectileBody {
             && candidate.name !== 'player' && !candidate.name.startsWith('char-') && !candidate.name.startsWith('noproj-'));
         this.mesh = mesh;
         this.obstacleDistance = hit?.pickedMesh ? hit.distance - scale / 2 : Infinity;
-        this.onDispose = onDispose;
-    }
-
-    get body(): ProjectileBody {
-        return this;
     }
 
     get position() {
@@ -68,7 +64,11 @@ export class ProjectileView implements ProjectileBody {
     }
 
     dispose() {
+        if (this.isDisposed) {
+            return;
+        }
+        this.isDisposed = true;
         this.mesh.dispose();
-        this.onDispose();
+        this.presentation.removeProjectile(this.mesh.name);
     }
 }

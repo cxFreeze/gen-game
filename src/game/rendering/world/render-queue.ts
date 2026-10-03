@@ -1,36 +1,23 @@
-interface RenderQueueOptions {
-    batchSize: number;
-    idleFrameCount: number;
-    onReady: () => void;
-}
-
 /** Processes scene work in batches and announces the first completed generation. */
 export class RenderQueue {
-    private readonly batchSize;
-    private readonly idleFrameCount;
-    private readonly onReady;
     private readonly tasks: Array<() => void> = [];
     private hasStarted = false;
     private isReady = false;
     private idleFrames = 0;
 
-    constructor({ batchSize, idleFrameCount, onReady }: RenderQueueOptions) {
-        this.batchSize = batchSize;
-        this.idleFrameCount = idleFrameCount;
-        this.onReady = onReady;
-    }
+    constructor(private readonly batchSize: number, private readonly idleFrameCount: number) {}
 
     enqueue(task: () => void) {
         this.tasks.push(task);
     }
 
-    processFrame() {
+    processFrame(): boolean {
         for (let index = 0; index < this.batchSize; index++) {
             const task = this.tasks.shift();
             if (!task) {
                 if (this.hasStarted && !this.isReady && ++this.idleFrames > this.idleFrameCount) {
                     this.isReady = true;
-                    this.onReady();
+                    return true;
                 }
                 break;
             }
@@ -38,6 +25,7 @@ export class RenderQueue {
             this.idleFrames = 0;
             task();
         }
+        return false;
     }
 
     clear() {

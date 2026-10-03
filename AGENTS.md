@@ -21,6 +21,7 @@ GenGame is a 3D game with Angular UI
 
 - Prefer iteration and modularization over code duplication
 - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError)
+- Do not overcomplicate, overabstract the code
 
 ### Naming Conventions
 

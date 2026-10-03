@@ -6,23 +6,12 @@ import type { CharacterBody } from '../../gameplay/characters/character-body.int
 import type { Position } from '../../math/position';
 import { AssetUtils } from '../animation/assets-utils';
 import { GameRuntime } from '../../runtime/game-runtime';
+import type { GamePresentation } from '../game-presentation';
 
 export class CharacterView implements CharacterBody {
-    readonly mesh: AbstractMesh;
     protected isDisposed = false;
     private rotationAnimation: Subscription | undefined;
-    private readonly getProjectileMesh: (id: string) => AbstractMesh | undefined;
-    private readonly onDispose: () => void;
-
-    constructor(mesh: AbstractMesh, getProjectileMesh: (id: string) => AbstractMesh | undefined, onDispose: () => void) {
-        this.mesh = mesh;
-        this.getProjectileMesh = getProjectileMesh;
-        this.onDispose = onDispose;
-    }
-
-    get body(): CharacterBody {
-        return this;
-    }
+    constructor(readonly mesh: AbstractMesh, private readonly presentation: GamePresentation) {}
 
     get name() {
         return this.mesh.name;
@@ -56,7 +45,7 @@ export class CharacterView implements CharacterBody {
     }
 
     intersectsProjectile(id: string) {
-        const projectile = this.getProjectileMesh(id);
+        const projectile = this.presentation.getProjectileMesh(id);
         if (!projectile) {
             return false;
         }
@@ -79,6 +68,6 @@ export class CharacterView implements CharacterBody {
         this.isDisposed = true;
         this.rotationAnimation?.unsubscribe();
         this.mesh.dispose();
-        this.onDispose();
+        this.presentation.removeCharacter(this.name);
     }
 }

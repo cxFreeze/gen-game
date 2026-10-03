@@ -102,13 +102,7 @@ export class GameRuntime {
 
         const presentation = new GamePresentation();
         this.presentation = presentation;
-        const game = new Game({
-            clock: { now: () => Date.now() },
-            scheduler: { schedule: (callback, delay) => this.schedule(callback, delay) },
-            bodies: presentation.bodies,
-            physics: presentation.physics,
-            world: presentation.world,
-        });
+        const game = new Game(presentation);
         this.game = game;
 
         const worldManager = new WorldView(presentation.playerView);

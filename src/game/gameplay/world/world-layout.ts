@@ -3,7 +3,6 @@ import { worldConfig } from './world-config';
 import { isInWorldBounds } from './world-bounds';
 import { BiomeType, ZoneType, type BiomeItem, type ZoneItem } from './world-types';
 import { Biomes } from './biomes';
-import { Random } from '../../math/random';
 
 export type ItemLoadRequest = {
     kind: 'biome';
@@ -23,11 +22,9 @@ export class WorldLayout extends WorldPlacement {
 
     constructor(spawn: { playerInitX: number; playerInitY: number }) {
         super({
-            randomNumber: seed => Random.randomNumber(seed),
-            randomBool: (seed, probability) => Random.randomBool(seed, probability),
-            ...worldConfig,
-            worldSize: worldConfig.safeDrawWorldSize,
-            playerSpawn: { x: spawn.playerInitX, y: spawn.playerInitY, minDistance: worldConfig.spawnMinDistanceFromPlayerSpawn },
+            x: spawn.playerInitX,
+            y: spawn.playerInitY,
+            minDistance: worldConfig.spawnMinDistanceFromPlayerSpawn,
         });
         this.spawn = { ...spawn };
         for (let index = 0; index < worldConfig.zoneCount[ZoneType.town]; index++) {

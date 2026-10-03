@@ -25,16 +25,16 @@ test('damage, healing, death, and firing cooldowns work without a rendered chara
     assert.equal(state.health, 75);
     state.takeDamage(-100);
     assert.equal(state.health, 100);
-    assert.equal(state.canFire(1000, () => false), false);
-    assert.equal(state.canFire(1000, () => true), true);
-    assert.equal(state.canFire(1500, () => true), false);
-    assert.equal(state.canFire(1501, () => true), true);
+    assert.equal(state.canFire(1000, false), false);
+    assert.equal(state.canFire(1000), true);
+    assert.equal(state.canFire(1500), false);
+    assert.equal(state.canFire(1501), true);
     state.takeDamage(200);
     assert.equal(state.health, 0);
     assert.equal(state.isDead, true);
     state.takeDamage(-100);
     assert.equal(state.health, 0);
-    assert.equal(state.canFire(5000, () => true), false);
+    assert.equal(state.canFire(5000), false);
 });
 
 test('movement preserves speed diagonally and cancels opposing inputs', () => {
@@ -92,10 +92,7 @@ function createEnemy({ position = { x: 0, y: 0, z: 0 }, canMove = () => true } =
         },
     };
     const enemyType = { maxSpawnDistance: 500, detectionRange: 200, stats: { ...playerConfig.stats, range: 100 } };
-    const movement = new EnemyMovement(body, { x: 0, y: 0, z: 0 }, enemyType, {
-        randomNumber: () => 50,
-        randomBool: () => true,
-    });
+    const movement = new EnemyMovement(body, { x: 0, y: 0, z: 0 }, enemyType);
     return { body, movement, requests };
 }
 

@@ -93,9 +93,6 @@ function createRuntime(loadAssets) {
             }
         } },
         '../rendering/game-presentation': { GamePresentation: class {
-            bodies = {};
-            physics = {};
-            world = {};
             playerView = {};
             constructor() {
                 playerViews.push(this.playerView);

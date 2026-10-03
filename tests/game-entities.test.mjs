@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { loadTypeScript } from './load-typescript.mjs';
 
-const { Character } = loadTypeScript('../src/game/gameplay/characters/character.ts');
-const { Player } = loadTypeScript('../src/game/gameplay/player/player.ts');
-const { Enemy } = loadTypeScript('../src/game/gameplay/enemies/enemy.ts');
-const { EnemySystem } = loadTypeScript('../src/game/gameplay/enemies/enemy-system.ts');
-const { ProjectileSystem } = loadTypeScript('../src/game/gameplay/projectiles/projectile-system.ts');
+const { Character } = loadTypeScript('../src/game/gameplay/characters/character.ts', {}, { Date });
+const { Player } = loadTypeScript('../src/game/gameplay/player/player.ts', {}, { Date });
+const { Enemy } = loadTypeScript('../src/game/gameplay/enemies/enemy.ts', {}, { Date });
+const { EnemySystem } = loadTypeScript('../src/game/gameplay/enemies/enemy-system.ts', {}, { Date });
+const { ProjectileSystem } = loadTypeScript('../src/game/gameplay/projectiles/projectile-system.ts', {}, { Date });
 const { World } = loadTypeScript('../src/game/gameplay/world/world.ts');
-const { Game } = loadTypeScript('../src/game/gameplay/game.ts');
+const { Game } = loadTypeScript('../src/game/gameplay/game.ts', {}, { Date });
 const { playerConfig } = loadTypeScript('../src/game/gameplay/player/player-config.ts');
 
 function createBody(name = 'player') {
@@ -39,6 +39,67 @@ function createBody(name = 'player') {
     return body;
 }
 
+class RecordedProjectiles {
+    shots = [];
+
+    createProjectile(infos, owner) {
+        this.shots.push({ infos, owner });
+    }
+}
+
+class TestGameView {
+    enemyBodies = [];
+    projectileBodies = [];
+    hasSpace = true;
+
+    constructor(playerBody = createBody()) {
+        this.playerBody = playerBody;
+    }
+
+    createPlayer(position) {
+        this.playerBody.setPosition(position);
+        return this.playerBody;
+    }
+
+    createEnemy(name, type, position) {
+        const body = createBody(name);
+        body.setPosition(position);
+        this.enemyBodies.push(body);
+        return body;
+    }
+
+    createProjectile() {
+        const body = {
+            position: { ...this.playerBody.position },
+            obstacleDistance: Infinity,
+            impacts: 0,
+            disposals: 0,
+            setPosition(position) {
+                this.position = position;
+            },
+            showImpact() {
+                this.impacts++;
+            },
+            dispose() {
+                this.disposals++;
+            },
+        };
+        this.projectileBodies.push(body);
+        return body;
+    }
+
+    isEnemySpaceAvailable() {
+        return this.hasSpace;
+    }
+    initializeWorld() {}
+    loadChunk() {}
+    unloadChunk(chunk, onUnloaded, shouldUnload) {
+        if (shouldUnload()) {
+            onUnloaded();
+        }
+    }
+}
+
 test('character slides along a collision and restores a position rejected by gameplay', () => {
     const body = createBody();
     body.translate = (x, z) => {
@@ -46,7 +107,7 @@ test('character slides along a collision and restores a position rejected by gam
             body.position = { x: body.position.x + x, y: 0, z: body.position.z + z };
         }
     };
-    const character = new Character({ body, stats: playerConfig.stats, now: () => 1000, shoot() {} });
+    const character = new Character(body, playerConfig.stats, new RecordedProjectiles());
     character.moveBy(10, 10);
     assert.equal(character.position.x, 10);
     assert.equal(character.position.z, 0);
@@ -61,11 +122,13 @@ test('character slides along a collision and restores a position rejected by gam
     assert.equal(body.disposeCount, 1);
 });
 
-test('player owns movement, firing cooldowns, and immunity to its own projectiles', () => {
+test('player owns movement, firing cooldowns, and immunity to its own projectiles', context => {
     let now = 1000;
+    context.mock.method(Date, 'now', () => now);
     const body = createBody();
-    const shots = [];
-    const player = new Player({ body, now: () => now, shoot: (infos, owner) => shots.push({ infos, owner }) });
+    const projectiles = new RecordedProjectiles();
+    const { shots } = projectiles;
+    const player = new Player(body, projectiles);
     const commands = { forwardPressed: true, backwardsPressed: false, leftPressed: false, rightPressed: false, aimDirection: 0, isFiring: true };
     player.update(commands, 1000);
     assert.equal(player.position.z, 85);
@@ -88,15 +151,14 @@ test('player owns movement, firing cooldowns, and immunity to its own projectile
     assert.equal(body.disposeCount, 1);
 });
 
-test('enemy combines detection, aim, line of sight, and firing in gameplay', () => {
+test('enemy combines detection, aim, line of sight, and firing in gameplay', context => {
+    context.mock.method(Date, 'now', () => 1000);
     const body = createBody('enemy');
-    const shots = [];
-    const enemy = new Enemy({
-        body,
-        enemyType: { name: 'blob', detectionRange: 200, maxSpawnDistance: 500, stats: { ...playerConfig.stats, range: 100 } },
-        now: () => 1000,
-        shoot: (...shot) => shots.push(shot),
-    });
+    const projectiles = new RecordedProjectiles();
+    const { shots } = projectiles;
+    const enemy = new Enemy(body,
+        { name: 'blob', detectionRange: 200, maxSpawnDistance: 500, stats: { ...playerConfig.stats, range: 100 } },
+        projectiles);
     enemy.rotation = 0;
     enemy.update({ position: { x: 0, y: 0, z: 50 }, isDead: false }, 150);
     assert.equal(enemy.getMovementMode(), 'attack');
@@ -106,25 +168,22 @@ test('enemy combines detection, aim, line of sight, and firing in gameplay', () 
     assert.equal(shots.length, 1);
 });
 
-test('projectile system updates adjacent expired projectiles and never skips one', () => {
+test('projectile system updates adjacent expired projectiles and never skips one', context => {
     let now = 1000;
-    let impacts = 0;
-    let disposed = 0;
-    const manager = new ProjectileSystem({
-        now: () => now,
-        checkHit: () => false,
-        createBody: () => ({ position: { x: 0, y: 0, z: 0 }, obstacleDistance: Infinity, setPosition() {}, showImpact: () => impacts++, dispose: () => disposed++ }),
-    });
+    context.mock.method(Date, 'now', () => now);
+    const view = new TestGameView();
+    const manager = new ProjectileSystem(view);
     const infos = { speed: 1, direction: 0, damage: 1, range: 1 };
     const first = manager.createProjectile(infos, 'enemy');
     const second = manager.createProjectile(infos, 'enemy');
     now = 1100;
-    manager.updatePositions();
+    const noHit = { checkDamageCollisions: () => false };
+    manager.updatePositions(noHit, noHit);
     assert.equal(first.isDestroyed, true);
     assert.equal(second.isDestroyed, true);
-    assert.equal(impacts, 2);
+    assert.equal(view.projectileBodies.reduce((total, body) => total + body.impacts, 0), 2);
     manager.dispose();
-    assert.equal(disposed, 2);
+    assert.equal(view.projectileBodies.reduce((total, body) => total + body.disposals, 0), 2);
 });
 
 function trackedEnemy(mode = 'passive') {
@@ -147,7 +206,7 @@ function trackedEnemy(mode = 'passive') {
 }
 
 test('enemy system remembers deaths, unloads passive enemies, and retains chasing enemies', () => {
-    const manager = new EnemySystem({ position: { x: 0, y: 0, z: 0 }, isDead: false });
+    const manager = new EnemySystem({ position: { x: 0, y: 0, z: 0 }, isDead: false }, new RecordedProjectiles(), new TestGameView());
     const passive = trackedEnemy();
     const chasing = trackedEnemy('chase');
     manager.addEnemy(passive, 'chunk', 'blob/1');
@@ -165,101 +224,64 @@ test('enemy system remembers deaths, unloads passive enemies, and retains chasin
     manager.dispose();
 });
 
-function worldOptions() {
-    const scheduled = [];
+function createWorldContext() {
     const unloads = [];
-    const created = [];
-    const unloadedEnemies = [];
-    const options = {
-        layout: {
-            getChunk: x => `${x}/0`, getChunksToLoad: chunk => [chunk], isInWorldBounds: () => true,
-            getZoneForChunk: () => null, getSpawnNumber: () => 1,
-            getRandomPositionInChunk: () => ({ x: 100, y: 100 }), isTooCloseToPlayerSpawn: () => false,
-        },
-        presentation: { initialize() {}, loadChunk() {}, unloadChunk: (chunk, complete, shouldUnload) => unloads.push({ chunk, complete, shouldUnload }) },
-        schedule: callback => scheduled.push(callback),
-        createEnemy: () => {
-            const enemy = trackedEnemy();
-            created.push(enemy);
-            return enemy;
-        },
-        isSpaceAvailable: () => true,
-        addEnemy() {},
-        unloadEnemies: chunk => unloadedEnemies.push(chunk),
+    const layout = {
+        getChunk: x => `${x}/0`, getChunksToLoad: chunk => [chunk], isInWorldBounds: () => true,
+        getZoneForChunk: () => null, getSpawnNumber: () => 1,
+        getRandomPositionInChunk: () => ({ x: 100, y: 100 }), isTooCloseToPlayerSpawn: () => false,
     };
-    const flush = () => scheduled.splice(0).forEach(callback => callback());
-    return { options, flush, unloads, created, unloadedEnemies };
+    const view = new TestGameView();
+    view.unloadChunk = (chunk, complete, shouldUnload) => unloads.push({ chunk, complete, shouldUnload });
+    const enemies = new EnemySystem({ position: { x: 0, y: 0, z: 0 }, isDead: false }, new RecordedProjectiles(), view);
+    return { layout, view, enemies, unloads, created: view.enemyBodies };
 }
 
-test('world cancels an obsolete chunk unload and ignores scheduled spawning after disposal', () => {
-    const fake = worldOptions();
-    const world = new World(fake.options);
-    world.update({ x: 0, y: 0, z: 0 });
-    fake.flush();
+test('world cancels an obsolete chunk unload and discards pending spawning after disposal', () => {
+    const fake = createWorldContext();
+    const world = new World(fake.layout, fake.view, fake.enemies);
+    world.update({ x: 0, y: 0, z: 0 }, 0);
     assert.equal(fake.created.length, 1);
-    world.update({ x: 500, y: 0, z: 0 });
-    fake.flush();
+    world.update({ x: 500, y: 0, z: 0 }, 100);
     assert.equal(fake.unloads.length, 1);
-    world.update({ x: 0, y: 0, z: 0 });
+    world.update({ x: 0, y: 0, z: 0 }, 0);
     assert.equal(fake.unloads[0].shouldUnload(), false);
-    assert.equal(fake.unloadedEnemies.length, 0);
+    assert.equal(fake.created[0].disposeCount, 0);
+    world.update({ x: 1000, y: 0, z: 0 }, 0);
     world.dispose();
-    fake.flush();
+    world.update({ x: 1000, y: 0, z: 0 }, 1000);
     assert.equal(fake.created.length, 2);
+    assert.equal(fake.unloads[0].shouldUnload(), false);
+    fake.enemies.dispose();
 });
 
 test('world stops searching when a chunk has no valid enemy spawn position', () => {
-    const fake = worldOptions();
-    fake.options.isSpaceAvailable = () => false;
-    const world = new World(fake.options);
-    world.update({ x: 0, y: 0, z: 0 });
-    fake.flush();
+    const fake = createWorldContext();
+    fake.view.hasSpace = false;
+    const world = new World(fake.layout, fake.view, fake.enemies);
+    world.update({ x: 0, y: 0, z: 0 }, 0);
     assert.equal(fake.created.length, 200);
-    assert.ok(fake.created.every(enemy => enemy.disposals === 1));
+    assert.ok(fake.created.every(body => body.disposeCount === 1));
     world.dispose();
+    fake.enemies.dispose();
 });
 
-test('a complete gameplay session uses grouped dependencies and releases its entities', () => {
-    const scheduled = [];
+test('a complete gameplay session calls its view and releases its entities', context => {
+    context.mock.method(Date, 'now', () => 1000);
     const body = createBody();
-    let projectileDisposals = 0;
-    const game = new Game({
-        clock: {
-            currentTime: 1000,
-            now() {
-                return this.currentTime;
-            },
-        },
-        scheduler: {
-            callbacks: scheduled,
-            schedule(callback) {
-                this.callbacks.push(callback);
-            },
-        },
-        bodies: {
-            playerBody: body,
-            createPlayer(position) {
-                this.playerBody.position = { ...position };
-                return this.playerBody;
-            },
-            createEnemy: () => createBody('enemy'),
-            createProjectile() {
-                return { position: this.playerBody.position, obstacleDistance: Infinity, setPosition() {}, showImpact() {}, dispose: () => projectileDisposals++ };
-            },
-        },
-        physics: { isEnemySpaceAvailable: () => true },
-        world: { initialize() {}, loadChunk() {}, unloadChunk() {} },
-    });
+    const view = new TestGameView(body);
+    const game = new Game(view);
     const frame = game.update({ forwardPressed: true, backwardsPressed: false, leftPressed: false, rightPressed: false, aimDirection: 0, isFiring: true }, 100);
     assert.equal(frame.isMoving, true);
     assert.equal(game.player.health, 100);
     game.dispose();
-    scheduled.forEach(callback => callback());
     assert.equal(body.disposeCount, 1);
-    assert.equal(projectileDisposals, 1);
+    assert.equal(view.projectileBodies.length, 1);
+    assert.equal(view.projectileBodies[0].disposals, 1);
+    assert.ok(view.enemyBodies.every(enemyBody => enemyBody.disposeCount === 1));
 });
 
-test('game keeps enemy system callbacks bound when scheduled chunks load and unload', () => {
+test('game creates and disposes enemies as its world loads and unloads chunks', () => {
     const { Game: ScheduledGame } = loadTypeScript('../src/game/gameplay/game.ts', {
         './world/world-state': { WorldState: class {
             playerInitX = 0;
@@ -275,39 +297,15 @@ test('game keeps enemy system callbacks bound when scheduled chunks load and unl
             isTooCloseToPlayerSpawn() { return false; }
         } },
     });
-    const scheduled = [];
-    const enemyBodies = [];
     const playerBody = createBody();
-    const game = new ScheduledGame({
-        clock: { now: () => 1000 },
-        scheduler: { schedule: callback => scheduled.push(callback) },
-        bodies: {
-            createPlayer: () => playerBody,
-            enemyBodies,
-            createEnemy(name, type, position) {
-                const body = createBody(name);
-                body.position = { ...position };
-                this.enemyBodies.push(body);
-                return body;
-            },
-            createProjectile() {
-                throw new Error('No projectile expected');
-            },
-        },
-        physics: { isEnemySpaceAvailable: () => true },
-        world: {
-            initialize() {},
-            loadChunk() {},
-            unloadChunk: (chunk, onUnloaded) => onUnloaded(),
-        },
-    });
+    const view = new TestGameView(playerBody);
+    const { enemyBodies } = view;
+    const game = new ScheduledGame(view);
     try {
-        scheduled.splice(0).forEach(callback => callback());
         assert.equal(enemyBodies.length, 1);
         assert.equal(enemyBodies[0].disposeCount, 0);
         playerBody.setPosition({ x: 500, y: 0, z: 0 });
-        game.update({ forwardPressed: false, backwardsPressed: false, leftPressed: false, rightPressed: false, aimDirection: 0, isFiring: false }, 0);
-        scheduled.splice(0).forEach(callback => callback());
+        game.update({ forwardPressed: false, backwardsPressed: false, leftPressed: false, rightPressed: false, aimDirection: 0, isFiring: false }, 100);
         assert.equal(enemyBodies.length, 2);
         assert.equal(enemyBodies[0].disposeCount, 1);
         assert.equal(enemyBodies[1].disposeCount, 0);

@@ -28,11 +28,7 @@ export class WorldRenderer {
 
     private readonly loadedChunksItems: { [key: string]: { meshes: LoadedMesh[], sprites: LoadedSprite[] } } = {};
     private readonly preLoadedChunksItems: { [key: string]: { meshes: PreLoadedItem[], sprites: PreLoadedItem[] } } = {};
-    private readonly renderQueue = new RenderQueue({
-        batchSize: renderConfig.itemLoadBatchSize,
-        idleFrameCount: renderConfig.framesWithoutDraw,
-        onReady: () => GameRuntime.finishLoading(),
-    });
+    private readonly renderQueue = new RenderQueue(renderConfig.itemLoadBatchSize, renderConfig.framesWithoutDraw);
     private readonly lightingManager = LightingManager.getInstance();
 
     private static instance: WorldRenderer | undefined;
@@ -61,7 +57,9 @@ export class WorldRenderer {
 
     private initRenderLoopExtras() {
         GameRuntime.scene.onBeforeRenderObservable.add(() => {
-            this.renderQueue.processFrame();
+            if (this.renderQueue.processFrame()) {
+                GameRuntime.finishLoading();
+            }
 
             const time = performance.now() * 0.002; // Temps simulé (ralenti)
             const waveSpeed = 0.4; // Vitesse de propagation de l'onde

@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { getChunkKey, getNeighborChunks } from '../src/game/gameplay/world/chunk-coordinates.ts';
-import { RenderQueue } from '../src/game/rendering/world/render-queue.ts';
 import { Random } from '../src/game/math/random.ts';
 import { loadTypeScript } from './load-typescript.mjs';
 
+const { RenderQueue } = loadTypeScript('../src/game/rendering/world/render-queue.ts');
 const { WorldPlacement } = loadTypeScript('../src/game/gameplay/world/world-placement.ts', {
     './chunk-coordinates': { getChunkKey, getNeighborChunks },
+    '../../math/random': { Random },
 });
 
 test('chunk coordinates preserve rounding at positive and negative boundaries', () => {
@@ -24,53 +25,45 @@ test('chunk coordinates preserve rounding at positive and negative boundaries', 
 test('render batches preserve order and wait for consecutive idle frames before announcing readiness', () => {
     const rendered = [];
     let readyCount = 0;
-    const queue = new RenderQueue({ batchSize: 2, idleFrameCount: 2, onReady: () => readyCount++ });
-    queue.processFrame();
+    const queue = new RenderQueue(2, 2);
+    const processFrame = () => {
+        if (queue.processFrame()) {
+            readyCount++;
+        }
+    };
+    processFrame();
     assert.equal(readyCount, 0);
     for (const item of [1, 2, 3]) {
         queue.enqueue(() => rendered.push(item));
     }
-    queue.processFrame();
+    processFrame();
     assert.deepEqual(rendered, [1, 2]);
-    queue.processFrame();
+    processFrame();
     queue.enqueue(() => rendered.push(4));
-    queue.processFrame();
-    queue.processFrame();
+    processFrame();
+    processFrame();
     assert.equal(readyCount, 0);
-    queue.processFrame();
+    processFrame();
     assert.deepEqual(rendered, [1, 2, 3, 4]);
     assert.equal(readyCount, 1);
-    queue.processFrame();
+    processFrame();
     assert.equal(readyCount, 1);
 });
 
 test('clearing a render queue discards pending scene operations', () => {
     let rendered = false;
-    let ready = false;
-    const queue = new RenderQueue({ batchSize: 1, idleFrameCount: 0, onReady: () => {
-        ready = true;
-    } });
+    const queue = new RenderQueue(1, 0);
     queue.enqueue(() => {
         rendered = true;
     });
     queue.clear();
-    queue.processFrame();
+    const ready = queue.processFrame();
     assert.equal(rendered, false);
     assert.equal(ready, false);
 });
 
 test('seeded placement remains reproducible and keeps spawn positions inside their chunks', () => {
-    const options = {
-        randomNumber: seed => Random.randomNumber(seed),
-        randomBool: (seed, probability) => Random.randomBool(seed, probability),
-        chunkSize: 500,
-        biomeChunkSize: 1000,
-        worldSize: 10000,
-        hugeSizeChance: 5,
-        hugeSizeRatio: 3,
-        playerSpawn: { x: 0, y: 0, minDistance: 200 },
-    };
-    const placement = new WorldPlacement(options);
+    const placement = new WorldPlacement({ x: 0, y: 0, minDistance: 200 });
     Random.setSeed('refactor');
     const position = placement.getRandomPositionInChunk(500, -500, 'blob', 1);
     const count = placement.getSpawnNumber(3, 'blob', 500, -500);

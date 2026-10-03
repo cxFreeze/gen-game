@@ -1,33 +1,24 @@
 import type { Position } from '../../math/position';
 import type { Projectile } from '../projectiles/projectile';
-import type { ProjectileInfos } from '../projectiles/projectile-trajectory';
+import type { ProjectileSystem } from '../projectiles/projectile-system';
 import { isInWorldBounds } from '../world/world-bounds';
 import { worldConfig } from '../world/world-config';
 import type { CharacterBody } from './character-body.interface';
 import { getDirectionRotation, type CharDirection } from './character-direction';
 import { CharacterState } from './character-state';
 import type { CharacterStats } from './character-stats.interface';
-export interface CharacterOptions {
-    body: CharacterBody;
-    stats: CharacterStats;
-    now: () => number;
-    shoot: (infos: ProjectileInfos, owner: string) => void;
-}
+
 export class Character {
-    private readonly body;
-    private readonly stats;
-    private readonly now;
-    private readonly shoot;
     private readonly state;
     private currentDirection: CharDirection = 'front';
     private hasDisposed = false;
 
-    constructor({ body, stats, now, shoot }: CharacterOptions) {
-        this.body = body;
-        this.stats = stats;
-        this.now = now;
-        this.shoot = shoot;
-        this.state = new CharacterState(this.stats);
+    constructor(
+        private readonly body: CharacterBody,
+        private readonly stats: CharacterStats,
+        private readonly projectiles: ProjectileSystem,
+    ) {
+        this.state = new CharacterState(stats);
     }
 
     dispose() {
@@ -111,11 +102,11 @@ export class Character {
         }
     }
 
-    tryFire(direction = this.body.rotation, canFire: () => boolean = () => true): boolean {
-        if (this.hasDisposed || !this.state.canFire(this.now(), canFire)) {
+    tryFire(direction = this.body.rotation, canFire = true): boolean {
+        if (this.hasDisposed || !this.state.canFire(Date.now(), canFire)) {
             return false;
         }
-        this.shoot({ speed: this.stats.projectileSpeed, damage: this.stats.damage, range: this.stats.range, direction }, this.body.name);
+        this.projectiles.createProjectile({ speed: this.stats.projectileSpeed, damage: this.stats.damage, range: this.stats.range, direction }, this.body.name);
         return true;
     }
 

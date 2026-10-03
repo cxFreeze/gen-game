@@ -23,22 +23,25 @@ test('player view keeps physical accessors live and releases its meshes without 
             './character-view': { CharacterView },
         });
         let disposals = 0;
-        const view = new PlayerView({ x: 10, y: 0, z: 20 }, 250, () => undefined, () => disposals++);
+        const view = new PlayerView({ x: 10, y: 0, z: 20 }, 250, {
+            getProjectileMesh: () => undefined,
+            removeCharacter: () => disposals++,
+        });
         const movement = [];
         view.playerMoved$.subscribe(value => movement.push(value));
-        view.body.translate(1, 2);
-        assert.equal(view.body.position.x, 11);
-        assert.equal(view.body.position.z, 22);
-        view.body.rotation = Math.PI;
+        view.translate(1, 2);
+        assert.equal(view.position.x, 11);
+        assert.equal(view.position.z, 22);
+        view.rotation = Math.PI;
         assert.equal(view.mesh.rotation.y, Math.PI);
-        view.body.rotate(0);
-        view.body.present({ hasMoved: true, isMoving: true, movementSpeed: 85, aimDirection: 0, isFiring: true });
+        view.rotate(0);
+        view.present({ hasMoved: true, isMoving: true, movementSpeed: 85, aimDirection: 0, isFiring: true });
         assert.deepEqual(movement, [false, true]);
         assert.equal(scene.getMeshByName('noproj-aimLine').isVisible, true);
-        assert.equal(view.body.fire, undefined);
-        assert.equal(view.body.takeDamage, undefined);
-        view.body.dispose();
-        view.body.dispose();
+        assert.equal(view.fire, undefined);
+        assert.equal(view.takeDamage, undefined);
+        view.dispose();
+        view.dispose();
         assert.equal(view.mesh.isDisposed(), true);
         assert.equal(scene.getMeshByName('noproj-aimLine'), null);
         assert.equal(disposals, 1);

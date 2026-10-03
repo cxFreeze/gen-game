@@ -1,7 +1,6 @@
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
 import { Color3 } from '@babylonjs/core/Maths/math.color.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
-import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
 import { BehaviorSubject } from 'rxjs';
 import type { Position } from '../../math/position';
@@ -10,6 +9,7 @@ import { AssetManager } from '../assets/assets';
 import { LightingManager } from '../lighting/lighting';
 import { GameRuntime } from '../../runtime/game-runtime';
 import { CharacterView } from './character-view';
+import type { GamePresentation } from '../game-presentation';
 
 export class PlayerView extends CharacterView implements PlayerBody {
     private readonly asset;
@@ -20,7 +20,7 @@ export class PlayerView extends CharacterView implements PlayerBody {
     private currentAnimation = 'Idle';
     readonly playerMoved$ = this.moved.asObservable();
 
-    constructor(position: Position, range: number, getProjectileMesh: (id: string) => AbstractMesh | undefined, onDispose: () => void) {
+    constructor(position: Position, range: number, presentation: GamePresentation) {
         const asset = AssetManager.getWorldAsset('player');
         const mesh = asset.mesh.clone('player');
         const scale = asset.scale;
@@ -33,7 +33,7 @@ export class PlayerView extends CharacterView implements PlayerBody {
         mesh.ellipsoidOffset = new Vector3(0, 5, 0);
         GameRuntime.scene.addMesh(mesh, false);
         LightingManager.getInstance().shadowGenerator.addShadowCaster(mesh);
-        super(mesh, getProjectileMesh, onDispose);
+        super(mesh, presentation);
         this.asset = asset;
         this.range = range;
         this.aimLine = MeshBuilder.CreateCylinder('noproj-aimLine', { height: range / scale, diameter: 0.2, tessellation: 16 }, GameRuntime.scene);
@@ -48,10 +48,6 @@ export class PlayerView extends CharacterView implements PlayerBody {
         this.aimLine.position.y = 0.2;
         this.aimLine.scaling = new Vector3(scale, scale, scale);
         this.aimLine.setPivotPoint(Vector3.Zero());
-    }
-
-    override get body(): PlayerBody {
-        return this;
     }
 
     present(state: Parameters<PlayerBody['present']>[0]) {

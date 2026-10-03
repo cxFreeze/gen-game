@@ -6,21 +6,19 @@ export class Projectile {
     readonly id: string;
     readonly ownerName: string;
     private readonly body: ProjectileBody;
-    private readonly now: () => number;
     private readonly trajectory;
     private hasDestroyed = false;
     readonly damage;
 
-    constructor(id: string, infos: ProjectileInfos, ownerName: string, body: ProjectileBody, now: () => number) {
+    constructor(id: string, infos: ProjectileInfos, ownerName: string, body: ProjectileBody) {
         this.id = id;
         this.ownerName = ownerName;
         this.body = body;
-        this.now = now;
-        this.trajectory = new ProjectileTrajectory(infos, this.body.position, this.now(), this.body.obstacleDistance);
+        this.trajectory = new ProjectileTrajectory(infos, body.position, Date.now(), body.obstacleDistance);
         this.damage = infos.damage;
     }
 
-    private destroy() {
+    destroy() {
         if (!this.hasDestroyed) {
             this.hasDestroyed = true;
             this.body.showImpact();
@@ -32,13 +30,13 @@ export class Projectile {
         return this.hasDestroyed;
     }
 
-    update(checkHit: () => boolean) {
+    update() {
         if (this.hasDestroyed) {
             return;
         }
-        const { position, hasReachedLimit } = this.trajectory.sample(this.now());
+        const { position, hasReachedLimit } = this.trajectory.sample(Date.now());
         this.body.setPosition(position);
-        if (hasReachedLimit || !isInWorldBounds(position.x, position.z, worldConfig.safeDrawWorldSize) || checkHit()) {
+        if (hasReachedLimit || !isInWorldBounds(position.x, position.z, worldConfig.safeDrawWorldSize)) {
             this.destroy();
         }
     }

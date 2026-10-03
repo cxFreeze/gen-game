@@ -1,24 +1,12 @@
 import type { EnemyType } from './enemy-type.interface';
 import { distanceBetween, distanceSquared, type Position } from '../../math/position';
+import { Random } from '../../math/random';
+import type { Character } from '../characters/character';
 
 export type EnemyMovementMode = 'passive' | 'chase' | 'attack';
 
-/** Movement and collision queries are supplied by the runtime's character adapter. */
-export interface EnemyMovementBody {
-    readonly name: string;
-    readonly position: Position;
-    rotation: number;
-    moveBy(x: number, z: number, isPositionValid: (position: Position) => boolean): void;
-}
-
-interface EnemyMovementRandom {
-    randomNumber(seed: string): number;
-    randomBool(seed: string, probability: number): boolean;
-}
-
 export class EnemyMovement {
-    private readonly body: EnemyMovementBody;
-    private readonly random: EnemyMovementRandom;
+    private readonly body: Character;
     private readonly spawnPosition;
     private readonly maxSpawnDistance;
     private readonly attackDistance;
@@ -32,19 +20,18 @@ export class EnemyMovement {
     private avoidanceTime = 0;
     private avoidanceSide;
 
-    constructor(body: EnemyMovementBody, spawn: Position, enemyType: EnemyType, random: EnemyMovementRandom) {
+    constructor(body: Character, spawn: Position, enemyType: EnemyType) {
         this.body = body;
-        this.random = random;
         this.spawnPosition = { x: spawn.x, y: spawn.y, z: spawn.z };
         this.maxSpawnDistance = Math.max(0, enemyType.maxSpawnDistance);
         this.attackDistance = Math.max(0, enemyType.stats.range);
         this.detectionDistance = Math.max(this.attackDistance, enemyType.detectionRange);
         this.speed = Math.max(0, enemyType.stats.speed) * 30;
-        this.avoidanceSide = this.random.randomBool(`${this.body.name}-avoidance`, 0.5) ? 1 : -1;
+        this.avoidanceSide = Random.randomBool(`${body.name}-avoidance`, 0.5) ? 1 : -1;
     }
 
     private getRandomValue(key: string, min: number, max: number): number {
-        return min + (max - min) * this.random.randomNumber(`${this.body.name}-${key}-${this.targetCount}`) / 100;
+        return min + (max - min) * Random.randomNumber(`${this.body.name}-${key}-${this.targetCount}`) / 100;
     }
 
     private getPassiveTarget(deltaTime: number): Position | null {
