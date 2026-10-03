@@ -11,7 +11,7 @@ import { WorldRenderer } from '../rendering/world/world-renderer';
 import { configureBabylon } from '../rendering/scene/babylon-configuration';
 import { DebugManager } from './debug';
 import { GameLifetime } from './game-lifetime';
-import type { GameStats } from './game-stats.interface';
+import { publishDebugStats, resetDebugStats } from './game-observables';
 import { Performance } from '../rendering/scene/performance';
 
 export class GameRuntime {
@@ -64,13 +64,13 @@ export class GameRuntime {
         return this._engine;
     }
 
-    public static async start(canvas: HTMLCanvasElement, updateStats: (stats: GameStats) => void) {
+    public static async start(canvas: HTMLCanvasElement) {
         this.dispose();
         const lifetime = new GameLifetime();
         this.lifetime = lifetime;
 
         try {
-            await this.initialize(canvas, updateStats, lifetime.signal);
+            await this.initialize(canvas, lifetime.signal);
         }
         catch (error: unknown) {
             if (this.lifetime === lifetime) {
@@ -80,7 +80,7 @@ export class GameRuntime {
         }
     }
 
-    private static async initialize(canvas: HTMLCanvasElement, updateStats: (stats: GameStats) => void, signal: AbortSignal) {
+    private static async initialize(canvas: HTMLCanvasElement, signal: AbortSignal) {
         configureBabylon();
         const engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
         this._engine = engine;
@@ -121,7 +121,7 @@ export class GameRuntime {
             worldManager.present(game.update(PlayerInputs.getCommands(), time));
 
             if (engine.frameId % 10 === 0) {
-                updateStats({
+                publishDebugStats({
                     fps: Math.round(engine.getFps()),
                     worldX: worldManager.worldX,
                     worldY: worldManager.worldY,
@@ -153,5 +153,6 @@ export class GameRuntime {
         this._engine?.dispose();
         this._scene = undefined;
         this._engine = undefined;
+        resetDebugStats();
     }
 }

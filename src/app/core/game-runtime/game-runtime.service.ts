@@ -1,18 +1,11 @@
 import { Service, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { GameRuntime } from '../../../game/runtime/game-runtime';
+import { debugStats$ } from '../../../game/runtime/game-observables';
 import { MenuRuntime } from '../../../game/runtime/menu-runtime';
-import type { GameStats } from '../../../game/runtime/game-stats.interface';
 import { GameSeed } from '../../../game/runtime/game-seed';
 
 export type { GameStats } from '../../../game/runtime/game-stats.interface';
-
-class EmptyStats implements GameStats {
-    readonly fps = 0;
-    readonly worldX = 0;
-    readonly worldY = 0;
-    readonly meshCount = 0;
-    readonly polygonCount = 0;
-}
 
 class DebugControls {
     readonly isDuckVisible: boolean = true;
@@ -24,13 +17,12 @@ class DebugControls {
 @Service()
 export class GameRuntimeService {
     private readonly currentSeed = signal('');
-    private readonly latestStats = signal<Readonly<GameStats>>(new EmptyStats());
+    private readonly latestStats = toSignal(debugStats$, { requireSync: true });
     private readonly debugControls = signal<Readonly<DebugControls>>(new DebugControls());
-    private session: object | undefined;
     private readonly menuPreviews = new Map<HTMLCanvasElement, MenuRuntime>();
 
     readonly seed = this.currentSeed.asReadonly();
-    readonly stats = this.latestStats.asReadonly();
+    readonly stats = this.latestStats;
     readonly controls = this.debugControls.asReadonly();
 
     get loaded$() {
@@ -75,23 +67,14 @@ export class GameRuntimeService {
     }
 
     start(canvas: HTMLCanvasElement) {
-        const session = {};
-        this.session = session;
-        this.latestStats.set(new EmptyStats());
         this.debugControls.set(new DebugControls());
-        return GameRuntime.start(canvas, stats => {
-            if (this.session === session) {
-                this.latestStats.set({ ...stats });
-            }
-        });
+        return GameRuntime.start(canvas);
     }
 
     dispose() {
         this.stopMenuPreview();
-        this.session = undefined;
         GameRuntime.dispose();
         this.currentSeed.set('');
-        this.latestStats.set(new EmptyStats());
         this.debugControls.set(new DebugControls());
     }
 

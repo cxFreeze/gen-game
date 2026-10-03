@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { setTimeout as wait } from 'node:timers/promises';
 import test from 'node:test';
 import { firstValueFrom } from 'rxjs';
-import { signal } from '@angular/core';
+import { Injector, runInInjectionContext, signal } from '@angular/core';
 import { GameLifetime } from '../src/game/runtime/game-lifetime.ts';
 import { loadTypeScript } from './load-typescript.mjs';
 
@@ -39,6 +39,7 @@ test('a new session receives its own loading notification after the previous one
 });
 
 function createRuntime(loadAssets) {
+    const observables = loadTypeScript('../src/game/runtime/game-observables.ts');
     const engines = [];
     const scenes = [];
     const playerViews = [];
@@ -56,29 +57,39 @@ function createRuntime(loadAssets) {
         dispose: () => cleanups.set(name, (cleanups.get(name) ?? 0) + 1),
     });
     class Engine {
+        frameId = 0;
         constructor() {
  engines.push(this); 
 }
         stopRenderLoop() {
  this.isRunning = false; 
 }
-        runRenderLoop() {
+        runRenderLoop(render) {
+ this.render = render;
  this.isRunning = true; 
 }
         getFps() {
  return 60; 
 }
+        getDeltaTime() {
+            return 16;
+        }
         dispose() {
  this.isDisposed = true; 
 }
     }
     class Scene {
+        meshes = [{}, {}, {}];
         constructor() {
  scenes.push(this); 
 }
         dispose() {
  this.isDisposed = true; 
 }
+        render() {}
+        getTotalVertices() {
+            return 30;
+        }
     }
     const { GameRuntime } = loadTypeScript('../src/game/runtime/game-runtime.ts', {
         '@babylonjs/core/Engines/engine.js': { Engine },
@@ -99,17 +110,22 @@ function createRuntime(loadAssets) {
             }
             dispose() {}
         } },
-        '../input/player-inputs': { PlayerInputs: { ...manager('inputs'), init() {
+        '../input/player-inputs': { PlayerInputs: { ...manager('inputs'), checkInputs() {}, getCommands() {
+            return {};
+        }, init() {
  counts.inputs++; 
 } } },
         '../rendering/assets/assets': { AssetManager: { ...manager('assets'), loadAssets } },
         '../rendering/lighting/lighting': { LightingManager: manager('lighting') },
         '../rendering/camera/world-view': { WorldView: class {
+            worldX = 10;
+            worldY = -6;
             constructor(player) {
                 this.player = player;
                 worldViews.push(this);
             }
             generateWorld() {}
+            present() {}
         } },
         '../rendering/world/world-renderer': { WorldRenderer: manager('generator') },
         './debug': { DebugManager: class {
@@ -120,9 +136,10 @@ function createRuntime(loadAssets) {
         } },
         '../rendering/scene/babylon-configuration': { configureBabylon() {} },
         './game-lifetime': { GameLifetime },
+        './game-observables': observables,
         '../rendering/scene/performance': { Performance: { ...manager('performance'), setPerformance() {} } },
     }, { window: new EventTarget() });
-    return { GameRuntime, engines, scenes, counts, cleanups, playerViews, worldViews };
+    return { GameRuntime, engines, scenes, counts, cleanups, playerViews, worldViews, ...observables };
 }
 
 function deferred() {
@@ -138,7 +155,7 @@ function deferred() {
 test('stopping during asset loading prevents player creation and render-loop startup', async () => {
     const assets = deferred();
     const runtime = createRuntime(() => assets.promise);
-    const startup = runtime.GameRuntime.start({}, () => {});
+    const startup = runtime.GameRuntime.start({});
     const stopped = assert.rejects(startup, { name: 'AbortError' });
     runtime.GameRuntime.dispose();
     assets.resolve();
@@ -154,9 +171,9 @@ test('a late failure from an old startup cannot dispose the replacement session'
     const oldAssets = deferred();
     let loadCount = 0;
     const runtime = createRuntime(() => ++loadCount === 1 ? oldAssets.promise : Promise.resolve());
-    const firstStartup = runtime.GameRuntime.start({}, () => {});
+    const firstStartup = runtime.GameRuntime.start({});
     const firstFailed = assert.rejects(firstStartup, /old request failed/);
-    await runtime.GameRuntime.start({}, () => {});
+    await runtime.GameRuntime.start({});
     const debug = runtime.GameRuntime.debug;
     assert.equal(debug.player, runtime.playerViews[0]);
     assert.equal(debug.worldView, runtime.worldViews[0]);
@@ -174,7 +191,7 @@ test('a late failure from an old startup cannot dispose the replacement session'
 
 test('a failed startup releases the scene, engine and every manager', async () => {
     const runtime = createRuntime(() => Promise.reject(new Error('asset failed')));
-    await assert.rejects(runtime.GameRuntime.start({}, () => {}), /asset failed/);
+    await assert.rejects(runtime.GameRuntime.start({}), /asset failed/);
     assert.equal(runtime.engines[0].isDisposed, true);
     assert.equal(runtime.scenes[0].isDisposed, true);
     assert.equal(runtime.GameRuntime.isReady, false);
@@ -183,7 +200,39 @@ test('a failed startup releases the scene, engine and every manager', async () =
     }
 });
 
-function createSessionService(GameRuntime) {
+test('runtime publishes debug statistics every ten frames and ignores stopped render loops', async t => {
+    const runtime = createRuntime(() => Promise.resolve());
+    const updates = [];
+    const subscription = runtime.debugStats$.subscribe(stats => updates.push(stats));
+    t.after(() => {
+        subscription.unsubscribe();
+        runtime.GameRuntime.dispose();
+    });
+    await runtime.GameRuntime.start({});
+    assert.equal(updates.at(-1).fps, 0);
+    updates.length = 0;
+    const firstEngine = runtime.engines[0];
+    firstEngine.frameId = 9;
+    firstEngine.render();
+    assert.equal(updates.length, 0);
+    firstEngine.frameId = 10;
+    firstEngine.render();
+    assert.deepEqual({ ...updates[0] }, { fps: 60, worldX: 10, worldY: -6, meshCount: 3, polygonCount: 10 });
+    await runtime.GameRuntime.start({});
+    assert.equal(updates.at(-1).fps, 0);
+    firstEngine.render();
+    assert.equal(updates.length, 2);
+    const secondEngine = runtime.engines[1];
+    secondEngine.frameId = 10;
+    secondEngine.render();
+    assert.equal(updates.length, 3);
+    runtime.GameRuntime.dispose();
+    assert.equal(updates.at(-1).fps, 0);
+    secondEngine.render();
+    assert.equal(updates.length, 4);
+});
+
+function createSessionService({ GameRuntime, debugStats$ }, t) {
     const destroyRef = {};
     const uiStoreToken = {};
     const errors = [];
@@ -191,6 +240,7 @@ function createSessionService(GameRuntime) {
     const { GameRuntimeService } = loadTypeScript('../src/app/core/game-runtime/game-runtime.service.ts', {
         '@angular/core': { Service: () => target => target, signal },
         '../../../game/runtime/game-runtime': { GameRuntime },
+        '../../../game/runtime/game-observables': { debugStats$ },
         '../../../game/runtime/menu-runtime': { MenuRuntime: class {} },
         '../../../game/runtime/game-seed': { GameSeed: class { value = 'test'; } },
     });
@@ -204,8 +254,11 @@ function createSessionService(GameRuntime) {
  this.error = error; 
 },
     };
+    const injector = Injector.create({ providers: [] });
+    t.after(() => injector.destroy());
+    const engine = runInInjectionContext(injector, () => new GameRuntimeService());
     const instances = new Map([
-        [GameRuntimeService, new GameRuntimeService()],
+        [GameRuntimeService, engine],
         [destroyRef, { onDestroy: callback => destroyCallbacks.push(callback) }],
         [uiStoreToken, ui],
     ]);
@@ -218,14 +271,14 @@ function createSessionService(GameRuntime) {
         '../../core/game-runtime/game-runtime.service': { GameRuntimeService },
         './game-ui.service': { GameUiService: uiStoreToken },
     }, { console: { error: error => errors.push(error) } });
-    return { service: new GameSessionService(), ui, errors, destroyCallbacks };
+    return { service: new GameSessionService(), engine, ui, errors, destroyCallbacks };
 }
 
-test('the Angular service ignores old startup errors and disposes the current session on destruction', async () => {
+test('the Angular service ignores old startup errors and disposes the current session on destruction', async t => {
     const oldAssets = deferred();
     let loadCount = 0;
     const runtime = createRuntime(() => ++loadCount === 1 ? oldAssets.promise : Promise.resolve());
-    const { service, ui, errors, destroyCallbacks } = createSessionService(runtime.GameRuntime);
+    const { service, engine, ui, errors, destroyCallbacks } = createSessionService(runtime, t);
     const firstStartup = service.start({});
     await service.start({});
     oldAssets.reject(new Error('obsolete failure'));
@@ -233,17 +286,23 @@ test('the Angular service ignores old startup errors and disposes the current se
     assert.equal(ui.error, undefined);
     assert.equal(errors.length, 0);
     assert.equal(runtime.engines[1].isRunning, true);
+    runtime.engines[1].frameId = 10;
+    runtime.engines[1].render();
+    assert.equal(engine.stats().fps, 60);
     destroyCallbacks.forEach(callback => callback());
     assert.equal(runtime.engines[1].isDisposed, true);
+    runtime.engines[1].render();
+    assert.equal(engine.stats().fps, 0);
 });
 
-test('the Angular service reports a current startup failure after releasing its resources', async () => {
+test('the Angular service reports a current startup failure after releasing its resources', async t => {
     const error = new Error('current failure');
     const runtime = createRuntime(() => Promise.reject(error));
-    const { service, ui, errors } = createSessionService(runtime.GameRuntime);
+    const { service, engine, ui, errors } = createSessionService(runtime, t);
     await service.start({});
     assert.equal(ui.error, error);
     assert.deepEqual(errors, [error]);
     assert.equal(runtime.engines[0].isDisposed, true);
+    assert.equal(engine.stats().fps, 0);
     service.dispose();
 });

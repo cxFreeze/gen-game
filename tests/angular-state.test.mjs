@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { computed, signal } from '@angular/core';
+import { computed, Injector, runInInjectionContext, signal } from '@angular/core';
 import { loadTypeScript } from './load-typescript.mjs';
 
 const angular = { computed, signal, Service: () => target => target };
@@ -45,8 +45,8 @@ function createDebugService(engine) {
     return new DebugPanelService();
 }
 
-function createEngine() {
-    const callbacks = [];
+function createEngine(t) {
+    const observables = loadTypeScript('../src/game/runtime/game-observables.ts');
     const runtime = {
         isReady: false,
         debug: {
@@ -54,26 +54,36 @@ function createEngine() {
             toggle3ditems: () => false,
             toggleSkyview: () => true,
         },
-        start(canvas, updateStats) {
+        start(canvas) {
+            assert.equal(arguments.length, 1);
+            this.dispose();
             this.isReady = true;
-            callbacks.push(updateStats);
             return Promise.resolve();
         },
         dispose() {
             this.isReady = false;
+            observables.resetDebugStats();
         },
     };
     const { GameRuntimeService } = loadTypeScript('../src/app/core/game-runtime/game-runtime.service.ts', {
         '@angular/core': angular,
         '../../../game/runtime/game-runtime': { GameRuntime: runtime },
+        '../../../game/runtime/game-observables': observables,
         '../../../game/runtime/menu-runtime': { MenuRuntime: class {} },
         '../../../game/runtime/game-seed': { GameSeed: class { value = 'test-session'; } },
     });
-    return { engine: new GameRuntimeService(), callbacks };
+    const injector = Injector.create({ providers: [] });
+    t.after(() => {
+        if (!injector.destroyed) {
+            injector.destroy();
+        }
+    });
+    const engine = runInInjectionContext(injector, () => new GameRuntimeService());
+    return { engine, runtime, injector, ...observables };
 }
 
-test('debug reads engine telemetry directly and keeps visibility preferences across sessions', async () => {
-    const { engine, callbacks } = createEngine();
+test('debug reads observable telemetry and keeps panel visibility across sessions', async t => {
+    const { engine, publishDebugStats } = createEngine(t);
     const debug = createDebugService(engine);
     debug.toggleDuck();
     assert.equal(debug.isDuckVisible(), true);
@@ -86,7 +96,7 @@ test('debug reads engine telemetry directly and keeps visibility preferences acr
     debug.togglePanel();
     assert.equal(debug.isVisible(), true);
     const stats = { fps: 60, worldX: 10.2, worldY: -5.8, meshCount: 25, polygonCount: 90 };
-    callbacks[0](stats);
+    publishDebugStats(stats);
     stats.fps = 0;
     assert.equal(debug.fps(), 60);
     assert.equal(debug.worldPosition(), '10 / -6');
@@ -103,14 +113,30 @@ test('debug reads engine telemetry directly and keeps visibility preferences acr
     assert.equal(engine.controls.set, undefined);
 });
 
-test('statistics from obsolete or stopped engine sessions are ignored', async () => {
-    const { engine, callbacks } = createEngine();
+test('statistics have an initial value and reset on restart and disposal', async t => {
+    const { engine, runtime, publishDebugStats } = createEngine(t);
+    const stats = { fps: 60, worldX: 1, worldY: 2, meshCount: 3, polygonCount: 4 };
+    assert.equal(engine.stats().fps, 0);
     await engine.start({});
+    publishDebugStats(stats);
+    assert.equal(engine.stats().fps, 60);
     await engine.start({});
-    callbacks[1]({ fps: 60, worldX: 1, worldY: 2, meshCount: 3, polygonCount: 4 });
-    callbacks[0]({ fps: 10, worldX: 9, worldY: 9, meshCount: 9, polygonCount: 9 });
+    assert.equal(engine.stats().fps, 0);
+    publishDebugStats(stats);
+    assert.equal(engine.stats().fps, 60);
+    runtime.dispose();
+    assert.equal(engine.stats().fps, 0);
+    engine.dispose();
+    assert.equal(engine.stats().fps, 0);
+});
+
+test('destroying the Angular injector closes the statistics subscription', async t => {
+    const { engine, injector, publishDebugStats } = createEngine(t);
+    await engine.start({});
+    const stats = { fps: 60, worldX: 1, worldY: 2, meshCount: 3, polygonCount: 4 };
+    publishDebugStats(stats);
+    injector.destroy();
+    publishDebugStats({ ...stats, fps: 10 });
     assert.equal(engine.stats().fps, 60);
     engine.dispose();
-    callbacks[1]({ fps: 100, worldX: 0, worldY: 0, meshCount: 0, polygonCount: 0 });
-    assert.equal(engine.stats().fps, 0);
 });

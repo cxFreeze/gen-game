@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { signal } from '@angular/core';
+import { Injector, runInInjectionContext, signal } from '@angular/core';
 import { Animation } from '@babylonjs/core/Animations/animation.js';
 import { AnimationGroup } from '@babylonjs/core/Animations/animationGroup.js';
 import '@babylonjs/core/Animations/animatable.js';
@@ -302,12 +302,15 @@ test('menu runtime cleans up a failed preview load', async () => {
     assert.equal(menu.calls.engineDisposals, 1);
 });
 
-test('Angular keeps the same preview while changing animation and starting the game', async () => {
+test('Angular keeps the same preview while changing animation and starting the game', async t => {
     const calls = [];
     const previews = [];
     const { GameRuntimeService } = loadTypeScript('../src/app/core/game-runtime/game-runtime.service.ts', {
         '@angular/core': { Service: () => target => target, signal },
-        '../../../game/runtime/game-runtime': { GameRuntime: { start: async () => calls.push('game') } },
+        '../../../game/runtime/game-runtime': { GameRuntime: {
+            start: async () => calls.push('game'),
+            dispose() {},
+        } },
         '../../../game/runtime/menu-runtime': { MenuRuntime: class {
             constructor() { previews.push(this); }
             async start() { calls.push('preview'); }
@@ -316,7 +319,9 @@ test('Angular keeps the same preview while changing animation and starting the g
         } },
         '../../../game/runtime/game-seed': { GameSeed: class {} },
     });
-    const runtime = new GameRuntimeService();
+    const injector = Injector.create({ providers: [] });
+    t.after(() => injector.destroy());
+    const runtime = runInInjectionContext(injector, () => new GameRuntimeService());
     const canvas = {};
     await runtime.startMenuPreview(canvas);
     assert.deepEqual(calls, ['preview']);
@@ -326,9 +331,10 @@ test('Angular keeps the same preview while changing animation and starting the g
     assert.deepEqual(calls, ['preview', 'Running', 'game']);
     runtime.stopMenuPreview(canvas);
     assert.deepEqual(calls, ['preview', 'Running', 'game', 'preview-disposed']);
+    runtime.dispose();
 });
 
-test('a late failure from an old menu preview cannot stop its replacement', async () => {
+test('a late failure from an old menu preview cannot stop its replacement', async t => {
     const pending = deferred();
     const previews = [];
     const { GameRuntimeService } = loadTypeScript('../src/app/core/game-runtime/game-runtime.service.ts', {
@@ -347,7 +353,9 @@ test('a late failure from an old menu preview cannot stop its replacement', asyn
         } },
         '../../../game/runtime/game-seed': { GameSeed: class {} },
     });
-    const runtime = new GameRuntimeService();
+    const injector = Injector.create({ providers: [] });
+    t.after(() => injector.destroy());
+    const runtime = runInInjectionContext(injector, () => new GameRuntimeService());
     const canvas = {};
     const oldStartup = runtime.startMenuPreview(canvas);
     const failed = assert.rejects(oldStartup, /Old request failed/);
