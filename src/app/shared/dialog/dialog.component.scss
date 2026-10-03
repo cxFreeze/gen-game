@@ -1,0 +1,52 @@
+:host {
+    position: fixed;
+    inset: var(--size-400);
+    width: fit-content;
+    max-width: calc(100% - var(--size-400) * 2);
+    max-height: calc(100% - var(--size-400) * 2);
+    margin: auto;
+    padding: 0;
+    overflow: auto;
+    border: 0;
+    border-radius: var(--size-150);
+    background: transparent;
+    color: var(--text-color);
+    pointer-events: auto;
+
+    &::backdrop {
+        background: color-mix(in srgb, var(--background-color) 45%, transparent);
+        pointer-events: auto;
+    }
+
+    &[data-position='top'] {
+        margin: 0 auto auto;
+    }
+
+    &[data-position='top-left'] {
+        margin: 0 auto auto 0;
+    }
+
+    &[data-position='top-right'] {
+        margin: 0 0 auto auto;
+    }
+
+    &[data-position='middle-left'] {
+        margin: auto auto auto 0;
+    }
+
+    &[data-position='middle-right'] {
+        margin: auto 0 auto auto;
+    }
+
+    &[data-position='bottom'] {
+        margin: auto auto 0;
+    }
+
+    &[data-position='bottom-left'] {
+        margin: auto auto 0 0;
+    }
+
+    &[data-position='bottom-right'] {
+        margin: auto 0 0 auto;
+    }
+}

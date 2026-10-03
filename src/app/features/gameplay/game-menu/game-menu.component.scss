@@ -1,28 +1,10 @@
-dialog {
-    position: fixed;
-    inset: 0;
+:host {
+    display: grid;
+    gap: var(--size-400);
     box-sizing: border-box;
-    width: min(calc(100% - var(--size-400)), 26rem);
-    max-height: calc(100% - var(--size-400));
-    margin: auto;
-    padding: var(--size-500);
-    overflow: auto;
-    border: var(--size-025) solid var(--border-color);
-    border-radius: var(--size-150);
-    background: var(--surface-color);
-    color: var(--text-color);
+    width: min(calc(100vw - var(--size-400) * 2 - var(--size-200)), 25rem);
+    padding: var(--size-400);
     text-align: center;
-    pointer-events: auto;
-
-    &[open] {
-        display: grid;
-        gap: var(--size-400);
-    }
-
-    &::backdrop {
-        background: color-mix(in srgb, var(--background-color) 45%, transparent);
-        pointer-events: auto;
-    }
 }
 
 h1 {
