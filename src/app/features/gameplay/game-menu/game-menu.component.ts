@@ -1,5 +1,5 @@
-import { Component, inject, input, output } from '@angular/core';
 import type { OutputEmitterRef } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { ButtonDirective } from '../../../shared/button/button.directive';
 import { DialogContext } from '../../../shared/services/dialog-context';
 
@@ -12,7 +12,7 @@ import { DialogContext } from '../../../shared/services/dialog-context';
             @if (mode() === 'pause') {
                 <button gg-button type="button" size="lg" autofocus (click)="closeMenu(resume)">Resume</button>
             }
-            <button gg-button type="button" size="lg" [autofocus]="mode() === 'game-over'" (click)="closeMenu(replay)">Replay</button>
+            <button gg-button type="button" size="lg" [variant]="mode() === 'pause' ? 'secondary' : 'primary'" [autofocus]="mode() === 'game-over'" (click)="closeMenu(replay)">Replay</button>
             <button gg-button type="button" size="lg" variant="secondary" (click)="closeMenu(mainMenu)">Main Menu</button>
         </div>
     `,
