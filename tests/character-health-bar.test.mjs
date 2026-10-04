@@ -10,10 +10,10 @@ import { UniversalCamera } from '@babylonjs/core/Cameras/universalCamera.js';
 import { Matrix, Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { loadTypeScript } from './load-typescript.mjs';
 
-function createView(t) {
+function createView(t, isRightHanded = true) {
     const engine = new NullEngine({ renderWidth: 800, renderHeight: 600 });
     const scene = new Scene(engine);
-    scene.useRightHandedSystem = true;
+    scene.useRightHandedSystem = isRightHanded;
     const camera = new UniversalCamera('camera', new Vector3(0, 40, -60), scene);
     camera.setTarget(Vector3.Zero());
     scene.activeCamera = camera;
@@ -48,8 +48,9 @@ function getProjectedWidth(mesh, camera, engine) {
     const transform = camera.getViewMatrix().multiply(camera.getProjectionMatrix());
     const viewport = camera.viewport.toGlobal(engine.getRenderWidth(), engine.getRenderHeight());
     mesh.computeWorldMatrix(true);
-    const left = Vector3.TransformCoordinates(new Vector3(-22, 0, 0), mesh.getWorldMatrix());
-    const right = Vector3.TransformCoordinates(new Vector3(22, 0, 0), mesh.getWorldMatrix());
+    const halfWidth = mesh.getBoundingInfo().boundingBox.extendSize.x;
+    const left = Vector3.TransformCoordinates(new Vector3(-halfWidth, 0, 0), mesh.getWorldMatrix());
+    const right = Vector3.TransformCoordinates(new Vector3(halfWidth, 0, 0), mesh.getWorldMatrix());
     const projectedLeft = Vector3.Project(left, Matrix.Identity(), transform, viewport);
     const projectedRight = Vector3.Project(right, Matrix.Identity(), transform, viewport);
     assert.ok(projectedRight.x > projectedLeft.x, 'The bar must decrease from right to left on screen');
@@ -67,7 +68,7 @@ test('floating health bar follows model bounds and keeps its screen size across 
     const background = getPart('background');
     const bounds = mesh.getHierarchyBoundingVectors();
     assert.ok(background.position.y > bounds.max.y, 'The bar must sit above every visible part of the model');
-    assert.ok(Math.abs(getProjectedWidth(background, camera, engine) - 44) < 0.001);
+    assert.ok(Math.abs(getProjectedWidth(background, camera, engine) - 70) < 0.001);
     assert.equal(background.parent, null, 'Character scaling and rotation must not deform the bar');
     for (const part of [background, getPart('health'), getPart('damage')]) {
         assert.equal(part.isPickable, false);
@@ -85,7 +86,7 @@ test('floating health bar follows model bounds and keeps its screen size across 
     assert.ok(Math.abs(background.position.x - oldPosition.x - 10) < 0.001);
     camera.position.scaleInPlace(2);
     step(0);
-    assert.ok(Math.abs(getProjectedWidth(background, camera, engine) - 44) < 0.001);
+    assert.ok(Math.abs(getProjectedWidth(background, camera, engine) - 70) < 0.001);
 
     camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
     camera.orthoLeft = -100;
@@ -93,10 +94,36 @@ test('floating health bar follows model bounds and keeps its screen size across 
     camera.orthoTop = 75;
     camera.orthoBottom = -75;
     step(0);
-    assert.ok(Math.abs(getProjectedWidth(background, camera, engine) - 44) < 0.001);
+    assert.ok(Math.abs(getProjectedWidth(background, camera, engine) - 70) < 0.001);
 });
 
-test('health decreases smoothly while a delayed trail shows the previous value, then expires after one second', t => {
+test('bar layers keep distinct depths while enemies and the camera move', t => {
+    for (const isRightHanded of [true, false]) {
+        const { scene, mesh, camera, view, step, getPart } = createView(t, isRightHanded);
+        view.showDamage(100, 60, 100);
+        step(0.5);
+        for (let frame = 0; frame < 120; frame++) {
+            mesh.position.set(5000 + frame * 0.3, 9, 5000 + Math.sin(frame * 0.1) * 20);
+            camera.position.set(5000 + frame * 0.15, 250, 4830);
+            camera.setTarget(new Vector3(5000 + frame * 0.15, 0, 5000));
+            scene.incrementRenderId();
+            step(0);
+            const viewMatrix = camera.getViewMatrix();
+            const getDepth = part => {
+                const mesh = getPart(part);
+                mesh.computeWorldMatrix(true);
+                return Math.abs(Vector3.TransformCoordinates(mesh.getAbsolutePosition(), viewMatrix).z);
+            };
+            const backgroundDepth = getDepth('background');
+            const damageDepth = getDepth('damage');
+            const healthDepth = getDepth('health');
+            assert.ok(backgroundDepth - damageDepth > 0.01, 'The damage trail must be physically closer than the background');
+            assert.ok(damageDepth - healthDepth > 0.01, 'Health must be physically closer than the damage trail');
+        }
+    }
+});
+
+test('health decreases smoothly while a delayed trail shows the previous value, then expires after ten seconds', t => {
     const { scene, view, step, getPart } = createView(t);
     const meshCount = scene.meshes.length;
     const materialCount = scene.materials.length;
@@ -113,11 +140,12 @@ test('health decreases smoothly while a delayed trail shows the previous value, 
     assert.equal(health.scaling.x, 0.6);
     assert.ok(damage.scaling.x > health.scaling.x && damage.scaling.x < previousDamageRatio);
     // Both fills shrink from the right, preserving the same left edge.
-    assert.ok(Math.abs(health.position.x - health.scaling.x * 21 + 21) < 1e-8);
-    assert.ok(Math.abs(damage.position.x - damage.scaling.x * 21 + 21) < 1e-8);
+    const halfFillWidth = health.getBoundingInfo().boundingBox.extendSize.x;
+    assert.ok(Math.abs(health.position.x - health.scaling.x * halfFillWidth + halfFillWidth) < 1e-8);
+    assert.ok(Math.abs(damage.position.x - damage.scaling.x * halfFillWidth + halfFillWidth) < 1e-8);
     step(0.28);
     assert.equal(damage.scaling.x, 0.6);
-    step(0.519);
+    step(9.519);
     assert.ok(getPart('background'));
     step(0.002);
     assert.equal(getPart('background'), null);
@@ -144,7 +172,7 @@ test('successive hits reuse the bar, continue its animation and restart its visi
         step(0);
     }
     assert.equal(getPart('damage').scaling.x, damageRatio, 'Without render time, pauses must not advance the animation');
-    step(0.8);
+    step(9.8);
     assert.equal(getPart('background'), background, 'Visibility must restart from the most recent hit');
     assert.equal(getPart('health').scaling.x, 0.4);
     step(0.201);

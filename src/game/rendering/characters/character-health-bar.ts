@@ -59,13 +59,13 @@ export class CharacterHealthBar {
         const mesh = CreatePlane(`${this.characterMesh.name}-health-bar-${name}`, { width, height }, this.scene);
         mesh.isPickable = false;
         mesh.renderingGroupId = this.characterMesh.renderingGroupId;
+        // Billboard local negative Z faces the camera in both scene handedness modes.
+        // Give each layer actual separation instead of relying on depth-buffer bias.
+        mesh.position.z = -layer * 0.25;
         const material = new StandardMaterial(`${mesh.name}-material`, this.scene);
         material.disableLighting = true;
         material.emissiveColor = color;
         material.backFaceCulling = false;
-        // Separate coplanar layers without changing their screen position.
-        material.zOffset = -layer;
-        material.zOffsetUnits = -layer;
         mesh.material = material;
         return mesh;
     }
