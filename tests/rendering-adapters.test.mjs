@@ -147,8 +147,10 @@ test('death cloud follows scaled, rotated model bounds and covers the model befo
     const center = bounds.min.add(bounds.max).scale(0.5);
     assert.ok(particles.emitter.equalsWithEpsilon(center));
     for (const axis of ['x', 'y', 'z']) {
+        const minimumCloudSize = particles.maxEmitBox[axis] - particles.minEmitBox[axis] + particles.minSize;
         const cloudSize = particles.maxEmitBox[axis] - particles.minEmitBox[axis] + particles.maxSize;
-        assert.ok(Math.abs(cloudSize - size[axis]) < 1e-8, `Cloud must match model size on ${axis}`);
+        assert.ok(minimumCloudSize > size[axis], `Even the smallest particles must extend beyond model size on ${axis}`);
+        assert.ok(cloudSize <= size[axis] * 2.1 + 1e-8, `Cloud must stay proportional to model size on ${axis}`);
     }
 
     // Shader compilation or a missing draw must not hide the model.
@@ -181,8 +183,8 @@ test('death cloud follows scaled, rotated model bounds and covers the model befo
     assert.ok(particles.particles.some(particle => particle.size > particles.maxSize));
     const modelSize = Math.max(size.x, size.y, size.z);
     assert.ok(particles.particles.some((particle, index) => {
-        return Vector3.Distance(particle.position, coveringPositions[index]) > modelSize * 0.3;
-    }), 'Cloud must disperse well beyond its initial covering positions');
+        return Vector3.Distance(particle.position, coveringPositions[index]) > modelSize * 0.1;
+    }), 'Mist must drift away from its initial covering positions as it expands');
     for (let frame = 0; frame < 19 && !mesh.isDisposed(); frame++) {
         renderDeathFrame(scene, particles);
     }

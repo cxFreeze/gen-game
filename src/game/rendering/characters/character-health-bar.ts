@@ -5,6 +5,7 @@ import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import { CreatePlane } from '@babylonjs/core/Meshes/Builders/planeBuilder.js';
 import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
+import type { Scene } from '@babylonjs/core/scene.js';
 
 const visibleDuration = 10;
 const healthDuration = 0.16;
@@ -16,6 +17,7 @@ const fillWidth = barWidth - 2;
 
 /** A camera-facing bar with a delayed damage trail, created only after an impact. */
 export class CharacterHealthBar {
+    private static readonly materialsByScene = new WeakMap<Scene, Record<'background' | 'damage' | 'health', StandardMaterial>>();
     private readonly scene;
     private readonly background;
     private readonly damageFill;
@@ -30,10 +32,11 @@ export class CharacterHealthBar {
 
     constructor(private readonly characterMesh: AbstractMesh, private readonly onFinished: () => void) {
         this.scene = characterMesh.getScene();
-        this.background = this.createPart('background', barWidth, barHeight, new Color3(0.08, 0.09, 0.1), 0);
+        const materials = this.getMaterials();
+        this.background = this.createPart('background', barWidth, barHeight, materials.background, 0);
         this.background.billboardMode = Mesh.BILLBOARDMODE_ALL;
-        this.damageFill = this.createPart('damage', fillWidth, barHeight - 2, new Color3(0.70, 0.80, 0.80), 1);
-        this.healthFill = this.createPart('health', fillWidth, barHeight - 2, new Color3(0.80, 0.35, 0.35), 2);
+        this.damageFill = this.createPart('damage', fillWidth, barHeight - 2, materials.damage, 1);
+        this.healthFill = this.createPart('health', fillWidth, barHeight - 2, materials.health, 2);
         this.damageFill.parent = this.background;
         this.healthFill.parent = this.background;
         this.background.setEnabled(false);
@@ -55,17 +58,36 @@ export class CharacterHealthBar {
         this.updatePosition();
     }
 
-    private createPart(name: string, width: number, height: number, color: Color3, layer: number) {
+    private getMaterials() {
+        const existingMaterials = CharacterHealthBar.materialsByScene.get(this.scene);
+        if (existingMaterials) {
+            return existingMaterials;
+        }
+        // The scene owns these materials and disposes them when it is destroyed.
+        const materials = {
+            background: this.createMaterial('background', new Color3(0.08, 0.09, 0.1)),
+            damage: this.createMaterial('damage', new Color3(0.70, 0.80, 0.80)),
+            health: this.createMaterial('health', new Color3(0.80, 0.35, 0.35)),
+        };
+        CharacterHealthBar.materialsByScene.set(this.scene, materials);
+        return materials;
+    }
+
+    private createMaterial(name: string, color: Color3) {
+        const material = new StandardMaterial(`health-bar-${name}-material`, this.scene);
+        material.disableLighting = true;
+        material.emissiveColor = color;
+        material.backFaceCulling = false;
+        return material;
+    }
+
+    private createPart(name: string, width: number, height: number, material: StandardMaterial, layer: number) {
         const mesh = CreatePlane(`${this.characterMesh.name}-health-bar-${name}`, { width, height }, this.scene);
         mesh.isPickable = false;
         mesh.renderingGroupId = this.characterMesh.renderingGroupId;
         // Billboard local negative Z faces the camera in both scene handedness modes.
         // Give each layer actual separation instead of relying on depth-buffer bias.
         mesh.position.z = -layer * 0.25;
-        const material = new StandardMaterial(`${mesh.name}-material`, this.scene);
-        material.disableLighting = true;
-        material.emissiveColor = color;
-        material.backFaceCulling = false;
         mesh.material = material;
         return mesh;
     }
@@ -121,7 +143,7 @@ export class CharacterHealthBar {
         }
         this.isDisposed = true;
         this.scene.onBeforeRenderObservable.remove(this.renderObserver);
-        this.background.dispose(false, true);
+        this.background.dispose();
         this.onFinished();
     }
 }

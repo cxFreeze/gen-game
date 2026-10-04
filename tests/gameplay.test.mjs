@@ -22,9 +22,9 @@ const { EnemyCombat } = loadTypeScript('../src/game/gameplay/enemies/enemy-comba
 test('damage, healing, death, and firing cooldowns work without a rendered character', () => {
     const state = new CharacterState(playerConfig.stats);
     state.takeDamage(25);
-    assert.equal(state.health, 75);
+    assert.equal(state.health, playerConfig.stats.health - 25);
     state.takeDamage(-100);
-    assert.equal(state.health, 100);
+    assert.equal(state.health, playerConfig.stats.health);
     assert.equal(state.canFire(1000, false), false);
     assert.equal(state.canFire(1000), true);
     assert.equal(state.canFire(1500), false);

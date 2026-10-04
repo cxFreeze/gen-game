@@ -130,6 +130,7 @@ test('health decreases smoothly while a delayed trail shows the previous value, 
     view.showDamage(100, 60, 100);
     const health = getPart('health');
     const damage = getPart('damage');
+    const healthMaterial = health.material;
     assert.equal(health.scaling.x, 1);
     assert.equal(damage.scaling.x, 1);
     step(0.08);
@@ -150,10 +151,12 @@ test('health decreases smoothly while a delayed trail shows the previous value, 
     step(0.002);
     assert.equal(getPart('background'), null);
     assert.equal(scene.meshes.length, meshCount);
-    assert.equal(scene.materials.length, materialCount);
+    assert.equal(scene.materials.length, materialCount + 3, 'Shared materials remain available until scene disposal');
     assert.equal(scene.onBeforeRenderObservable.hasObservers(), false);
     view.showDamage(60, 50, 100);
     assert.equal(getPart('health').scaling.x, 0.6, 'A later hit starts from current health, not full health');
+    assert.equal(getPart('health').material, healthMaterial, 'A recreated bar must reuse the shared material');
+    assert.equal(scene.materials.length, materialCount + 3);
 });
 
 test('successive hits reuse the bar, continue its animation and restart its visibility using render time', t => {
@@ -179,7 +182,7 @@ test('successive hits reuse the bar, continue its animation and restart its visi
     assert.equal(getPart('background'), null);
 });
 
-test('character death and disposal immediately release health bar meshes, materials and observers', t => {
+test('character death and disposal release health bar meshes and observers while preserving shared materials', t => {
     for (const shouldDie of [false, true]) {
         const { scene, view, mesh, step, getPart } = createView(t);
         const materialCount = scene.materials.length;
@@ -194,11 +197,47 @@ test('character death and disposal immediately release health bar meshes, materi
         assert.equal(getPart('background'), null);
         assert.equal(getPart('health'), null);
         assert.equal(getPart('damage'), null);
-        assert.equal(scene.materials.length, materialCount);
+        assert.equal(scene.materials.length, materialCount + 3);
         assert.equal(scene.onBeforeRenderObservable.hasObservers(), false);
         view.showDamage(75, 50, 100);
         step(0.1);
         assert.equal(getPart('background'), null, 'Dead or disposed characters must not recreate a bar');
         assert.equal(mesh.isDisposed(), !shouldDie);
     }
+});
+
+test('bars share materials within a scene and release them only with their owning scene', t => {
+    const { scene, sibling, view, getPart } = createView(t);
+    const otherView = new view.constructor(sibling, { removeCharacter() {} });
+    const otherScene = new Scene(scene.getEngine());
+    const otherMesh = MeshBuilder.CreateBox('other-scene-enemy', {}, otherScene);
+    const otherSceneView = new view.constructor(otherMesh, { removeCharacter() {} });
+    t.after(() => {
+        otherView.dispose();
+        otherSceneView.dispose();
+        otherScene.dispose();
+    });
+    view.showDamage(100, 60, 100);
+    const materialCount = scene.materials.length;
+    otherView.showDamage(100, 80, 100);
+    otherSceneView.showDamage(100, 90, 100);
+    let disposedMaterialCount = 0;
+    for (const part of ['background', 'damage', 'health']) {
+        const material = getPart(part).material;
+        const otherBar = scene.getMeshByName(`other-enemy-health-bar-${part}`);
+        const otherSceneBar = otherScene.getMeshByName(`other-scene-enemy-health-bar-${part}`);
+        assert.equal(otherBar.material, material);
+        assert.notEqual(otherSceneBar.material, material, 'Different scenes must own distinct materials');
+        assert.equal(otherSceneBar.material.getScene(), otherScene);
+        material.onDisposeObservable.add(() => disposedMaterialCount++);
+    }
+    assert.equal(scene.materials.length, materialCount);
+    view.dispose();
+    assert.equal(disposedMaterialCount, 0, 'Disposing one bar must preserve the materials used by another');
+    otherView.dispose();
+    assert.equal(disposedMaterialCount, 0, 'Materials must survive the last bar for later reuse');
+    otherScene.dispose();
+    assert.equal(disposedMaterialCount, 0, 'Disposing another scene must not affect shared materials');
+    scene.dispose();
+    assert.equal(disposedMaterialCount, 3);
 });

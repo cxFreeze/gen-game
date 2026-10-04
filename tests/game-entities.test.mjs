@@ -178,7 +178,7 @@ test('player owns movement, firing cooldowns, and immunity to its own projectile
     assert.equal(shots.length, 2);
     assert.equal(shots[0].owner, 'player');
     assert.equal(player.checkDamageCollisions({ id: 'own', ownerName: 'player', damage: 100 }), false);
-    assert.equal(player.health, 100);
+    assert.equal(player.health, playerConfig.stats.health);
     assert.equal(player.checkDamageCollisions({ id: 'enemy', ownerName: 'enemy', damage: 100 }), true);
     assert.equal(player.isDead, true);
     now = 2500;
@@ -354,7 +354,7 @@ test('a complete gameplay session calls its view and releases its entities', con
     const game = new Game(view);
     const frame = game.update({ forwardPressed: true, backwardsPressed: false, leftPressed: false, rightPressed: false, aimDirection: 0, isFiring: true }, 100);
     assert.equal(frame.isMoving, true);
-    assert.equal(game.player.health, 100);
+    assert.equal(game.player.health, playerConfig.stats.health);
     game.dispose();
     assert.equal(body.disposeCount, 1);
     assert.equal(view.projectileBodies.length, 1);

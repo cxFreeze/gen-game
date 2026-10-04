@@ -1,5 +1,5 @@
 import { RawTexture } from '@babylonjs/core/Materials/Textures/rawTexture.js';
-import { Color4 } from '@babylonjs/core/Maths/math.color.js';
+import { Color3, Color4 } from '@babylonjs/core/Maths/math.color.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import { ParticleSystem } from '@babylonjs/core/Particles/particleSystem.js';
@@ -17,7 +17,12 @@ export class CharacterDeathEffect {
     private hasHiddenModel = false;
     private isDisposed = false;
 
-    constructor(private readonly mesh: AbstractMesh, private readonly onFinished: () => void) {
+    /** The optional color tints the mist; opacity remains controlled by the effect. */
+    constructor(
+        private readonly mesh: AbstractMesh,
+        private readonly onFinished: () => void,
+        color = new Color3(0.58, 0.22, 0.88),
+    ) {
         this.scene = mesh.getScene();
         for (const part of [mesh, ...mesh.getChildMeshes()]) {
             part.refreshBoundingInfo({ applySkeleton: true, applyMorph: true });
@@ -31,7 +36,7 @@ export class CharacterDeathEffect {
             Math.max(0, (size.y - particleSize) / 2),
             Math.max(0, (size.z - particleSize) / 2),
         );
-        const particles = new ParticleSystem(`${mesh.name}-death-cloud`, 35, this.scene);
+        const particles = new ParticleSystem(`${mesh.name}-death-cloud`, 48, this.scene);
         this.particles = particles;
         particles.particleTexture = this.createCloudTexture(this.scene);
         particles.emitter = bounds.min.add(bounds.max).scale(0.5);
@@ -60,13 +65,15 @@ export class CharacterDeathEffect {
                 position.addInPlace(direction.scale(Math.max(0, distance) + particleSize * 0.02));
             }
         };
-        particles.minSize = particleSize * 0.75;
-        particles.maxSize = particleSize;
+        // Overlap the soft edges beyond the model bounds to conceal its silhouette.
+        particles.minSize = particleSize * 1.25;
+        particles.maxSize = particleSize * 1.75;
         particles.minLifeTime = 0.55;
         particles.maxLifeTime = 0.7;
         particles.manualEmitCount = particles.getCapacity();
         particles.emitRate = 0;
-        particles.updateSpeed = 1 / 35;
+        // Keep particle lifetimes in seconds, like the model-cover timer.
+        particles.updateSpeed = 1 / 60;
         particles.blendMode = ParticleSystem.BLENDMODE_STANDARD;
         particles.renderingGroupId = mesh.renderingGroupId;
         const dispersionDistance = Math.max(size.x, size.y, size.z) * 0.6;
@@ -74,10 +81,14 @@ export class CharacterDeathEffect {
         particles.direction2 = new Vector3(dispersionDistance * 0.9, dispersionDistance * 0.65, dispersionDistance * 0.9);
         particles.minEmitPower = 1;
         particles.maxEmitPower = 1.5;
-        particles.minAngularSpeed = -0.6;
-        particles.maxAngularSpeed = 0.6;
-        const lightColor = new Color4(0.86, 0.82, 0.94, 1);
-        const shadowColor = new Color4(0.56, 0.51, 0.68, 1);
+        particles.minInitialRotation = 0;
+        particles.maxInitialRotation = Math.PI * 2;
+        particles.minAngularSpeed = -1.2;
+        particles.maxAngularSpeed = 1.2;
+        const highlight = Color3.Lerp(color, Color3.White(), 0.28);
+        const shadow = color.scale(0.65);
+        const lightColor = new Color4(highlight.r, highlight.g, highlight.b, 1);
+        const shadowColor = new Color4(shadow.r, shadow.g, shadow.b, 1);
         particles.addColorGradient(0,
             new Color4(lightColor.r, lightColor.g, lightColor.b, 0),
             new Color4(shadowColor.r, shadowColor.g, shadowColor.b, 0),
@@ -123,17 +134,26 @@ export class CharacterDeathEffect {
     }
 
     private createCloudTexture(scene: Scene) {
-        const resolution = 64;
+        const resolution = 128;
         const pixels = new Uint8Array(resolution * resolution * 4);
         for (let y = 0; y < resolution; y++) {
             for (let x = 0; x < resolution; x++) {
-                const radius = Math.hypot((x + 0.5) * 2 / resolution - 1, (y + 0.5) * 2 / resolution - 1);
-                const opacity = 1 - Math.min(1, Math.max(0, (radius - 0.55) / 0.45));
+                const u = (x + 0.5) * 2 / resolution - 1;
+                const v = (y + 0.5) * 2 / resolution - 1;
+                const radius = Math.hypot(u, v);
+                const edgeFade = Math.max(0, 1 - radius * radius);
+                // Warped wisps break up the round billboard while keeping its edges transparent.
+                const warpedU = u + 0.16 * Math.sin(v * 7 + Math.sin(u * 5));
+                const warpedV = v + 0.16 * Math.sin(u * 6 - Math.sin(v * 4));
+                const wisps = 0.72
+                    + 0.18 * Math.sin(warpedU * 11 + warpedV * 7)
+                    + 0.1 * Math.sin(warpedU * 21 - warpedV * 15);
+                const opacity = Math.exp(-2.2 * radius * radius) * edgeFade * edgeFade * wisps;
                 const offset = (y * resolution + x) * 4;
                 pixels[offset] = 255;
                 pixels[offset + 1] = 255;
                 pixels[offset + 2] = 255;
-                pixels[offset + 3] = Math.round(255 * opacity * opacity * (3 - 2 * opacity));
+                pixels[offset + 3] = Math.round(255 * opacity);
             }
         }
         return RawTexture.CreateRGBATexture(pixels, resolution, resolution, scene);

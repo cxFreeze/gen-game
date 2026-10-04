@@ -1,4 +1,3 @@
-import { worldConfig } from '../../gameplay/world/world-config';
 import { AnimationGroup } from '@babylonjs/core/Animations/animationGroup.js';
 import { AssetContainer } from '@babylonjs/core/assetContainer.js';
 import { VertexBuffer } from '@babylonjs/core/Buffers/buffer.js';
@@ -10,10 +9,11 @@ import { Matrix } from '@babylonjs/core/Maths/math.vector.js';
 import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
 import { MeshBuilder } from '@babylonjs/core/Meshes/meshBuilder.js';
 import { SpriteManager } from '@babylonjs/core/Sprites/spriteManager.js';
-import { GameRuntime } from '../../runtime/game-runtime';
 import type { BiomeAssetType, EnemyAsset, WorldAsset, ZoneAssetType } from '../../gameplay/world/asset-types.interface';
+import { worldConfig } from '../../gameplay/world/world-config';
 import { BiomeType, ZoneType } from '../../gameplay/world/world-types';
 import { Random } from '../../math/random';
+import { GameRuntime } from '../../runtime/game-runtime';
 import { GG3DAsset, GGSpriteAsset } from './gg-asset';
 
 interface BiomeAssetByType {
@@ -231,6 +231,7 @@ export class AssetManager {
             flower.scale = 12 / flower.sizeY;
             flower.ignoreCollisions = true;
             flower.isPickable = false;
+            flower.disableShadow = true;
             this.biomeAssets[BiomeType.forest].flower.push(flower);
         }
 
