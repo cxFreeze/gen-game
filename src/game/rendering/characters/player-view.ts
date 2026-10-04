@@ -67,6 +67,10 @@ export class PlayerView extends CharacterView implements PlayerBody {
         this.aimLine.rotation.y = state.aimDirection;
     }
 
+    override showDamage() {
+        // Player health is presented by the HUD, without a floating bar.
+    }
+
     override showDeath() {
         if (this.isDisposed) {
             return;

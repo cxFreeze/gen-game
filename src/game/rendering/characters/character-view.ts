@@ -8,11 +8,13 @@ import { AssetUtils } from '../animation/assets-utils';
 import { GameRuntime } from '../../runtime/game-runtime';
 import type { GamePresentation } from '../game-presentation';
 import { CharacterDeathEffect } from './character-death-effect';
+import { CharacterHealthBar } from './character-health-bar';
 
 export class CharacterView implements CharacterBody {
     protected isDisposed = false;
     private rotationAnimation: Subscription | undefined;
     private deathEffect: CharacterDeathEffect | undefined;
+    private healthBar: CharacterHealthBar | undefined;
     constructor(readonly mesh: AbstractMesh, private readonly presentation: GamePresentation) {}
 
     get name() {
@@ -63,12 +65,21 @@ export class CharacterView implements CharacterBody {
         return !!(hit?.hit && hit.pickedMesh?.name === 'player');
     }
 
+    showDamage(previousHealth: number, currentHealth: number, maxHealth: number) {
+        if (this.isDisposed || this.deathEffect) {
+            return;
+        }
+        this.healthBar ??= new CharacterHealthBar(this.mesh, () => this.healthBar = undefined);
+        this.healthBar.show(previousHealth, currentHealth, maxHealth);
+    }
+
     showDeath() {
         if (this.isDisposed || this.deathEffect) {
             return;
         }
         this.rotationAnimation?.unsubscribe();
         this.rotationAnimation = undefined;
+        this.healthBar?.dispose();
         for (const mesh of [this.mesh, ...this.mesh.getChildMeshes()]) {
             mesh.checkCollisions = false;
             mesh.isPickable = false;
@@ -82,6 +93,7 @@ export class CharacterView implements CharacterBody {
         }
         this.isDisposed = true;
         this.rotationAnimation?.unsubscribe();
+        this.healthBar?.dispose();
         this.deathEffect?.dispose();
         this.deathEffect = undefined;
         this.mesh.dispose();

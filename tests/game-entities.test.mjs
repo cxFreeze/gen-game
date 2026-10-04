@@ -19,6 +19,7 @@ function createBody(name = 'player') {
         disposeCount: 0,
         deathCount: 0,
         presentations: [],
+        damagePresentations: [],
         translate(x, z) {
             body.position = { x: body.position.x + x, y: body.position.y, z: body.position.z + z };
         },
@@ -32,6 +33,9 @@ function createBody(name = 'player') {
         hasLineOfSight: () => true,
         present(state) {
             body.presentations.push(state);
+        },
+        showDamage(previousHealth, currentHealth, maxHealth) {
+            body.damagePresentations.push({ previousHealth, currentHealth, maxHealth });
         },
         showDeath() {
             body.deathCount++;
@@ -54,6 +58,29 @@ class RecordedProjectiles {
         this.shots.push({ infos, owner });
     }
 }
+
+test('damage presentation receives health before and after actual damage, including a lethal hit', () => {
+    const body = createBody('enemy');
+    const character = new Character(body, { ...playerConfig.stats, health: 100 }, new RecordedProjectiles());
+    character.takeDamage(25);
+    character.takeDamage(0);
+    character.takeDamage(-10);
+    character.takeDamage(5);
+    character.takeDamage(1000);
+    character.takeDamage(1);
+    assert.deepEqual(body.damagePresentations, [
+        { previousHealth: 100, currentHealth: 75, maxHealth: 100 },
+        { previousHealth: 85, currentHealth: 80, maxHealth: 100 },
+        { previousHealth: 80, currentHealth: 0, maxHealth: 100 },
+    ]);
+    assert.equal(body.deathCount, 1);
+
+    const disposedBody = createBody('disposed');
+    const disposedCharacter = new Character(disposedBody, playerConfig.stats, new RecordedProjectiles());
+    disposedCharacter.dispose();
+    disposedCharacter.takeDamage(10);
+    assert.equal(disposedBody.damagePresentations.length, 0);
+});
 
 class TestGameView {
     enemyBodies = [];

@@ -41,6 +41,11 @@ test('player view keeps physical accessors live and releases its meshes without 
         view.present({ hasMoved: true, isMoving: true, movementSpeed: 85, aimDirection: 0, isFiring: true });
         assert.deepEqual(movement, [false, true]);
         assert.equal(scene.getMeshByName('noproj-aimLine').isVisible, true);
+        const meshCount = scene.meshes.length;
+        const materialCount = scene.materials.length;
+        view.showDamage(100, 75, 100);
+        assert.equal(scene.meshes.length, meshCount, 'Player damage must not create a floating health bar');
+        assert.equal(scene.materials.length, materialCount);
         assert.equal(view.fire, undefined);
         assert.equal(view.takeDamage, undefined);
         view.dispose();

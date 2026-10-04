@@ -57,7 +57,11 @@ export class Character {
         if (this.hasDisposed || this.state.isDead) {
             return;
         }
+        const previousHealth = this.state.health;
         this.state.takeDamage(damage);
+        if (this.state.health < previousHealth) {
+            this.body.showDamage(previousHealth, this.state.health, this.state.maxHealth);
+        }
         if (this.state.isDead) {
             this.die();
         }
