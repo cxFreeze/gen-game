@@ -1,0 +1,1 @@
+import{t as h}from"./chunk-PXEp8Pfz.js";var e=class extends h{constructor(t,a,r,i,o){super(a,o),this._operation=r,this._className=i,this.a=this.registerDataInput(`a`,t)}_doOperation(t){return this._operation(this.a.getValue(t))}getClassName(){return this._className}};export{e as t};

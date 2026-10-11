@@ -1,0 +1,1 @@
+import{t as u}from"./chunk-InUrC7dV.js";var r=class extends u{constructor(s){super(s),this.out=this._registerSignalOutput(`out`)}};export{r as t};

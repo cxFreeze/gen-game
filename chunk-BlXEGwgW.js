@@ -1,0 +1,1 @@
+import"./chunk-CgQDO-0U.js";import{O as g}from"./main-PYR53G4F.js";export{g as colorVertexShader};

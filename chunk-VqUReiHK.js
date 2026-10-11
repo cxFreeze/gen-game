@@ -1,0 +1,1 @@
+import{t as e$1}from"./chunk-CgQDO-0U.js";var e=`kernelBlurVaryingDeclaration`;var a=`varying vec2 sampleCoord{X};`;e$1.IncludesShadersStore[e]||(e$1.IncludesShadersStore[e]=a);var o={name:e,shader:a};export{o as t};
