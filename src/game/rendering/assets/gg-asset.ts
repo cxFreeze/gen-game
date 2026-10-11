@@ -108,7 +108,7 @@ export class GG3DAsset extends GGAsset {
         const collider = MeshBuilder.CreateBox('collider', { width: 1, height: 1, depth: 1 }, GameRuntime.scene);
         collider.scaling = new Vector3(this._sizeX, this._sizeY, this._sizeZ).multiplyByFloats(sizeAjust, 1, sizeAjust);
         collider.position = boundingBox.centerWorld.clone();
-        collider.isVisible = false;
+        collider.isVisible = true;
 
         this.collider = collider;
 

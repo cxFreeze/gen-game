@@ -339,7 +339,7 @@ export class AssetManager {
         townCenter1.safeZone = 100;
         townCenter1.static = true;
         townCenter1.scale = 12;
-        townCenter1.isPickable = false;
+        townCenter1.isPickable = true;
         townCenter1.rotation = Math.PI;
         townCenter1.createCollider(0.9);
 
@@ -349,7 +349,7 @@ export class AssetManager {
         townCenter2.safeZone = 100;
         townCenter2.static = true;
         townCenter2.scale = 20;
-        townCenter2.isPickable = false;
+        townCenter2.isPickable = true;
         townCenter2.rotation = Math.PI;
         townCenter2.createCollider(0.9);
 

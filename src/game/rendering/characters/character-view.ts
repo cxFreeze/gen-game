@@ -4,12 +4,12 @@ import type { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import type { Subscription } from 'rxjs';
 import type { CharacterBody } from '../../gameplay/characters/character-body.interface';
 import type { Position } from '../../math/position';
-import { AssetUtils } from '../animation/assets-utils';
 import { GameRuntime } from '../../runtime/game-runtime';
+import { AssetUtils } from '../animation/assets-utils';
 import type { GamePresentation } from '../game-presentation';
+import { CharacterDamageEffect } from './character-damage-effect';
 import { CharacterDeathEffect } from './character-death-effect';
 import { CharacterHealthBar } from './character-health-bar';
-import { CharacterDamageEffect } from './character-damage-effect';
 
 export class CharacterView implements CharacterBody {
     protected isDisposed = false;
@@ -20,7 +20,7 @@ export class CharacterView implements CharacterBody {
     private readonly displacement = Vector3.Zero();
     private readonly sightRay = new Ray(Vector3.Zero(), Vector3.Zero());
     private readonly isSightObstacle = (candidate: AbstractMesh) => candidate !== this.mesh && !candidate.name.includes('projectile') && candidate.isPickable;
-    constructor(readonly mesh: AbstractMesh, private readonly presentation: GamePresentation) {}
+    constructor(readonly mesh: AbstractMesh, private readonly presentation: GamePresentation) { }
 
     get name() {
         return this.mesh.name;

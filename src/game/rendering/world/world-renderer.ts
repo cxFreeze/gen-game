@@ -345,7 +345,7 @@ export class WorldRenderer {
         if (asset.collider) {
             const collider = asset.collider.createInstance(`${asset.name}collider${this.itemCnt}`);
             collider.parent = item;
-            collider.isVisible = false;
+            collider.isVisible = true;
             collider.isPickable = false;
             collider.checkCollisions = true;
             collider.alwaysSelectAsActiveMesh = false;

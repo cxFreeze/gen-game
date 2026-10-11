@@ -1,9 +1,12 @@
 import { Animation } from '@babylonjs/core/Animations/animation.js';
 import { UniversalCamera } from '@babylonjs/core/Cameras/universalCamera.js';
 import { Ray } from '@babylonjs/core/Culling/ray.js';
+import { Material } from '@babylonjs/core/Materials/material.js';
+import { MultiMaterial } from '@babylonjs/core/Materials/multiMaterial.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh.js';
+import type { Mesh } from '@babylonjs/core/Meshes/mesh.js';
 import { FxaaPostProcess } from '@babylonjs/core/PostProcesses/fxaaPostProcess.js';
 import { takeUntil } from 'rxjs';
 import type { Position } from '../../math/position';
@@ -31,11 +34,11 @@ export class WorldView {
     private readonly initCameraY: number = 40;
     private readonly initCameraZ: number = 25;
 
-    private readonly transparentMeshes = new Set<AbstractMesh>();
     private readonly currentObstacleMeshes = new Set<AbstractMesh>();
     private readonly obstacleRay = new Ray(Vector3.Zero(), Vector3.Zero());
-    private readonly isCameraObstacle = (mesh: AbstractMesh) => mesh.name !== 'player' && mesh.isPickable;
-    private readonly ghostMeshes = new WeakMap<InstancedMesh, AbstractMesh>();
+    private readonly isCameraObstacle = (mesh: AbstractMesh) => mesh instanceof InstancedMesh && mesh.isPickable && mesh.isEnabled();
+    private readonly ghostMeshes = new Map<InstancedMesh, InstancedMesh>();
+    private readonly ghostAssets = new Map<Mesh, { source: Mesh; availableInstances: InstancedMesh[] }>();
 
     private readonly lightingManager = LightingManager.getInstance();
     constructor(private readonly player: PlayerView) {
@@ -104,58 +107,77 @@ export class WorldView {
                 const mesh = hit.pickedMesh;
                 currentMeshes.add(mesh);
 
-                if (!this.transparentMeshes.has(mesh)) {
+                if (mesh instanceof InstancedMesh && !this.ghostMeshes.has(mesh)) {
                     this.setMeshTransparent(mesh);
-                    this.transparentMeshes.add(mesh);
                 }
             }
         }
 
-        for (const mesh of this.transparentMeshes) {
+        for (const mesh of this.ghostMeshes.keys()) {
             if (!currentMeshes.has(mesh)) {
                 this.resetMeshTransparency(mesh);
-                this.transparentMeshes.delete(mesh);
             }
         }
     }
 
-    private setMeshTransparent(mesh: AbstractMesh): AbstractMesh | undefined {
-        if (!mesh.material || !(mesh instanceof InstancedMesh) || this.ghostMeshes.has(mesh)) {
-            return undefined;
+    private getGhostAsset(sourceMesh: Mesh) {
+        const existingAsset = this.ghostAssets.get(sourceMesh);
+        if (existingAsset) {
+            return existingAsset;
         }
 
-        const ghostMesh = mesh.sourceMesh.clone(`ghost${mesh.name}`);
-        ghostMesh.position = mesh.position;
-        ghostMesh.rotation = mesh.rotation;
-        ghostMesh.scaling = mesh.scaling;
-        ghostMesh.material = mesh.material.clone('ghostMaterial');
-        if (ghostMesh.material == null) {
+        const material = sourceMesh.material;
+        const ghostMaterial = material instanceof MultiMaterial
+            ? material.clone(`ghost-${material.name}`, true)
+            : material?.clone(`ghost-${material.name}`);
+        if (!ghostMaterial) {
             return;
         }
-        ghostMesh.material.transparencyMode = 2;
-        ghostMesh.material.alpha = 0.2;
-        ghostMesh.receiveShadows = true;
-        ghostMesh.isVisible = true;
 
-        //GameRuntime.scene.addMesh(ghostMesh);
+        const materials = ghostMaterial instanceof MultiMaterial ? ghostMaterial.subMaterials : [ghostMaterial];
+        for (const subMaterial of materials) {
+            if (subMaterial) {
+                subMaterial.transparencyMode = Material.MATERIAL_ALPHABLEND;
+                subMaterial.alpha = 0.2;
+            }
+        }
+
+        const source = sourceMesh.clone(`ghost-${sourceMesh.name}`, null, true);
+        source.material = ghostMaterial;
+        source.isVisible = false;
+        source.isPickable = false;
+        source.checkCollisions = false;
+        const asset = { source, availableInstances: new Array<InstancedMesh>() };
+        this.ghostAssets.set(sourceMesh, asset);
+        return asset;
+    }
+
+    private setMeshTransparent(mesh: InstancedMesh): void {
+        const asset = this.getGhostAsset(mesh.sourceMesh);
+        if (!asset) {
+            return;
+        }
+
+        const ghostMesh = asset.availableInstances.pop() ?? asset.source.createInstance(`ghost-${mesh.name}`);
+        ghostMesh.parent = mesh.parent;
+        ghostMesh.position = mesh.position;
+        ghostMesh.rotation = mesh.rotation;
+        ghostMesh.rotationQuaternion = mesh.rotationQuaternion;
+        ghostMesh.scaling = mesh.scaling;
+        ghostMesh.isPickable = false;
+        ghostMesh.checkCollisions = false;
+        ghostMesh.setEnabled(true);
         this.lightingManager.shadowGenerator.addShadowCaster(ghostMesh);
         this.ghostMeshes.set(mesh, ghostMesh);
-
-        mesh.isVisible = false;
-
         GameRuntime.schedule(() => {
             mesh.isVisible = false;
         }, 50);
-
-        return ghostMesh;
     }
 
 
-    private resetMeshTransparency(mesh: AbstractMesh): void {
-        mesh.isVisible = true;
-
-        if (!(mesh instanceof InstancedMesh)) {
-            return;
+    private resetMeshTransparency(mesh: InstancedMesh): void {
+        if (!mesh.isDisposed()) {
+            mesh.isVisible = true;
         }
 
         const ghostMesh = this.ghostMeshes.get(mesh);
@@ -163,8 +185,10 @@ export class WorldView {
             return;
         }
 
-        GameRuntime.scene.removeMesh(ghostMesh);
-        ghostMesh.dispose();
+        this.lightingManager.shadowGenerator.removeShadowCaster(ghostMesh);
+        ghostMesh.setEnabled(false);
+        ghostMesh.parent = null;
+        this.ghostAssets.get(mesh.sourceMesh)?.availableInstances.push(ghostMesh);
         this.ghostMeshes.delete(mesh);
     }
 
