@@ -105,11 +105,8 @@ export class WorldView {
                 currentMeshes.add(mesh);
 
                 if (!this.transparentMeshes.has(mesh)) {
-                    const newMesh = this.setMeshTransparent(mesh);
+                    this.setMeshTransparent(mesh);
                     this.transparentMeshes.add(mesh);
-                    if (newMesh) {
-                        this.lightingManager.shadowGenerator.addShadowCaster(newMesh);
-                    }
                 }
             }
         }
@@ -140,9 +137,11 @@ export class WorldView {
         ghostMesh.receiveShadows = true;
         ghostMesh.isVisible = true;
 
-        GameRuntime.scene.addMesh(ghostMesh);
+        //GameRuntime.scene.addMesh(ghostMesh);
         this.lightingManager.shadowGenerator.addShadowCaster(ghostMesh);
         this.ghostMeshes.set(mesh, ghostMesh);
+
+        mesh.isVisible = false;
 
         GameRuntime.schedule(() => {
             mesh.isVisible = false;
