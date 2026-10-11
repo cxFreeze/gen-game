@@ -102,6 +102,7 @@ function createOverlay() {
         '../../../shared/services/dialog.service': { DialogService: dialogsToken },
         '../game-session.service': { GameSessionService: sessionToken },
         '../game-menu/game-menu.component': { GameMenuComponent: class {} },
+        '../damage-vignette/damage-vignette.component': { DamageVignetteComponent: class {} },
         '../health-bar/health-bar.component': { HealthBarComponent: class {} },
         '../../debug/debug-panel/debug-panel.component': { DebugPanelComponent: class {} },
     }, { KeyboardEvent: Event });

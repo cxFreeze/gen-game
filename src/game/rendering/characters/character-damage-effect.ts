@@ -33,12 +33,12 @@ export class CharacterDamageEffect {
             const depth = camera.mode === Camera.PERSPECTIVE_CAMERA
                 ? Math.max(camera.minZ, Math.abs(Vector3.TransformCoordinates(center, camera.getViewMatrix()).z))
                 : 1;
-            fragmentSize = 8 * 2 * depth / (viewportHeight * Math.abs(camera.getProjectionMatrix().m[5]));
+            fragmentSize = 10 * 2 * depth / (viewportHeight * Math.abs(camera.getProjectionMatrix().m[5]));
         }
         // Keep a compact ring close to the body, in the ground plane at mid-height.
-        const radius = Math.max(size.x, size.z) * 0.4 + fragmentSize * 0.1;
+        const radius = Math.max(size.x, size.z) * 0.5 + fragmentSize * 0.1;
         const origin = center;
-        const particles = new ParticleSystem(`${mesh.name}-damage-burst`, 18, this.scene);
+        const particles = new ParticleSystem(`${mesh.name}-damage-burst`, 12, this.scene);
         this.particles = particles;
         particles.particleTexture = this.getTexture();
         particles.emitter = origin;

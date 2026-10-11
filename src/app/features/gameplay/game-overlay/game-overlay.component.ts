@@ -2,6 +2,7 @@ import { Component, effect, inject, output, untracked } from '@angular/core';
 import { GameRuntimeService } from '../../../core/game-runtime/game-runtime.service';
 import { DialogService } from '../../../shared/services/dialog.service';
 import { DebugPanelComponent } from '../../debug/debug-panel/debug-panel.component';
+import { DamageVignetteComponent } from '../damage-vignette/damage-vignette.component';
 import { HealthBarComponent } from '../health-bar/health-bar.component';
 import { GameMenuComponent } from '../game-menu/game-menu.component';
 import { GameSessionService } from '../game-session.service';
@@ -10,7 +11,7 @@ import { GameSessionService } from '../game-session.service';
     selector: 'gg-game-overlay',
     templateUrl: './game-overlay.component.html',
     styleUrl: './game-overlay.component.scss',
-    imports: [DebugPanelComponent, HealthBarComponent],
+    imports: [DebugPanelComponent, HealthBarComponent, DamageVignetteComponent],
     host: {
         '(window:keydown.escape)': 'onEscape($event)',
     },

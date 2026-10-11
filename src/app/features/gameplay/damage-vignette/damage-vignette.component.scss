@@ -1,0 +1,26 @@
+:host {
+    display: block;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    user-select: none;
+    opacity: 0;
+    background: radial-gradient(
+        ellipse at center,
+        rgb(185 18 30 / 0) 45%,
+        rgb(185 18 30 / 0.5) 78%,
+        rgb(185 18 30 / 0.85) 100%
+    );
+    transition: opacity 420ms ease-out;
+
+    &.is-taking-damage {
+        transition-duration: 90ms;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :host,
+    :host.is-taking-damage {
+        transition-duration: 120ms;
+    }
+}

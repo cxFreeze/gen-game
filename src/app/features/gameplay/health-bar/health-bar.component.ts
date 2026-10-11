@@ -1,5 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import { HeartComponent } from '../../../shared/heart/heart.component';
+import { healthPerHeart } from '../health-display';
 
 @Component({
     selector: 'gg-health-bar',
@@ -19,14 +20,13 @@ import { HeartComponent } from '../../../shared/heart/heart.component';
     styleUrl: './health-bar.component.scss',
 })
 export class HealthBarComponent {
-    private readonly healthPerHeart = 10;
     readonly current = input.required<number>();
     readonly max = input.required<number>();
     protected readonly hearts = computed(() => {
         const currentHealth = this.current();
-        return Array.from({ length: Math.ceil(this.max() / this.healthPerHeart) }, (_, index) => {
-            const remainingHealth = currentHealth - index * this.healthPerHeart;
-            const fill: 0 | 0.5 | 1 = remainingHealth >= this.healthPerHeart ? 1 : remainingHealth > 0 ? 0.5 : 0;
+        return Array.from({ length: Math.ceil(this.max() / healthPerHeart) }, (_, index) => {
+            const remainingHealth = currentHealth - index * healthPerHeart;
+            const fill: 0 | 0.5 | 1 = remainingHealth >= healthPerHeart ? 1 : remainingHealth > 0 ? 0.5 : 0;
             return { index, fill };
         });
     });
