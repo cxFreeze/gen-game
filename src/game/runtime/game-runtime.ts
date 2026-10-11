@@ -95,7 +95,7 @@ export class GameRuntime {
 
     private static async initialize(canvas: HTMLCanvasElement, signal: AbortSignal) {
         configureBabylon();
-        const engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+        const engine = new Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, powerPreference: 'high-performance' });
         this._engine = engine;
         const scene = new Scene(engine, { useGeometryUniqueIdsMap: true });
         this._scene = scene;
@@ -105,8 +105,7 @@ export class GameRuntime {
         this._scene.performancePriority = ScenePerformancePriority.Intermediate;
         this._scene.blockMaterialDirtyMechanism = true;
         this._scene.autoClear = false;
-        // Moving geometry and transient effects need a fresh depth buffer every frame.
-        this._scene.autoClearDepthAndStencil = true;
+        this._scene.autoClearDepthAndStencil = false;
 
 
         Performance.setPerformance(this.engine.getFps());

@@ -1,6 +1,6 @@
+import type { WorldView } from '../rendering/camera/world-view';
 import type { PlayerView } from '../rendering/characters/player-view';
 import { LightingManager } from '../rendering/lighting/lighting';
-import type { WorldView } from '../rendering/camera/world-view';
 import { GameRuntime } from './game-runtime';
 
 export class DebugManager {
@@ -40,7 +40,7 @@ export class DebugManager {
     toggleSkyview() {
         GameRuntime.engine.clear(GameRuntime.scene.clearColor, true, true);
         this.skyView = !this.skyView;
-        this.worldView.setCameraHeight(this.skyView ? 2000 : 220);
+        this.worldView.setCameraHeight(this.skyView ? 2000 : 250);
         return this.skyView;
     }
 

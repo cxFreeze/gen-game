@@ -6,11 +6,11 @@ import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh.js';
 import { FxaaPostProcess } from '@babylonjs/core/PostProcesses/fxaaPostProcess.js';
 import { takeUntil } from 'rxjs';
-import { GameRuntime } from '../../runtime/game-runtime';
-import type { PlayerView } from '../characters/player-view';
-import { Anim } from '../animation/anim';
-import { LightingManager } from '../lighting/lighting';
 import type { Position } from '../../math/position';
+import { GameRuntime } from '../../runtime/game-runtime';
+import { Anim } from '../animation/anim';
+import type { PlayerView } from '../characters/player-view';
+import { LightingManager } from '../lighting/lighting';
 
 export class WorldView {
 
@@ -45,6 +45,7 @@ export class WorldView {
 
     generateWorld() {
         this._camera = new UniversalCamera('camera', new Vector3(0, 0, 0), GameRuntime.scene);
+        this.camera.maxZ = this.cameraY * 2;
         new FxaaPostProcess('fxaa', 1.0, this.camera, undefined, GameRuntime.engine);
 
         this.setCameraPosition(this.player.position.x, this.player.position.z);
@@ -169,6 +170,7 @@ export class WorldView {
     public setCameraHeight(y: number) {
         this.cameraY = y;
         this.camera.position.y = y;
+        this.camera.maxZ = y * 2;
         this.camera.setTarget(this.player.mesh.position);
     }
 }
