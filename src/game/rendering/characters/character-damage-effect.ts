@@ -81,10 +81,11 @@ export class CharacterDamageEffect {
         particles.addSizeGradient(0.5, fragmentSize);
         particles.addSizeGradient(1, fragmentSize * 0.6);
         const previousPosition = mesh.getAbsolutePosition().clone();
+        const movement = Vector3.Zero();
         this.movementObserver = this.scene.onBeforeRenderObservable.add(() => {
             mesh.computeWorldMatrix(true);
             const position = mesh.getAbsolutePosition();
-            const movement = position.subtract(previousPosition);
+            position.subtractToRef(previousPosition, movement);
             origin.addInPlace(movement);
             for (const particle of particles.particles) {
                 particle.position.addInPlace(movement);

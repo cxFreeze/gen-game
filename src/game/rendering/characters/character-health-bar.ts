@@ -23,6 +23,8 @@ export class CharacterHealthBar {
     private readonly damageFill;
     private readonly healthFill;
     private readonly renderObserver;
+    private readonly viewPosition = Vector3.Zero();
+    private readonly screenUp = Vector3.Zero();
     private elapsedTime = 0;
     private targetRatio = 1;
     private initialHealthRatio = 1;
@@ -128,13 +130,16 @@ export class CharacterHealthBar {
         this.background.position.set((bounds.min.x + bounds.max.x) / 2, bounds.max.y * 1.2, (bounds.min.z + bounds.max.z) / 2);
         const engine = this.scene.getEngine();
         const viewportHeight = engine.getRenderHeight() * engine.getHardwareScalingLevel() * camera.viewport.height;
-        const depth = camera.mode === Camera.PERSPECTIVE_CAMERA
-            ? Math.max(camera.minZ, Math.abs(Vector3.TransformCoordinates(this.background.position, camera.getViewMatrix()).z))
-            : 1;
+        let depth = 1;
+        if (camera.mode === Camera.PERSPECTIVE_CAMERA) {
+            Vector3.TransformCoordinatesToRef(this.background.position, camera.getViewMatrix(), this.viewPosition);
+            depth = Math.max(camera.minZ, Math.abs(this.viewPosition.z));
+        }
         const worldUnitsPerPixel = 2 * depth / (viewportHeight * Math.abs(camera.getProjectionMatrix().m[5]));
         this.background.scaling.setAll(worldUnitsPerPixel);
-        const screenUp = Vector3.TransformNormal(Vector3.Up(), camera.getWorldMatrix()).normalize();
-        this.background.position.addInPlace(screenUp.scale((8 + barHeight / 2) * worldUnitsPerPixel));
+        Vector3.TransformNormalFromFloatsToRef(0, 1, 0, camera.getWorldMatrix(), this.screenUp);
+        this.screenUp.normalize().scaleInPlace((8 + barHeight / 2) * worldUnitsPerPixel);
+        this.background.position.addInPlace(this.screenUp);
     }
 
     dispose() {

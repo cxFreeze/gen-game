@@ -1,5 +1,4 @@
 import { MultiMaterial } from '@babylonjs/core/Materials/multiMaterial.js';
-import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh.js';
 import { Sprite } from '@babylonjs/core/Sprites/sprite.js';
@@ -68,16 +67,21 @@ export class WorldRenderer {
             const waveFrequency = 10; // Fréquence spatiale
 
             // sprite animation
-            Object.keys(this.loadedChunksItems).forEach((chunk) => {
-                this.loadedChunksItems[chunk]?.sprites.forEach((item) => {
+            for (const chunk in this.loadedChunksItems) {
+                if (!Object.hasOwn(this.loadedChunksItems, chunk)) {
+                    continue;
+                }
+                const sprites = this.loadedChunksItems[chunk].sprites;
+                for (let spriteIndex = 0; spriteIndex < sprites.length; spriteIndex++) {
+                    const item = sprites[spriteIndex];
                     const x = item.sprite.position.x;
                     const z = item.sprite.position.z;
                     const wave = Math.sin(x * waveFrequency + time * waveSpeed) *
                         Math.cos(z * waveFrequency + time * waveSpeed) *
                         waveAmplitude;
                     item.sprite.angle = wave;
-                });
-            });
+                }
+            }
         });
     }
 
@@ -155,7 +159,7 @@ export class WorldRenderer {
                 this.itemCnt++;
 
 
-                ground.position = new Vector3(absX + rAsset.width / 2, 0, absY + rAsset.height / 2);
+                ground.position.set(absX + rAsset.width / 2, 0, absY + rAsset.height / 2);
                 this.optimizeStaticMesh(ground, rAsset);
                 this.loadedChunksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: ground, asset: rAsset });
             }
@@ -328,15 +332,11 @@ export class WorldRenderer {
         }
 
         const ratio = asset.scale * sizeRatio;
-        item.scaling = new Vector3(ratio, ratio, ratio);
+        item.scaling.setAll(ratio);
 
-        item.position = new Vector3(x, z, y);
-        if (rotate > 0) {
-            item.rotation = item.rotation.add(new Vector3(0, rotate, 0));
-        }
-        else {
-            item.rotation = item.rotation.add(new Vector3(0, asset.rotation, 0));
-        }
+        item.position.set(x, z, y);
+        item.rotation.y += rotate > 0 ? rotate : asset.rotation;
+        item.rotationQuaternion = null;
 
         item.checkCollisions = asset.mesh.checkCollisions;
         item.isPickable = asset.isPickable;
@@ -452,7 +452,7 @@ export class WorldRenderer {
         }
 
         sprite.size = asset.height * asset.scale * sizeRatio;
-        sprite.position = new Vector3(x, sprite.size / 2 + z, y);
+        sprite.position.set(x, sprite.size / 2 + z, y);
         sprite.angle = rotate;
         sprite.invertU = invert;
 

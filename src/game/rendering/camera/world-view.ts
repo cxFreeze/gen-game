@@ -32,6 +32,9 @@ export class WorldView {
     private readonly initCameraZ: number = 25;
 
     private readonly transparentMeshes = new Set<AbstractMesh>();
+    private readonly currentObstacleMeshes = new Set<AbstractMesh>();
+    private readonly obstacleRay = new Ray(Vector3.Zero(), Vector3.Zero());
+    private readonly isCameraObstacle = (mesh: AbstractMesh) => mesh.name !== 'player' && mesh.isPickable;
     private readonly ghostMeshes = new WeakMap<InstancedMesh, AbstractMesh>();
 
     private readonly lightingManager = LightingManager.getInstance();
@@ -78,7 +81,7 @@ export class WorldView {
         this.worldX = x;
         this.worldY = y;
 
-        this.camera.position = new Vector3(x + this.cameraX, this.cameraY, y + this.cameraZ);
+        this.camera.position.set(x + this.cameraX, this.cameraY, y + this.cameraZ);
         this.camera.setTarget(this.player.mesh.position);
 
         this.lightingManager.setSunPosition(x, y);
@@ -86,13 +89,13 @@ export class WorldView {
     }
 
     private setCameraObstacleSemiTransparent() {
-        const ray = new Ray(this.camera.position, this.player.mesh.position.subtract(this.camera.position).normalize());
+        this.obstacleRay.origin.copyFrom(this.camera.position);
+        this.player.mesh.position.subtractToRef(this.camera.position, this.obstacleRay.direction);
+        this.obstacleRay.direction.normalize();
+        const hitResults = GameRuntime.scene.multiPickWithRay(this.obstacleRay, this.isCameraObstacle);
 
-        const hitResults = GameRuntime.scene.multiPickWithRay(ray, (mesh) => {
-            return mesh.name !== 'player' && mesh.isPickable;
-        });
-
-        const currentMeshes = new Set<AbstractMesh>();
+        const currentMeshes = this.currentObstacleMeshes;
+        currentMeshes.clear();
         if (hitResults) {
             for (const hit of hitResults) {
                 if (!hit.pickedPoint || hit.pickedPoint.y < 20 || !hit.pickedMesh) {

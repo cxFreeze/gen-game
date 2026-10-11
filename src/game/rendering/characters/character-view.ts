@@ -17,6 +17,9 @@ export class CharacterView implements CharacterBody {
     private deathEffect: CharacterDeathEffect | undefined;
     private healthBar: CharacterHealthBar | undefined;
     private readonly damageEffects = new Set<CharacterDamageEffect>();
+    private readonly displacement = Vector3.Zero();
+    private readonly sightRay = new Ray(Vector3.Zero(), Vector3.Zero());
+    private readonly isSightObstacle = (candidate: AbstractMesh) => candidate !== this.mesh && !candidate.name.includes('projectile') && candidate.isPickable;
     constructor(readonly mesh: AbstractMesh, private readonly presentation: GamePresentation) {}
 
     get name() {
@@ -36,8 +39,9 @@ export class CharacterView implements CharacterBody {
     }
 
     translate(x: number, z: number) {
+        this.displacement.set(x, 0, z);
         this.mesh.computeWorldMatrix(true);
-        this.mesh.moveWithCollisions(new Vector3(x, 0, z));
+        this.mesh.moveWithCollisions(this.displacement);
     }
 
     setPosition(position: Position) {
@@ -61,9 +65,10 @@ export class CharacterView implements CharacterBody {
     }
 
     hasLineOfSight(target: Position, range: number) {
-        const origin = new Vector3(this.mesh.position.x, 3, this.mesh.position.z);
-        const direction = new Vector3(target.x, 3, target.z).subtract(origin).normalize();
-        const hit = GameRuntime.scene.pickWithRay(new Ray(origin, direction, range), candidate => candidate !== this.mesh && !candidate.name.includes('projectile') && candidate.isPickable);
+        this.sightRay.origin.set(this.mesh.position.x, 3, this.mesh.position.z);
+        this.sightRay.direction.set(target.x - this.mesh.position.x, 0, target.z - this.mesh.position.z).normalize();
+        this.sightRay.length = range;
+        const hit = GameRuntime.scene.pickWithRay(this.sightRay, this.isSightObstacle);
         return !!(hit?.hit && hit.pickedMesh?.name === 'player');
     }
 

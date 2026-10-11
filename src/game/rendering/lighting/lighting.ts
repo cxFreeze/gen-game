@@ -50,7 +50,7 @@ export class LightingManager {
     }
 
     public setSunPosition(x: number, z: number) {
-        this.getSun().position = new Vector3(this.sunX + x, this.sunY, this.sunZ + z);
+        this.getSun().position.set(this.sunX + x, this.sunY, this.sunZ + z);
     }
 
     public toggleShadows() {

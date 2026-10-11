@@ -42,6 +42,7 @@ export class CharacterDeathEffect {
         particles.emitter = bounds.min.add(bounds.max).scale(0.5);
         particles.minEmitBox = halfExtents.scale(-1);
         particles.maxEmitBox = halfExtents;
+        const direction = Vector3.Zero();
         particles.startPositionFunction = (worldMatrix, position) => {
             Vector3.TransformCoordinatesFromFloatsToRef(
                 (Math.random() * 2 - 1) * halfExtents.x,
@@ -55,14 +56,16 @@ export class CharacterDeathEffect {
                 return;
             }
             // Move along the view ray so opaque geometry cannot hide the covering particles.
-            const direction = camera.globalPosition.subtract(position).normalize();
+            camera.globalPosition.subtractToRef(position, direction);
+            direction.normalize();
             const distance = Math.min(
                 direction.x === 0 ? Infinity : ((direction.x > 0 ? bounds.max.x : bounds.min.x) - position.x) / direction.x,
                 direction.y === 0 ? Infinity : ((direction.y > 0 ? bounds.max.y : bounds.min.y) - position.y) / direction.y,
                 direction.z === 0 ? Infinity : ((direction.z > 0 ? bounds.max.z : bounds.min.z) - position.z) / direction.z,
             );
             if (Number.isFinite(distance)) {
-                position.addInPlace(direction.scale(Math.max(0, distance) + particleSize * 0.02));
+                direction.scaleInPlace(Math.max(0, distance) + particleSize * 0.02);
+                position.addInPlace(direction);
             }
         };
         // Overlap the soft edges beyond the model bounds to conceal its silhouette.
