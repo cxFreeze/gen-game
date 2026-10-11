@@ -7,8 +7,8 @@ import { GameRuntime } from '../../runtime/game-runtime';
 export class LightingManager {
     private sun: DirectionalLight | null = null;
     private sunX: number = 0;
-    private sunY: number = 2000;
-    private sunZ: number = -500;
+    private sunY: number = 1000;
+    private sunZ: number = -400;
 
     private _shadowGenerator: ShadowGenerator | null = null;
     public get shadowGenerator(): ShadowGenerator {
@@ -39,6 +39,7 @@ export class LightingManager {
         const sun = new DirectionalLight('sun', new Vector3(0.5, -1, 0.5), GameRuntime.scene);
         sun.position = new Vector3(this.sunX, this.sunY, this.sunZ);
         sun.intensity = 2;
+        sun.shadowMaxZ = this.sunY * 2;
         this.sun = sun;
 
         const shadowGenerator = new ShadowGenerator(3072, sun);
