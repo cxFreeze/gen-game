@@ -4,6 +4,7 @@ import type { PlayerHealth } from './player-health.interface';
 
 const emptyDebugStats: Readonly<GameStats> = {
     fps: 0,
+    frameTime: 0,
     worldX: 0,
     worldY: 0,
     meshCount: 0,

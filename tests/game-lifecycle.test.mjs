@@ -75,6 +75,7 @@ function createRuntime(loadAssets) {
     const cleanups = new Map();
     const counts = { players: 0, inputs: 0, renders: 0, updates: [], inputChecks: 0, pauseChanges: [], animationResets: 0 };
     const players = [];
+    let elapsedTime = 0;
     const manager = name => ({
         getInstance: () => ({
             createLightning() {},
@@ -118,6 +119,7 @@ function createRuntime(loadAssets) {
 }
         render() {
             counts.renders++;
+            elapsedTime += 3;
         }
         resetLastAnimationTimeFrame() {
             counts.animationResets++;
@@ -137,6 +139,7 @@ function createRuntime(loadAssets) {
             }
             update(commands, deltaTime) {
                 counts.updates.push(deltaTime);
+                elapsedTime += 2;
             }
             dispose() {
                 cleanups.set('game', (cleanups.get('game') ?? 0) + 1);
@@ -181,7 +184,7 @@ function createRuntime(loadAssets) {
         './game-lifetime': { GameLifetime },
         './game-observables': observables,
         '../rendering/scene/performance': { Performance: { ...manager('performance'), setPerformance() {} } },
-    }, { window: new EventTarget() });
+    }, { window: new EventTarget(), performance: { now: () => elapsedTime } });
     return { GameRuntime, engines, scenes, counts, cleanups, players, playerViews, worldViews, ...observables };
 }
 
@@ -260,7 +263,8 @@ test('runtime publishes debug statistics every ten frames and ignores stopped re
     assert.equal(updates.length, 0);
     firstEngine.frameId = 10;
     firstEngine.render();
-    assert.deepEqual({ ...updates[0] }, { fps: 60, worldX: 10, worldY: -6, meshCount: 3, polygonCount: 10 });
+    assert.deepEqual({ ...updates[0] }, { fps: 60, frameTime: 5, worldX: 10, worldY: -6, meshCount: 3, polygonCount: 10 });
+    assert.equal(runtime.counts.updates.at(-1), 16, 'Gameplay keeps the interval between frames as its delta time');
     await runtime.GameRuntime.start({});
     assert.equal(updates.at(-1).fps, 0);
     firstEngine.render();

@@ -1,6 +1,7 @@
 @if (debugPanelService.isVisible()) {
 <gg-panel class="debug-panel">
     <h3>DEBUG PANEL</h3>
+    <div>CPU frame time : {{ debugPanelService.frameTime() | number:'1.2-2' }} ms</div>
     <div>seed : {{ debugPanelService.seed() }}</div>
     <div>3D items : assets : {{ debugPanelService.meshCount() }} - polys : {{ debugPanelService.polygonCount() }}</div>
     <div>position : {{ debugPanelService.worldPosition() }}</div>

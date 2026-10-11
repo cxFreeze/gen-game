@@ -96,15 +96,17 @@ test('debug reads observable telemetry and keeps panel visibility across session
     assert.equal(debug.isSkyView(), true);
     debug.togglePanel();
     assert.equal(debug.isVisible(), true);
-    const stats = { fps: 60, worldX: 10.2, worldY: -5.8, meshCount: 25, polygonCount: 90 };
+    const stats = { fps: 60, frameTime: 16.67, worldX: 10.2, worldY: -5.8, meshCount: 25, polygonCount: 90 };
     publishDebugStats(stats);
     stats.fps = 0;
     assert.equal(debug.fps(), 60);
+    assert.equal(debug.frameTime(), 16.67);
     assert.equal(debug.worldPosition(), '10 / -6');
     assert.equal(debug.seed(), 'test-session');
     engine.dispose();
     assert.equal(debug.isVisible(), true);
     assert.equal(debug.fps(), 0);
+    assert.equal(debug.frameTime(), 0);
     assert.equal(debug.seed(), '');
     assert.equal(debug.areTreesVisible(), true);
     assert.equal(debug.isSkyView(), false);
@@ -116,7 +118,7 @@ test('debug reads observable telemetry and keeps panel visibility across session
 
 test('statistics have an initial value and reset on restart and disposal', async t => {
     const { engine, runtime, publishDebugStats } = createEngine(t);
-    const stats = { fps: 60, worldX: 1, worldY: 2, meshCount: 3, polygonCount: 4 };
+    const stats = { fps: 60, frameTime: 16.67, worldX: 1, worldY: 2, meshCount: 3, polygonCount: 4 };
     assert.equal(engine.stats().fps, 0);
     await engine.start({});
     publishDebugStats(stats);
@@ -134,7 +136,7 @@ test('statistics have an initial value and reset on restart and disposal', async
 test('destroying the Angular injector closes the statistics subscription', async t => {
     const { engine, injector, publishDebugStats } = createEngine(t);
     await engine.start({});
-    const stats = { fps: 60, worldX: 1, worldY: 2, meshCount: 3, polygonCount: 4 };
+    const stats = { fps: 60, frameTime: 16.67, worldX: 1, worldY: 2, meshCount: 3, polygonCount: 4 };
     publishDebugStats(stats);
     injector.destroy();
     publishDebugStats({ ...stats, fps: 10 });

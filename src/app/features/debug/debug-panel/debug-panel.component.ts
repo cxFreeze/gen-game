@@ -1,3 +1,4 @@
+import { DecimalPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FpsCounterComponent } from '../fps-counter/fps-counter.component';
 import { ButtonDirective } from '../../../shared/button/button.directive';
@@ -6,7 +7,7 @@ import { DebugPanelService } from '../debug-panel.service';
 
 @Component({
     selector: 'gg-debug-panel',
-    imports: [PanelComponent, FpsCounterComponent, ButtonDirective],
+    imports: [PanelComponent, FpsCounterComponent, ButtonDirective, DecimalPipe],
     templateUrl: './debug-panel.component.html',
     styleUrl: './debug-panel.component.scss',
     host: {

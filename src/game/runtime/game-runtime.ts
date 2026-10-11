@@ -132,6 +132,7 @@ export class GameRuntime {
             if (signal.aborted || this.isPaused) {
                 return;
             }
+            const frameStartTime = performance.now();
             scene.render(false);
             const time = engine.getDeltaTime();
             PlayerInputs.checkInputs();
@@ -141,6 +142,7 @@ export class GameRuntime {
             if (engine.frameId % 10 === 0) {
                 publishDebugStats({
                     fps: Math.round(engine.getFps()),
+                    frameTime: performance.now() - frameStartTime,
                     worldX: worldManager.worldX,
                     worldY: worldManager.worldY,
                     meshCount: scene.meshes.length,

@@ -15,6 +15,7 @@ export class DebugPanelService {
     readonly meshCount = computed(() => this.gameRuntime.stats().meshCount);
     readonly polygonCount = computed(() => this.gameRuntime.stats().polygonCount);
     readonly fps = computed(() => this.gameRuntime.stats().fps);
+    readonly frameTime = computed(() => this.gameRuntime.stats().frameTime);
     readonly isDuckVisible = computed(() => this.gameRuntime.controls().isDuckVisible);
     readonly areTreesVisible = computed(() => this.gameRuntime.controls().areTreesVisible);
     readonly isSkyView = computed(() => this.gameRuntime.controls().isSkyView);

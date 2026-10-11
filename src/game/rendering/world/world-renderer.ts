@@ -1,17 +1,17 @@
-import type { WorldLayout, ItemLoadRequest } from '../../gameplay/world/world-layout';
-import { renderConfig } from '../scene/render-config';
-import { worldConfig } from '../../gameplay/world/world-config';
-import { isMeshInChunkBounds } from './chunk-bounds';
+import { MultiMaterial } from '@babylonjs/core/Materials/multiMaterial.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh.js';
-import { MultiMaterial } from '@babylonjs/core/Materials/multiMaterial.js';
 import { Sprite } from '@babylonjs/core/Sprites/sprite.js';
+import { worldConfig } from '../../gameplay/world/world-config';
+import type { ItemLoadRequest, WorldLayout } from '../../gameplay/world/world-layout';
 import { GameRuntime } from '../../runtime/game-runtime';
-import type { LoadedMesh, LoadedSprite, PreLoadedItem } from './chunk-types.interface';
 import { AssetManager } from '../assets/assets';
 import { GG3DAsset, GGAsset, GGSpriteAsset } from '../assets/gg-asset';
 import { LightingManager } from '../lighting/lighting';
+import { renderConfig } from '../scene/render-config';
+import { isMeshInChunkBounds } from './chunk-bounds';
+import type { LoadedMesh, LoadedSprite, PreLoadedItem } from './chunk-types.interface';
 import { RenderQueue } from './render-queue';
 
 
