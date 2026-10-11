@@ -9,12 +9,14 @@ import { GameRuntime } from '../../runtime/game-runtime';
 import type { GamePresentation } from '../game-presentation';
 import { CharacterDeathEffect } from './character-death-effect';
 import { CharacterHealthBar } from './character-health-bar';
+import { CharacterDamageEffect } from './character-damage-effect';
 
 export class CharacterView implements CharacterBody {
     protected isDisposed = false;
     private rotationAnimation: Subscription | undefined;
     private deathEffect: CharacterDeathEffect | undefined;
     private healthBar: CharacterHealthBar | undefined;
+    private readonly damageEffects = new Set<CharacterDamageEffect>();
     constructor(readonly mesh: AbstractMesh, private readonly presentation: GamePresentation) {}
 
     get name() {
@@ -66,9 +68,15 @@ export class CharacterView implements CharacterBody {
     }
 
     showDamage(previousHealth: number, currentHealth: number, maxHealth: number) {
-        if (this.isDisposed || this.deathEffect) {
+        if (this.isDisposed || this.deathEffect || currentHealth >= previousHealth) {
             return;
         }
+        const effect = new CharacterDamageEffect(this.mesh, () => this.damageEffects.delete(effect));
+        this.damageEffects.add(effect);
+        this.showHealthBar(previousHealth, currentHealth, maxHealth);
+    }
+
+    protected showHealthBar(previousHealth: number, currentHealth: number, maxHealth: number) {
         this.healthBar ??= new CharacterHealthBar(this.mesh, () => this.healthBar = undefined);
         this.healthBar.show(previousHealth, currentHealth, maxHealth);
     }
@@ -92,6 +100,9 @@ export class CharacterView implements CharacterBody {
             return;
         }
         this.isDisposed = true;
+        for (const effect of this.damageEffects) {
+            effect.dispose();
+        }
         this.rotationAnimation?.unsubscribe();
         this.healthBar?.dispose();
         this.deathEffect?.dispose();

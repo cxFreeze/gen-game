@@ -1,18 +1,18 @@
 import { Engine } from '@babylonjs/core/Engines/engine.js';
 import { Scene, ScenePerformancePriority } from '@babylonjs/core/scene.js';
 import { EMPTY, of } from 'rxjs';
-import { PlayerInputs } from '../input/player-inputs';
 import { Game } from '../gameplay/game';
-import { GamePresentation } from '../rendering/game-presentation';
+import { PlayerInputs } from '../input/player-inputs';
 import { AssetManager } from '../rendering/assets/assets';
-import { LightingManager } from '../rendering/lighting/lighting';
 import { WorldView } from '../rendering/camera/world-view';
-import { WorldRenderer } from '../rendering/world/world-renderer';
+import { GamePresentation } from '../rendering/game-presentation';
+import { LightingManager } from '../rendering/lighting/lighting';
 import { configureBabylon } from '../rendering/scene/babylon-configuration';
+import { Performance } from '../rendering/scene/performance';
+import { WorldRenderer } from '../rendering/world/world-renderer';
 import { DebugManager } from './debug';
 import { GameLifetime } from './game-lifetime';
 import { publishDebugStats, publishPlayerHealth, resetDebugStats, resetPlayerHealth } from './game-observables';
-import { Performance } from '../rendering/scene/performance';
 
 export class GameRuntime {
     private static readonly resizeHandler = () => this._engine?.resize();
@@ -104,6 +104,10 @@ export class GameRuntime {
         this._scene.collisionsEnabled = true;
         this._scene.performancePriority = ScenePerformancePriority.Intermediate;
         this._scene.blockMaterialDirtyMechanism = true;
+        this._scene.autoClear = false;
+        // Moving geometry and transient effects need a fresh depth buffer every frame.
+        this._scene.autoClearDepthAndStencil = true;
+
 
         Performance.setPerformance(this.engine.getFps());
 

@@ -39,6 +39,11 @@ function createView(t, isRightHanded = true) {
     const step = seconds => {
         scene.getAnimationRatio = () => seconds * 60;
         scene.onBeforeRenderObservable.notifyObservers(scene);
+        for (const particles of [...scene.particleSystems]) {
+            particles.preWarmStepOffset = seconds * 60;
+            particles.animate(true);
+        }
+        scene.onAfterRenderObservable.notifyObservers(scene);
     };
     const getPart = part => scene.getMeshByName(`enemy-health-bar-${part}`);
     return { engine, scene, camera, source, mesh, sibling, view, step, getPart };
@@ -170,7 +175,7 @@ test('successive hits reuse the bar, continue its animation and restart its visi
     assert.equal(getPart('background'), background);
     assert.equal(getPart('health').scaling.x, 0.6);
     assert.equal(getPart('damage').scaling.x, damageRatio, 'Another hit must not jump the trail back to full health');
-    assert.equal(scene.onBeforeRenderObservable.observers.length, observerCount);
+    assert.equal(scene.onBeforeRenderObservable.observers.length, observerCount + 1, 'Only the new damage halo adds an observer; the bar reuses its own');
     for (let frame = 0; frame < 120; frame++) {
         step(0);
     }
@@ -198,7 +203,7 @@ test('character death and disposal release health bar meshes and observers while
         assert.equal(getPart('health'), null);
         assert.equal(getPart('damage'), null);
         assert.equal(scene.materials.length, materialCount + 3);
-        assert.equal(scene.onBeforeRenderObservable.hasObservers(), false);
+        assert.equal(scene.onBeforeRenderObservable.hasObservers(), shouldDie, 'Death preserves the final damage halo until it fades');
         view.showDamage(75, 50, 100);
         step(0.1);
         assert.equal(getPart('background'), null, 'Dead or disposed characters must not recreate a bar');

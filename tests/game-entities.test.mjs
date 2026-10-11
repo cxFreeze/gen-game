@@ -135,6 +135,33 @@ class TestGameView {
     }
 }
 
+test('projectile hits trigger character damage feedback independently of projectile impact', () => {
+    const body = createBody('enemy');
+    const projectileBody = {
+        position: { x: 1, y: 2, z: 3 },
+        obstacleDistance: Infinity,
+        setPosition(position) {
+            this.position = position;
+        },
+        dispose() {},
+        impacts: 0,
+        showImpact() {
+            this.impacts++;
+        },
+    };
+    const projectiles = new ProjectileSystem({ createProjectile: () => projectileBody });
+    const projectile = projectiles.createProjectile({ damage: 5, speed: 1, range: 100, direction: 0 }, 'player');
+    const character = new Character(body, { ...playerConfig.stats, health: 100 }, projectiles);
+    projectileBody.position = { x: 10, y: 2, z: 20 };
+    assert.equal(character.checkDamageCollisions(projectile), true);
+    assert.deepEqual(body.damagePresentations, [{ previousHealth: 100, currentHealth: 95, maxHealth: 100 }]);
+    assert.equal(projectileBody.impacts, 0);
+    projectile.destroy();
+    assert.equal(projectileBody.impacts, 1, 'The projectile keeps its own impact feedback');
+    projectiles.dispose();
+    character.dispose();
+});
+
 test('character slides along a collision and restores a position rejected by gameplay', () => {
     const body = createBody();
     body.translate = (x, z) => {
