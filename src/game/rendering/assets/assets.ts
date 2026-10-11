@@ -147,6 +147,7 @@ export class AssetManager {
         ocean.width = this.groundTileSize;
         ocean.safeZone = this.groundTileSize;
         ocean.type = 'ground';
+        ocean.static = true;
         ocean.ignoreCollisions = true;
         ocean.isPickable = false;
         this.worldAssets.set('ocean', ocean);
@@ -155,6 +156,7 @@ export class AssetManager {
         signal.throwIfAborted();
         const fence = new GG3DAsset('fence', fenceMesh);
         fence.scale = 22;
+        fence.static = true;
         fence.ignoreCollisions = true;
         fence.isPickable = false;
         fence.disableShadow = true;
@@ -176,6 +178,7 @@ export class AssetManager {
         forestGround.safeZone = this.groundTileSize;
         forestGround.isPickable = false;
         forestGround.type = 'ground';
+        forestGround.static = true;
         forestTexture.material.zOffset = 20;
         this.biomeAssets[BiomeType.forest].ground.push(forestGround);
 
@@ -183,6 +186,7 @@ export class AssetManager {
         signal.throwIfAborted();
         const tree1 = new GG3DAsset('tree1', tree1Mesh);
         tree1.safeZone = 50;
+        tree1.static = true;
         tree1.displacementRatio = 0.2;
         tree1.sizeRatio = 0.4;
         tree1.scale = 75;
@@ -192,6 +196,7 @@ export class AssetManager {
         signal.throwIfAborted();
         const tree2 = new GG3DAsset('tree2', tree2Mesh);
         tree2.safeZone = 50;
+        tree2.static = true;
         tree2.displacementRatio = 0.2;
         tree2.sizeRatio = 0.4;
         tree2.scale = 75;
@@ -203,6 +208,7 @@ export class AssetManager {
         signal.throwIfAborted();
         const rock1 = new GG3DAsset('rock1', rock1Mesh);
         rock1.safeZone = 20;
+        rock1.static = true;
         rock1.displacementRatio = 0.2;
         rock1.sizeRatio = 0.4;
         rock1.scale = 5;
@@ -212,6 +218,7 @@ export class AssetManager {
         signal.throwIfAborted();
         const rock2 = new GG3DAsset('rock2', rock2Mesh);
         rock2.safeZone = 20;
+        rock2.static = true;
         rock2.displacementRatio = 0.2;
         rock2.sizeRatio = 0.4;
         rock2.scale = 10;
@@ -226,6 +233,7 @@ export class AssetManager {
             mesh.bakeTransformIntoVertices(Matrix.Translation(-bounds.center.x, -bounds.minimum.y, -bounds.center.z));
             const flower = new GG3DAsset(name, mesh);
             flower.safeZone = 25;
+            flower.static = true;
             flower.displacementRatio = 0.2;
             flower.sizeRatio = 0.3;
             flower.scale = 12 / flower.sizeY;
@@ -254,6 +262,7 @@ export class AssetManager {
         townGround.isPickable = false;
         townGround.disableShadow = true;
         townGround.type = 'ground';
+        townGround.static = true;
 
         townTextureAsset.texture.wrapU = Texture.WRAP_ADDRESSMODE;
         townTextureAsset.texture.wrapV = Texture.WRAP_ADDRESSMODE;
@@ -267,6 +276,7 @@ export class AssetManager {
         const plazaTextureAsset = this.loadTextureAsset('plazaGround', `${this.texturesPath}/town/plaza_ground_texture.jpg`);
         const plazaGround = new GG3DAsset('plazaGround', MeshBuilder.CreateDisc('disc', { radius: 60, tessellation: 48 }, GameRuntime.scene), plazaTextureAsset.material);
         plazaGround.mesh.rotation.x = Math.PI / 2;
+        plazaGround.static = true;
         plazaGround.ignoreCollisions = true;
         plazaGround.isPickable = false;
         plazaGround.disableShadow = true;
@@ -282,6 +292,7 @@ export class AssetManager {
         signal.throwIfAborted();
         const house1 = new GG3DAsset('house1', house1Mesh);
         house1.safeZone = 80;
+        house1.static = true;
         house1.displacementRatio = 0.3;
         house1.sizeRatio = 0.2;
         house1.scale = 80;
@@ -291,6 +302,7 @@ export class AssetManager {
         signal.throwIfAborted();
         const house2 = new GG3DAsset('house2', house2Mesh);
         house2.safeZone = 80;
+        house2.static = true;
         house2.displacementRatio = 0.3;
         house2.sizeRatio = 0.2;
         house2.scale = 80;
@@ -300,6 +312,7 @@ export class AssetManager {
         signal.throwIfAborted();
         const house3 = new GG3DAsset('house3', house3Mesh);
         house3.safeZone = 80;
+        house3.static = true;
         house3.displacementRatio = 0.3;
         house3.sizeRatio = 0.2;
         house3.scale = 60;
@@ -311,6 +324,7 @@ export class AssetManager {
         signal.throwIfAborted();
         const tower = new GG3DAsset('tower', towerMesh);
         tower.safeZone = 500;
+        tower.static = true;
         tower.displacementRatio = 0.8;
         tower.sizeRatio = 0.1;
         tower.scale = 100;
@@ -322,6 +336,7 @@ export class AssetManager {
         signal.throwIfAborted();
         const townCenter1 = new GG3DAsset('center1', townCenter1Mesh);
         townCenter1.safeZone = 100;
+        townCenter1.static = true;
         townCenter1.scale = 12;
         townCenter1.isPickable = false;
         townCenter1.rotation = Math.PI;
@@ -331,6 +346,7 @@ export class AssetManager {
         signal.throwIfAborted();
         const townCenter2 = new GG3DAsset('center2', townCenter2Mesh);
         townCenter2.safeZone = 100;
+        townCenter2.static = true;
         townCenter2.scale = 20;
         townCenter2.isPickable = false;
         townCenter2.rotation = Math.PI;

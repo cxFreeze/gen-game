@@ -5,6 +5,7 @@ import { isMeshInChunkBounds } from './chunk-bounds';
 import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { AbstractMesh } from '@babylonjs/core/Meshes/abstractMesh.js';
 import { InstancedMesh } from '@babylonjs/core/Meshes/instancedMesh.js';
+import { MultiMaterial } from '@babylonjs/core/Materials/multiMaterial.js';
 import { Sprite } from '@babylonjs/core/Sprites/sprite.js';
 import { GameRuntime } from '../../runtime/game-runtime';
 import type { LoadedMesh, LoadedSprite, PreLoadedItem } from './chunk-types.interface';
@@ -155,6 +156,7 @@ export class WorldRenderer {
 
 
                 ground.position = new Vector3(absX + rAsset.width / 2, 0, absY + rAsset.height / 2);
+                this.optimizeStaticMesh(ground, rAsset);
                 this.loadedChunksItems[`${chunkX}/${chunkY}`].meshes.push({ mesh: ground, asset: rAsset });
             }
             xIndex += biggestAsset;
@@ -353,13 +355,30 @@ export class WorldRenderer {
             this.lightingManager.shadowGenerator.addShadowCaster(item);
         }
 
-        if (item) {
-            item.computeWorldMatrix(true);
-            item.doNotSyncBoundingInfo = true;
-            GameRuntime.scene.addMesh(item);
-        }
+        item.computeWorldMatrix(true);
+        this.optimizeStaticMesh(item, asset);
+        GameRuntime.scene.addMesh(item);
 
         return item;
+    }
+
+    private optimizeStaticMesh(mesh: AbstractMesh, asset: GG3DAsset): void {
+        if (!asset.static) {
+            return;
+        }
+
+        for (const staticMesh of [mesh, ...mesh.getChildMeshes()]) {
+            staticMesh.freezeWorldMatrix();
+            staticMesh.doNotSyncBoundingInfo = true;
+
+            const material = staticMesh.material;
+            const materials = material instanceof MultiMaterial ? [material, ...material.subMaterials] : [material];
+            for (const staticMaterial of materials) {
+                if (staticMaterial && !staticMaterial.isFrozen) {
+                    staticMaterial.freeze();
+                }
+            }
+        }
     }
 
     private drawItemWithDeviation(asset: GG3DAsset, x: number, y: number, chunkX: number, chunkY: number): InstancedMesh | undefined {

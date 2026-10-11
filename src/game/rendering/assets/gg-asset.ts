@@ -31,6 +31,8 @@ export abstract class GGAsset {
 }
 
 export class GG3DAsset extends GGAsset {
+    static = false;
+
     private _mesh: Mesh;
     get mesh(): Mesh {
         return this._mesh;
